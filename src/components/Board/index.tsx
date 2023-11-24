@@ -36,7 +36,7 @@ function Board() {
       <Panel className="canvases">
         {layers.map((layer, idx) => {
           return (
-            <div key={`canvas_${layer.id}`} name={layer.name} className="layer_canvas_container" style={{ zIndex: (1 - idx) + layers.length, mixBlendMode: layer.blendMode }}>
+            <div key={`canvas_${layer.id}`} className="layer_canvas_container" style={{ zIndex: (1 - idx) + layers.length, mixBlendMode: layer.blendMode }}>
               <LayerCanvas ref={layer.canvasRef} id={layer.id} />
             </div>
           )

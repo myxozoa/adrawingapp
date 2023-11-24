@@ -1,30 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { ToolState } from '../../contexts/ToolState'
 
-import { tools as _tools, tool_list } from '../../constants'
+import { tools, tool_list } from '../../constants'
+import { ToolName, Tool } from '../../types'
 
-function ToolStateProvider({ children }) {
-  const [currentTool, _setCurrentTool] = useState(_tools[tool_list.PEN])
-  const [tools, setTools] = useState(_tools)
+function ToolStateProvider({ children }: { children: React.ReactNode }) {
+  const [currentTool, setCurrentToolState] = useState(tools[tool_list.PEN])
+  // const [tools, setTools] = useState(_tools)
 
-  const setCurrentTool = (name) => {
+  const setCurrentTool = (name: ToolName) => {
     if (currentTool.name !== name) {
-      _setCurrentTool(tools[name])
+      setCurrentToolState(tools[name])
     } else {
-      _setCurrentTool(tools[tool_list.PEN])
+      setCurrentToolState(tools[tool_list.PEN])
     }
   }
 
-  const changeToolSetting = (name, newSettings) => {
-    Object.keys(newSettings).forEach(setting => {
-      currentTool[setting] = newSettings[setting]
+  const changeToolSetting = (newSettings: Partial<Tool>) => {
+    Object.keys(newSettings).forEach((setting) => {
+        currentTool[setting] = newSettings[setting]
     })
   }
-
-  useEffect(() => {
-    
-  }, [])
 
   return (
       <ToolState.Provider value={{ tools, currentTool, setCurrentTool, changeToolSetting }}>

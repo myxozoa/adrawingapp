@@ -11,24 +11,26 @@ function initializeCanvas(
   canvas.style.width = `${width.toString()}px`
   canvas.style.height = `${height.toString()}px`
   const context = canvas.getContext('2d', { willReadFrequently: true })
-  context.scale(targetDpi, targetDpi)
-  context.imageSmoothingQuality = 'high'
+  context!.scale(targetDpi, targetDpi)
+  context!.imageSmoothingQuality = 'high'
 }
 
-function _LayerCanvas({ id }, ref) {
+function _LayerCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasElement>) {
 
   useEffect(() => {
-    const rect = ref.current.parentElement.getBoundingClientRect();
+    const refTypeHack = ref as React.MutableRefObject<HTMLCanvasElement>
+    const rect = refTypeHack.current!.parentElement!.getBoundingClientRect();
 
-    initializeCanvas(ref.current, rect.width, rect.height)
+    initializeCanvas(refTypeHack.current!, rect.width, rect.height)
   }, [])
 
   const canvasId = `canvas_${id}`
   return <canvas ref={ref} className="layer_canvas" id={canvasId} />
 }
 
-function hasChanged(prev, next) {
-  return prev.id === next.id
+
+function hasChanged(prevProps: Readonly<React.ComponentProps<any>>, nextProps: Readonly<React.ComponentProps<any>>): boolean {
+  return prevProps.id === nextProps.id
 }
 
 export const LayerCanvas = memo(forwardRef(_LayerCanvas), hasChanged)

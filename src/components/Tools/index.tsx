@@ -14,7 +14,7 @@ function Tools() {
     <Container className="tools">
       <Panel>
         {Object.values(tools).map((tool) => {
-          return <Tool key={tool.name} name={tool.name} id={tool.name} select={setCurrentTool} selected={currentTool.name === tool.name} />})}
+          return <Tool key={tool.name} name={tool.name} select={setCurrentTool} selected={currentTool.name === tool.name} />})}
       </Panel>
     </Container>
   )

@@ -2,15 +2,26 @@ import { createRef } from "react"
 
 import { blend_modes } from "../constants"
 
-export class Layer {
-  constructor(name: string) {
-    this.blendMode = blend_modes.default
+import { ILayer, LayerID, LayerName, Operation, BlendModes } from "../types"
+
+export class Layer implements ILayer {
+  blendMode: BlendModes
+  name: LayerName
+  id: LayerID
+  canvasRef: React.MutableRefObject<HTMLCanvasElement>
+  currentOperation: Operation
+  undoQueue: ImageData[]
+  rasterizedEvents: ImageData
+  noDraw: boolean
+
+  constructor(name: LayerName) {
+    this.blendMode = blend_modes.normal
     this.name = name
     this.id = Math.random() * Math.random()
-    this.canvasRef = createRef({}) as React.RefObject<HTMLCanvasElement>
-    this.currentEvent = { points: [] }
+    this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
+    this.currentOperation = { points: [] , tool: {} } as unknown as Operation
     this.undoQueue = []
-    this.rasterizedEvents = null
+    this.rasterizedEvents = new ImageData(0, 0)
     this.noDraw = false
   }
 
@@ -19,13 +30,15 @@ export class Layer {
     this.undoQueue.push(image)
 
     if (this.undoQueue.length > 5) {
-      this.rasterizedEvents = this.undoQueue.shift()
+      this.rasterizedEvents = this.undoQueue.shift()!
     }
 
-    this.currentEvent = { points: [] }
+    this.currentOperation = { points: [], tool: {} } as unknown as Operation // TODO: make these initializations more
   }
 
-  rasterizeElement = () => {
+  rasterizeElement = (): ImageData => {
+    if (!this.canvasRef.current) throw new Error("Unable to find Canvas")
+
     this.noDraw = true
 
     const context = this.canvasRef.current.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D
@@ -38,6 +51,8 @@ export class Layer {
   }
 
   fill = (color = 'white') => {
+    if (!this.canvasRef.current) throw new Error("Unable to find Canvas")
+  
     const context = this.canvasRef.current.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D
     context.save()
     context.fillStyle = color
@@ -46,13 +61,13 @@ export class Layer {
   }
 
   // newElement = () => {
-  //   this.undoQueue.push({ ...this.currentEvent })
+  //   this.undoQueue.push({ ...this.currentOperation })
 
   //   if (this.undoQueue.length > 5 || countPoints(this.undoQueue) > 500) {
   //     this.rasterizeElement()
   //   }
 
-  //   this.currentEvent = { points: [] }
+  //   this.currentOperation = { points: [] }
   // }
 
   // rasterizeElement = () => {

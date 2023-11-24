@@ -1,15 +1,9 @@
 import { createContext } from "react"
+import { LayerState as LayerStateType } from "../types"
 
-const defaultValue = { 
+const defaultValue: LayerStateType = { 
   layers: [],
-  setLayers: () => {},
-  currentLayer: 0,
-  setCurrentLayer: () => {},
-  newLayer: () => {},
-  removeLayer: () => {},
-  saveNewName: () => {},
-  editingLayer: undefined,
-  setEditingLayer: () => {}
-}
+  editingLayer: undefined
+} as unknown as LayerStateType
 
 export const LayerState = createContext(defaultValue)

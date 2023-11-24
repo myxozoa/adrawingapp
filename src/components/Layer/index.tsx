@@ -5,8 +5,9 @@ import './styles.css'
 import PanelElement from '../PanelElement'
 
 import { LayerState } from "../../contexts/LayerState"
+import { LayerName, LayerID } from '../../types'
 
-function Layer({ name, select, selected, id, editing, saveNewName }) {
+function Layer({ name, select, selected, id, editing, saveNewName }: { name: LayerName, select: (id: number) => void, selected: boolean, id: LayerID, editing: boolean, saveNewName: (id: number, name: string) => void }) {
   const { setEditingLayer } = useContext(LayerState)
 
   const [newName, setNewName] = useState("")

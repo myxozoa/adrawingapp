@@ -3,12 +3,14 @@ import { useEffect, useState, useRef } from 'react'
 import { LayerState } from '../../contexts/LayerState'
 import { Layer } from '../../objects/Layer'
 
+import { LayerID, LayerName } from '../../types'
+
 const baseLayer = new Layer("New Layer")
 
-function LayerStateProvider({ children }) {
+function LayerStateProvider({ children }: { children: React.ReactNode }) {
   const [layers, setLayers] = useState([baseLayer])
   const [currentLayer, _setCurrentLayer] = useState(baseLayer)
-  const [editingLayer, setEditingLayer] = useState(undefined)
+  const [editingLayer, setEditingLayer] = useState<number>(0)
 
   const currentLayerIndex = useRef(0)
 
@@ -32,7 +34,7 @@ function LayerStateProvider({ children }) {
     }
   }
 
-  const setCurrentLayer = (id) => {
+  const setCurrentLayer = (id: LayerID) => {
     const _currentLayerIndex = layers.findIndex((layer) => layer.id === id)
 
     currentLayerIndex.current = _currentLayerIndex
@@ -40,8 +42,8 @@ function LayerStateProvider({ children }) {
     _setCurrentLayer(layers[_currentLayerIndex])
   }
 
-  const saveNewName = (id, name) => {
-    setEditingLayer(undefined)
+  const saveNewName = (id: LayerID, name: LayerName) => {
+    setEditingLayer(0)
 
     setLayers(layers.map(layer => {
       if (id === layer.id) {
@@ -56,7 +58,7 @@ function LayerStateProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    const currentLayerExists = layers.find((layer) => layer.id === currentLayer)
+    const currentLayerExists = layers.find((layer) => layer.id === currentLayer.id)
 
     if (!currentLayerExists) {
 

@@ -20,7 +20,7 @@ function Layers() {
         {layers.map((layer, idx) => {
           return <Layer
             saveNewName={saveNewName}
-            editing={editingLayer && editingLayer === layer.id}
+            editing={!!editingLayer && editingLayer === layer.id}
             key={layer.name + idx}
             name={layer.name}
             id={layer.id}

@@ -2,15 +2,17 @@ import { tool_list } from '../../constants'
 
 import { getRelativeMousePos, getDistance } from '../../utils'
 
+import { ILayer, Tool, Point, Points, UIInteraction, MouseState, Operation } from '../../types'
+
 const smoothLength = 3
 
-function offsetPoint(point, offset) {
+function offsetPoint(point: Point, offset: number) {
   return { ...point, x: point.x + offset, y: point.y + offset }
 }
 
-function smooth(points) {
+function smooth(points: Points) {
   for (let i = 0; i < smoothLength; ++i) {
-      const j = points.length - i - 2
+      const j = points.length - (i - 2)
       const point0 = points[j]
       const point1 = points[j + 1]
       const a = 0.2
@@ -26,10 +28,15 @@ function smooth(points) {
 
 class _DrawingManager {
   context: CanvasRenderingContext2D
+  currentLayer: ILayer
+  currentTool: Tool
+  minDist: number
+  toolBelt: Record<string, (operation: Operation) => void>
+
   constructor() {
-    this.context
-    this.currentLayer
-    this.currentTool
+    this.context = {} as CanvasRenderingContext2D
+    this.currentLayer = {} as ILayer
+    this.currentTool = {} as Tool
     this.minDist = 1
 
     this.toolBelt = {
@@ -39,27 +46,27 @@ class _DrawingManager {
     }
   }
 
-  basePen = (interactionEvent) => {    
-    const startPoint = interactionEvent.points[0]
+  basePen = (operation: Operation) => {    
+    const startPoint = operation.points[0]
     
     this.context.lineCap = 'round'
     this.context.lineJoin = 'round'
     this.context.miterLimit = 10
-    this.context.strokeStyle = interactionEvent.tool.getCanvasColor(true)
+    this.context.strokeStyle = operation.tool.getCanvasColor(true)
 
     this.context.moveTo(startPoint.x, startPoint.y);
     
-    for (let i = 1; i < interactionEvent.points.length; i++) {
-      const prevPoint = interactionEvent.points[i - 1]
-      const point = interactionEvent.points[i];
+    for (let i = 1; i < operation.points.length; i++) {
+      const prevPoint = operation.points[i - 1]
+      const point = operation.points[i];
       this.context.beginPath()
 
       this.context.moveTo(prevPoint.x, prevPoint.y);
 
       if (point.pointerType === 'pen') {
-        this.context.lineWidth = interactionEvent.tool.size * point.pressure
+        this.context.lineWidth = operation.tool.size * point.pressure
       } else {
-        this.context.lineWidth = interactionEvent.tool.size
+        this.context.lineWidth = operation.tool.size
       }
   
       this.context.lineTo(point.x, point.y)
@@ -67,14 +74,15 @@ class _DrawingManager {
     }
   }
 
-  brushLine = (interactionEvent, _point0, _point1) => {
+  brushLine = (operation: Operation, _point0: Point, _point1: Point) => {
     const point0 = offsetPoint(_point0, -50)
     const point1 = offsetPoint(_point1, -50)
     const distance = getDistance(point0, point1)
-    const step = interactionEvent.tool.size / (distance ? distance : 1)
+    const step = operation.tool.size / (distance ? distance : 1)
     let i = 0
     let t = 0
-    let x, y
+    let x: number
+    let y: number
 
     while (i <= distance) {
       t = Math.max(0, Math.min(1, i / distance));
@@ -83,45 +91,49 @@ class _DrawingManager {
 
       this.context.globalAlpha = (point0.pressure / 5)
 
-      this.context.drawImage(interactionEvent.tool.image, x, y);
+      if (operation.tool.image) {
+        this.context.drawImage(operation.tool.image, x, y);
+      } else {
+        console.error("No image in tool to be drawn")
+      }
       i += step
     }
   }
 
-  baseBrush = (interactionEvent) => {
-    for (let i = 1; i < interactionEvent.points.length; i++) {
-      const point0 = interactionEvent.points[i - 1]
-      const point1 = interactionEvent.points[i]
-      this.brushLine(interactionEvent, point0, point1)
+  baseBrush = (operation: Operation) => {
+    for (let i = 1; i < operation.points.length; i++) {
+      const point0 = operation.points[i - 1]
+      const point1 = operation.points[i]
+      this.brushLine(operation, point0, point1)
     }
-    // interactionEvent.points.forEach(_point => {
+    // operation.points.forEach(_point => {
     //   const point = offsetPoint(_point, -50)
-    //   this.context.drawImage(interactionEvent.tool.image, point.x, point.y)
+    //   this.context.drawImage(operation.tool.image, point.x, point.y)
     // })
   }
 
-  erase = (interactionEvent) => {
+  erase = (operation: Operation) => {
     this.context.globalCompositeOperation ="destination-out";
   
-    this.basePen(interactionEvent)
+    this.basePen(operation)
   }
 
-  brushDraw = (interactionEvent) => {
+  brushDraw = (operation: Operation) => {
     this.context.save()
     this.context.globalCompositeOperation ="source-over";
   
-    this.baseBrush(interactionEvent)
+    this.baseBrush(operation)
     this.context.restore()
   }
   
-  penDraw = (interactionEvent) => {
+  penDraw = (operation: Operation) => {
     this.context.globalCompositeOperation ="source-over";
   
-    this.basePen(interactionEvent)
+    this.basePen(operation)
   }
 
-  draw = (interactionEvent) => {
-    this.toolBelt[interactionEvent.tool.name](interactionEvent)
+  draw = (operation: Operation) => {
+    this.toolBelt[operation.tool.name](operation)
   }
   
   endInteraction = () => {
@@ -130,21 +142,21 @@ class _DrawingManager {
     this.currentLayer.newElement()
   }
 
-  use = (relativeMouseState, interactionEvents) => {
-    interactionEvents.tool = this.currentTool
-    if (interactionEvents.points.length === 0 || getDistance(interactionEvents.points[interactionEvents.points.length - 1], relativeMouseState) > this.minDist) {
-      interactionEvents.points.push(relativeMouseState);
+  use = (relativeMouseState: MouseState, operation: Operation) => {
+    operation.tool = this.currentTool
+    if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
+      operation.points.push(relativeMouseState);
     }
-    if (interactionEvents.points.length > smoothLength) {
-      smooth(interactionEvents.points)
+    if (operation.points.length > smoothLength) {
+      smooth(operation.points)
     }
   }
 
-  interactLoop = (currentInteraction) => {
+  interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
     if (this.currentLayer.noDraw) return
 
     this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
-    const relativeMouseState = getRelativeMousePos(this.context.canvas, currentInteraction.current.mouseState)
+    const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
 
     if (this.currentLayer.rasterizedEvents) {
       this.context.putImageData(this.currentLayer.rasterizedEvents, 0, 0)
@@ -156,23 +168,23 @@ class _DrawingManager {
   
     if (this.currentLayer.undoQueue.length > 0) this.context.putImageData(this.currentLayer.undoQueue[this.currentLayer.undoQueue.length - 1], 0, 0)
 
-    if (currentInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
-      this.use(relativeMouseState, this.currentLayer.currentEvent)
+    if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
+      this.use(relativeMouseState, this.currentLayer.currentOperation)
     }
 
-    // if (this.currentTool.name === tool_list.BRUSH && this.currentLayer.currentEvent.points.length > 10) {
-    //   this.currentLayer.currentEvent.points = this.currentLayer.currentEvent.points.slice(-10)
+    // if (this.currentTool.name === tool_list.BRUSH && this.currentLayer.currentOperation.points.length > 10) {
+    //   this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-10)
     // }
 
-    if (this.currentLayer.currentEvent.points.length > 1) {
-      this.draw(this.currentLayer.currentEvent)
+    if (this.currentLayer.currentOperation.points.length > 1) {
+      this.draw(this.currentLayer.currentOperation)
     }
   
-    requestAnimationFrame(() => this.interactLoop(currentInteraction))
+    requestAnimationFrame(() => this.interactLoop(currentUIInteraction))
   }
   
   undo = () => {
-    if (this.currentLayer.undoQueue.length > 0 && this.currentLayer.currentEvent.points.length === 0) {
+    if (this.currentLayer.undoQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
       this.currentLayer.undoQueue.pop()
     }
   }
