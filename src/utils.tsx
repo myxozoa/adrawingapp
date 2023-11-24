@@ -24,17 +24,21 @@ export function getRelativeMousePos(canvas: HTMLCanvasElement, mouseState: Mouse
   }
 }
 
-export function throttle(func: () => void, timeFrame = 200): () => void {
-  let lastTime = 0
+export function throttle(func: (...args: any[]) => void, delay = 250): () => void {
+  let shouldWait = false
 
-  return function () {
-      const now = Date.now()
-      if (now - lastTime >= timeFrame) {
-          func()
-          lastTime = now
-      }
+  return (...args) => {
+    if (shouldWait) return
+
+    func(...args)
+    shouldWait = true
+    setTimeout(() => {
+
+      shouldWait = false
+    }, delay)
   }
 }
+
 
 export function getDistance(point0: Point, point1: Point): number {
   if (!point0 || !point1) return 0

@@ -14,7 +14,7 @@ import { DrawingManager } from './drawingManager'
 import { throttle } from '../../utils'
 
 function Board() {
-  const {  currentInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
+  const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
   const { layers, currentLayer } = useContext(LayerState)
   const { currentTool } = useContext(ToolState)
 
@@ -28,7 +28,7 @@ function Board() {
   }, [currentLayer])
 
   useEffect(() => {
-    DrawingManager.interactLoop(currentInteraction);
+    DrawingManager.interactLoop(currentUIInteraction);
   }, [])
 
   return (

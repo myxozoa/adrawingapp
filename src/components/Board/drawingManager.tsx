@@ -12,7 +12,7 @@ function offsetPoint(point: Point, offset: number) {
 
 function smooth(points: Points) {
   for (let i = 0; i < smoothLength; ++i) {
-      const j = points.length - (i - 2)
+      const j = (points.length - i) - 2
       const point0 = points[j]
       const point1 = points[j + 1]
       const a = 0.2

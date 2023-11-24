@@ -4,7 +4,7 @@ import { key_modifers } from '../constants'
 
 import { MouseState, Modifier, ModifierState, UIInteraction, PointerType } from '../types'
 
-// const defaultInteraction: UIInteraction = { mouseState: {}, keyModifiers: [], wheelDeltaY: 0 }
+const defaultInteraction: UIInteraction = { mouseState: {}, keyModifiers: [], wheelDeltaY: 0 } as unknown as UIInteraction
 8
 function constructInteraction(mouseState: React.MutableRefObject<MouseState>, modifierState: React.MutableRefObject<ModifierState>, wheelDeltaY: React.MutableRefObject<number>): UIInteraction {
   const interaction = { 
@@ -34,12 +34,12 @@ function parseMouseButtons(event: PointerEvent) {
 }
 
 function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (event?: KeyboardEvent) => void) {
-  const mouseState = useRef() as React.MutableRefObject<MouseState>
-  const modifierState = useRef() as React.MutableRefObject<ModifierState>
+  const mouseState = useRef({}) as React.MutableRefObject<MouseState>
+  const modifierState = useRef({}) as React.MutableRefObject<ModifierState>
   // const commandState = useRef({ ctrlZ: false })
-  const wheelDeltaY = useRef() as React.MutableRefObject<number>
+  const wheelDeltaY = useRef({}) as React.MutableRefObject<number>
 
-  const currentInteraction = useRef() as React.MutableRefObject<UIInteraction>
+  const currentUIInteraction = useRef({ ...defaultInteraction }) as React.MutableRefObject<UIInteraction>
   // const prevInteraction = useRef({...defaultInteraction})
 
   useEffect(() => {
@@ -55,7 +55,7 @@ function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (e
         pressure: event.pressure,
         pointerType: event.pointerType as unknown as PointerType }
       
-      currentInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
     const onPointerUp = (event: PointerEvent) => {
@@ -66,7 +66,7 @@ function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (e
     const updateWheelDeltaY = (event: WheelEvent) => {
       wheelDeltaY.current = event.deltaY
 
-      currentInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
     const updateKeyModifiers = (event: KeyboardEvent) => {
@@ -74,7 +74,7 @@ function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (e
       handleModifier(modifierState, event.altKey, key_modifers.alt)
       handleModifier(modifierState, event.shiftKey, key_modifers.shift)
 
-      currentInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
     const updateKeys = (event: KeyboardEvent) => {
@@ -102,7 +102,7 @@ function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (e
     }
   }, [])
 
-  return { currentInteraction }
+  return { currentUIInteraction }
 
 }
 

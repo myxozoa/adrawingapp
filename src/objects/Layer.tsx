@@ -21,7 +21,7 @@ export class Layer implements ILayer {
     this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
     this.currentOperation = { points: [] , tool: {} } as unknown as Operation
     this.undoQueue = []
-    this.rasterizedEvents = new ImageData(0, 0)
+    this.rasterizedEvents = new ImageData(1, 1)
     this.noDraw = false
   }
 
