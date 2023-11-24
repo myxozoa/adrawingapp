@@ -1,0 +1,22 @@
+.tool_settings_container {
+  height: 50px;
+}
+
+.tool_settings {
+  display: flex;
+  flex-direction: row;
+}
+
+.tool_setting {
+  width: 200px;
+}
+
+.tool_preview_canvas {
+  width: 50px;
+  height: 50px;
+  background-color: white;
+}
+
+.tool_color {
+  width: 50px;
+}

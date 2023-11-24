@@ -1,0 +1,24 @@
+.layers {
+  flex-grow: 1;
+  width: 200px;
+}
+
+.layer_list {
+  overflow-y: auto;
+}
+
+.layer_settings, .edit_layers {
+  height: 50px;
+  flex-grow: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit_layers {
+  margin-top: 0;
+}
+
+.layer_settings {
+  margin-bottom: 0;
+}
