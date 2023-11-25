@@ -39,7 +39,8 @@ class _DrawingManager {
       this.context.lineTo(point1.x, point1.y)
       this.context.stroke()
     } else {
-      for (let i = 2; i < operation.points.length - 1; i += 2) {
+      // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
+      for (let i = 2; i < operation.points.length - 1; i += 1) {
         const startPoint = operation.points[i - 2]
         const midPoint = operation.points[i - 1]
         const endPoint = operation.points[i]
@@ -110,6 +111,8 @@ class _DrawingManager {
       if (distance > operation.tool.size) {
         this.brushLine(operation, point0, point1)
       } else {
+        if (!operation.tool.image) throw new Error("Tool is missing image")
+
         if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
 
         const offsetPoint0 = offsetPoint(point0, -50)
@@ -166,28 +169,29 @@ class _DrawingManager {
   interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
     if (this.currentLayer.noDraw) return
 
-    this.context.reset();
+    this.context.reset()
     const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
 
-    if (this.currentLayer.rasterizedEvents) {
-      this.context.putImageData(this.currentLayer.rasterizedEvents, 0, 0)
-    }
-  
     if (this.currentLayer.undoQueue.length > 0) {
       this.context.putImageData(this.currentLayer.undoQueue[this.currentLayer.undoQueue.length - 1], 0, 0)
+    } else {
+      if (this.currentLayer.rasterizedEvents) {
+        this.context.putImageData(this.currentLayer.rasterizedEvents, 0, 0)
+      }
     }
 
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
       this.use(relativeMouseState, this.currentLayer.currentOperation)
     }
 
-    if (this.currentLayer.currentOperation.points.length % 9 === 0 && this.currentLayer.currentOperation.points.length >= 9) {
-      console.log(this.currentLayer.currentOperation.points.length)
-      this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-9)
-    }
-
     if (this.currentLayer.currentOperation.points.length > 1) {
       this.draw(this.currentLayer.currentOperation)
+    }
+    
+    if (this.currentLayer.currentOperation.points.length % 33 === 0 && this.currentLayer.currentOperation.points.length >= 33) {
+      const image = this.currentLayer.rasterizeElement()
+      this.currentLayer.addElementToUndoQueue(image)
+      this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-3)
     }
   
     requestAnimationFrame(() => this.interactLoop(currentUIInteraction))

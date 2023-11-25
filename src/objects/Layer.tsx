@@ -27,13 +27,18 @@ export class Layer implements ILayer {
 
   newElement = () => {
     const image = this.rasterizeElement()
+
+    this.addElementToUndoQueue(image)
+
+    this.currentOperation = { points: [], tool: {} } as unknown as Operation // TODO: make these initializations more
+  }
+
+  addElementToUndoQueue = (image: ImageData) => {
     this.undoQueue.push(image)
 
     if (this.undoQueue.length > 5) {
       this.rasterizedEvents = this.undoQueue.shift()!
     }
-
-    this.currentOperation = { points: [], tool: {} } as unknown as Operation // TODO: make these initializations more
   }
 
   rasterizeElement = (): ImageData => {
@@ -41,7 +46,7 @@ export class Layer implements ILayer {
 
     this.noDraw = true
 
-    const context = this.canvasRef.current.getContext("2d", { willReadFrequently: false }) as CanvasRenderingContext2D
+    const context = this.canvasRef.current.getContext("2d") as CanvasRenderingContext2D
 
     const image = context.getImageData(0, 0, this.canvasRef.current.width, this.canvasRef.current.height)
 
@@ -53,7 +58,7 @@ export class Layer implements ILayer {
   fill = (color = 'white') => {
     if (!this.canvasRef.current) throw new Error("Unable to find Canvas")
   
-    const context = this.canvasRef.current.getContext("2d", { willReadFrequently: false }) as CanvasRenderingContext2D
+    const context = this.canvasRef.current.getContext("2d") as CanvasRenderingContext2D
     context.save()
     context.fillStyle = color
     context.fillRect(0, 0, context.canvas.width, context.canvas.height)

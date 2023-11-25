@@ -6,6 +6,7 @@ import {
   ColorValueString,
   Operations,
   Point,
+  Points,
   MouseState
 } from "./types";
 
@@ -103,7 +104,7 @@ export function smoothPoints(points: Points) {
   }
 }
 
-export function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Point, endPoint: Point): Point {
+export function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Point, endPoint: Point): Pick<Point, "x" | "y"> {
   const controlPoint = { x: midPoint.x * 2 - (startPoint.x + endPoint.x) / 2, y: midPoint.y * 2 - (startPoint.y + endPoint.y) / 2 }
 
   return controlPoint

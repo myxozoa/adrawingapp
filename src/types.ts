@@ -45,7 +45,15 @@ export interface Tool {
 export interface ToolState { 
   tools: Record<ToolName, Tool>
   currentTool: Tool
+  toolSize: number
+  toolHardness: number
+  toolOpacity: number
+  toolColor: string
   setCurrentTool: (name: ToolName) => void
+  setToolSize: React.Dispatch<React.SetStateAction<number>>
+  setToolHardness: React.Dispatch<React.SetStateAction<number>>
+  setToolOpacity: React.Dispatch<React.SetStateAction<number>>
+  setToolColor: React.Dispatch<React.SetStateAction<string>>
   changeToolSetting: (newSettings: Partial<Tool>) => void
 }
 
@@ -64,6 +72,7 @@ export interface ILayer {
   noDraw: boolean
   newElement(): void
   rasterizeElement(): ImageData
+  addElementToUndoQueue(image: ImageData): void
   fill(color?: ColorValueString): void
 }
 export interface LayerState {
