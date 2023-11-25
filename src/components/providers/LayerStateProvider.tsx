@@ -55,7 +55,7 @@ function LayerStateProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     layers[0].fill()
-    const image = layers[0].rasterizeElement()
+    const image = layers[0].getImageData()
     layers[0].replaceDrawingData(image)
   }, [])
 

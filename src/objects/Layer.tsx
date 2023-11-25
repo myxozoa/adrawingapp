@@ -19,22 +19,25 @@ export class Layer implements ILayer {
     this.name = name
     this.id = Math.random() * Math.random()
     this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
-    this.currentOperation = { points: [] , tool: {} } as unknown as Operation
+    this.currentOperation = { points: [] } as unknown as Operation
     this.undoSnapshotQueue = []
     this.drawingData = new ImageData(1, 1)
     this.noDraw = false
   }
 
-  newElement = () => {
-    const image = this.rasterizeElement()
+  saveAndStartNewOperation = () => {
+    const image = this.getImageData()
 
     this.addElementToUndoSnapshotQueue(image)
 
-    this.currentOperation = { points: [], tool: {} } as unknown as Operation // TODO: make these initializations more
+    this.currentOperation = { points: [] } as unknown as Operation // TODO: make these initializations more
   }
 
   addElementToUndoSnapshotQueue = (image: ImageData) => {
+    console.log("saved an undo")
     this.undoSnapshotQueue.push(image)
+
+    console.log(image)
 
     if (this.undoSnapshotQueue.length > 5) {
       this.drawingData = this.undoSnapshotQueue.shift()!
@@ -45,7 +48,7 @@ export class Layer implements ILayer {
     this.drawingData = image
   }
 
-  rasterizeElement = (): ImageData => {
+  getImageData = (): ImageData => {
     if (!this.canvasRef.current) throw new Error("Unable to find Canvas")
 
     this.noDraw = true

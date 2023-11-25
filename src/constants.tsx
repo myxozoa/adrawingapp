@@ -14,6 +14,8 @@ export const tool_types: Record<ToolType, ToolType> = {
 }
 
 const getCanvasColor = function(this: Tool, opacity?: boolean, fullyTransparent?: boolean) {
+  if (!this.color || !this.opacity) return 'rgba(0,0,0,0)'
+
   const useOpacity = opacity ? (this.opacity / 100).toFixed(2) : 1
   const transparent = fullyTransparent ? 0.0 : useOpacity
   return `rgba(${this.color[0]},${this.color[1]},${this.color[2]}, ${transparent})`
@@ -27,8 +29,9 @@ export const tools: Record<ToolName, Tool> = {
     color: [255, 0, 0],
     opacity: 100,
     hardness: 100,
-    availableSettings: [ "size", "color" ],
+    availableSettings: [ "color", "size" ],
     type: tool_types.STROKE,
+    continuous: true,
     getCanvasColor
   } as Tool,
   BRUSH: {
@@ -37,9 +40,10 @@ export const tools: Record<ToolName, Tool> = {
     color: [255, 0, 0],
     opacity: 100,
     hardness: 100,
-    availableSettings: [ "size", "color", "opacity" ],
+    availableSettings: [ "color", "size", "hardness", "opacity" ],
     getCanvasColor,
     type: tool_types.STROKE,
+    continuous: true,
     image: null
   } as Tool,
   ERASER: {
@@ -48,9 +52,10 @@ export const tools: Record<ToolName, Tool> = {
     color: [0, 0, 0],
     opacity: 100,
     hardness: 100,
-    availableSettings: [ "size", "color", "opacity" ],
+    availableSettings: [ "color", "size", "opacity" ],
     getCanvasColor,
     type: tool_types.STROKE,
+    continuous: true,
     image: null
   } as Tool,
   FILL: {
@@ -61,6 +66,7 @@ export const tools: Record<ToolName, Tool> = {
     hardness: 100,
     availableSettings: [ "color" ],
     type: tool_types.POINT,
+    continuous: false,
     getCanvasColor
   }
   // CURVE: {name: tool_list.CURVE}

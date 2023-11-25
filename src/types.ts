@@ -40,7 +40,8 @@ export interface Tool {
   hardness?: number
   availableSettings: ToolSetting[]
   type: ToolType
-  getCanvasColor?: (opacity?: boolean, fullyTransparent?: boolean) => HexColor
+  continuous: boolean
+  getCanvasColor: (opacity?: boolean, fullyTransparent?: boolean) => HexColor
   image?: Nullable<HTMLImageElement>
 }
 
@@ -56,7 +57,7 @@ export interface ToolState {
   setToolHardness: React.Dispatch<React.SetStateAction<number>>
   setToolOpacity: React.Dispatch<React.SetStateAction<number>>
   setToolColor: React.Dispatch<React.SetStateAction<string>>
-  changeToolSetting: (newSettings: Partial<Tool>) => void
+  changeToolSetting: (newSettings: any) => void
 }
 
 export type BlendModes = "normal" | "multiply" | "screen" | "overlay" | "darken" | "lighten" | "color-dodge" | "color-burn" | "hard-light" | "soft-light" | "difference" | "exclusion" | "hue" | "saturation" | "color" | "luminosity"
@@ -72,9 +73,10 @@ export interface ILayer {
   undoSnapshotQueue: ImageData[]
   drawingData: ImageData
   noDraw: boolean
-  newElement(): void
-  rasterizeElement(): ImageData
+  saveAndStartNewOperation(): void
+  getImageData(): ImageData
   addElementToUndoSnapshotQueue(image: ImageData): void
+  replaceDrawingData(image: ImageData): void
   fill(color?: ColorValueString): void
 }
 export interface LayerState {

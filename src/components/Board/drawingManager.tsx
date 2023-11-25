@@ -10,12 +10,14 @@ class _DrawingManager {
   currentTool: Tool
   minDist: number
   toolBelt: Record<string, (operation: Operation) => void>
+  waitUntilInteractionEnd: boolean
 
   constructor() {
     this.context = {} as CanvasRenderingContext2D
     this.currentLayer = {} as ILayer
     this.currentTool = {} as Tool
     this.minDist = 1
+    this.waitUntilInteractionEnd = false
 
     this.toolBelt = {
       [tool_list.PEN]: this.penDraw,
@@ -31,6 +33,7 @@ class _DrawingManager {
     this.context.miterLimit = 10
     this.context.strokeStyle = operation.tool.getCanvasColor(true)
 
+    // TODO: make less lazy
     if (operation.points.length < 3) {
       const point0 = operation.points[0]
       const point1 = operation.points[1]
@@ -52,9 +55,9 @@ class _DrawingManager {
         const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
         
         if (midPoint.pointerType === 'pen') {
-          this.context.lineWidth = operation.tool.size * midPoint.pressure
+          this.context.lineWidth = operation.tool.size! * midPoint.pressure
         } else {
-          this.context.lineWidth = operation.tool.size
+          this.context.lineWidth = operation.tool.size!
         }
         
         this.context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
@@ -80,7 +83,7 @@ class _DrawingManager {
     const point0 = offsetPoint(_point0, -50)
     const point1 = offsetPoint(_point1, -50)
     const distance = getDistance(point0, point1)
-    const step = (distance / operation.tool.size)
+    const step = (distance / operation.tool.size!)
 
     for (let i = 0; i <= distance; i += step) {
       const t = Math.max(0, Math.min(1, i / distance))
@@ -104,11 +107,12 @@ class _DrawingManager {
 
       const distance = getDistance(point0, point1)
 
-      if (distance > operation.tool.size) {
+      if (distance > operation.tool.size!) {
         this.brushLine(operation, point0, point1)
       } else {
         if (!operation.tool.image) throw new Error("Tool is missing image")
 
+        // TODO: make less lazy
         if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
 
         const offsetPoint0 = offsetPoint(point0, -50)
@@ -129,24 +133,31 @@ class _DrawingManager {
   }
 
   erase = (operation: Operation) => {
+    if (this.currentLayer.currentOperation.points.length <= 1) return
+
     this.context.globalCompositeOperation ="destination-out";
   
     this.basePen(operation)
   }
 
   brushDraw = (operation: Operation) => {
+    if (this.currentLayer.currentOperation.points.length <= 1) return
+
     this.context.globalCompositeOperation ="source-over";
   
     this.baseBrush(operation)
   }
   
   penDraw = (operation: Operation) => {
+    if (this.currentLayer.currentOperation.points.length <= 1) return
+
     this.context.globalCompositeOperation ="source-over";
   
     this.basePen(operation)
   }
 
   draw = (operation: Operation) => {
+
     this.context.save()
     this.toolBelt[operation.tool.name](operation)
     this.context.restore()
@@ -154,22 +165,30 @@ class _DrawingManager {
   
   endInteraction = () => {
     if (this.currentLayer.noDraw) return
+    
+    this.waitUntilInteractionEnd = false
 
-    this.currentLayer.newElement()
+    this.currentLayer.saveAndStartNewOperation()
   }
 
   use = (relativeMouseState: MouseState, operation: Operation) => {
     operation.tool = this.currentTool
 
-    if (operation.tool.type === tool_types.stroke) {
-      if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
-        operation.points.push(relativeMouseState)
-      }
-      if (operation.points.length > 2) {
-        smoothPoints(operation.points)
-      }
-    } else {
-      this.toolBelt[operation.tool.name](operation)
+    if (this.waitUntilInteractionEnd) return
+
+    switch(operation.tool.type) {
+      case tool_types.STROKE:
+        if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
+          operation.points.push(relativeMouseState)
+        }
+        if (operation.points.length > 2) {
+          smoothPoints(operation.points)
+        }
+        break
+
+      case tool_types.POINT:
+        this.waitUntilInteractionEnd = true
+        break
     }
   }
 
@@ -191,14 +210,14 @@ class _DrawingManager {
       this.use(relativeMouseState, this.currentLayer.currentOperation)
     }
 
-    if (this.currentLayer.currentOperation.points.length > 1) {
+    if (this.currentLayer.currentOperation.tool) {
       this.draw(this.currentLayer.currentOperation)
-    }
-    
-    if (this.currentLayer.currentOperation.points.length % 33 === 0 && this.currentLayer.currentOperation.points.length >= 33) {
-      const image = this.currentLayer.rasterizeElement()
-      this.currentLayer.addElementToUndoSnapshotQueue(image)
-      this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-3)
+      
+      if (this.currentLayer.currentOperation.points.length % 33 === 0 && this.currentLayer.currentOperation.points.length >= 33) {
+        const image = this.currentLayer.getImageData()
+        this.currentLayer.addElementToUndoSnapshotQueue(image)
+        this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-3)
+      }
     }
   
     requestAnimationFrame(() => this.interactLoop(currentUIInteraction))
