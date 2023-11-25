@@ -10,8 +10,8 @@ export class Layer implements ILayer {
   id: LayerID
   canvasRef: React.MutableRefObject<HTMLCanvasElement>
   currentOperation: Operation
-  undoQueue: ImageData[]
-  rasterizedEvents: ImageData
+  undoSnapshotQueue: ImageData[]
+  drawingData: ImageData
   noDraw: boolean
 
   constructor(name: LayerName) {
@@ -20,25 +20,29 @@ export class Layer implements ILayer {
     this.id = Math.random() * Math.random()
     this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
     this.currentOperation = { points: [] , tool: {} } as unknown as Operation
-    this.undoQueue = []
-    this.rasterizedEvents = new ImageData(1, 1)
+    this.undoSnapshotQueue = []
+    this.drawingData = new ImageData(1, 1)
     this.noDraw = false
   }
 
   newElement = () => {
     const image = this.rasterizeElement()
 
-    this.addElementToUndoQueue(image)
+    this.addElementToUndoSnapshotQueue(image)
 
     this.currentOperation = { points: [], tool: {} } as unknown as Operation // TODO: make these initializations more
   }
 
-  addElementToUndoQueue = (image: ImageData) => {
-    this.undoQueue.push(image)
+  addElementToUndoSnapshotQueue = (image: ImageData) => {
+    this.undoSnapshotQueue.push(image)
 
-    if (this.undoQueue.length > 5) {
-      this.rasterizedEvents = this.undoQueue.shift()!
+    if (this.undoSnapshotQueue.length > 5) {
+      this.drawingData = this.undoSnapshotQueue.shift()!
     }
+  }
+
+  replaceDrawingData = (image: ImageData) => {
+    this.drawingData = image
   }
 
   rasterizeElement = (): ImageData => {

@@ -28,17 +28,19 @@ export type ModifierState = Set<Modifier>
 
 export interface UIInteraction { mouseState: MouseState, modifierState: ModifierState, wheelDeltaY: number }
 
-export type ToolName = "PEN" | "BRUSH" | "ERASER" /*| "CURVE" */
+export type ToolType = "STROKE" | "POINT"
+export type ToolName = "PEN" | "BRUSH" | "ERASER" | "FILL" /*| "CURVE" */
 export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
 export interface Tool {
   [index: string] : any
   name: ToolName
-  size: number
-  color: ColorArray
-  opacity: number
-  hardness: number
+  size?: number
+  color?: ColorArray
+  opacity?: number
+  hardness?: number
   availableSettings: ToolSetting[]
-  getCanvasColor: (opacity?: boolean, fullyTransparent?: boolean) => HexColor
+  type: ToolType
+  getCanvasColor?: (opacity?: boolean, fullyTransparent?: boolean) => HexColor
   image?: Nullable<HTMLImageElement>
 }
 
@@ -67,12 +69,12 @@ export interface ILayer {
   id: LayerID
   canvasRef: React.MutableRefObject<HTMLCanvasElement>
   currentOperation: Operation
-  undoQueue: ImageData[]
-  rasterizedEvents: ImageData
+  undoSnapshotQueue: ImageData[]
+  drawingData: ImageData
   noDraw: boolean
   newElement(): void
   rasterizeElement(): ImageData
-  addElementToUndoQueue(image: ImageData): void
+  addElementToUndoSnapshotQueue(image: ImageData): void
   fill(color?: ColorValueString): void
 }
 export interface LayerState {

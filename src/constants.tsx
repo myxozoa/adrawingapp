@@ -1,10 +1,16 @@
-import { BlendModes, Modifier, Tool, ToolName } from "./types"
+import { BlendModes, Modifier, Tool, ToolName, ToolType } from "./types"
 
 export const tool_list: Record<ToolName, ToolName> = {
   PEN: "PEN",
   BRUSH: "BRUSH",
   ERASER: "ERASER",
+  FILL: "FILL"
   // CURVE: "CURVE"
+}
+
+export const tool_types: Record<ToolType, ToolType> = {
+  STROKE: "STROKE",
+  POINT: "POINT"
 }
 
 const getCanvasColor = function(this: Tool, opacity?: boolean, fullyTransparent?: boolean) {
@@ -13,6 +19,7 @@ const getCanvasColor = function(this: Tool, opacity?: boolean, fullyTransparent?
   return `rgba(${this.color[0]},${this.color[1]},${this.color[2]}, ${transparent})`
 }
 
+// TODO: Remove useless default settings for things some tools dont need from the tools themselves
 export const tools: Record<ToolName, Tool> = {
   PEN: {
     name: tool_list.PEN,
@@ -21,6 +28,7 @@ export const tools: Record<ToolName, Tool> = {
     opacity: 100,
     hardness: 100,
     availableSettings: [ "size", "color" ],
+    type: tool_types.STROKE,
     getCanvasColor
   } as Tool,
   BRUSH: {
@@ -31,6 +39,7 @@ export const tools: Record<ToolName, Tool> = {
     hardness: 100,
     availableSettings: [ "size", "color", "opacity" ],
     getCanvasColor,
+    type: tool_types.STROKE,
     image: null
   } as Tool,
   ERASER: {
@@ -41,8 +50,19 @@ export const tools: Record<ToolName, Tool> = {
     hardness: 100,
     availableSettings: [ "size", "color", "opacity" ],
     getCanvasColor,
+    type: tool_types.STROKE,
     image: null
   } as Tool,
+  FILL: {
+    name: tool_list.FILL,
+    size: 10,
+    color: [255, 0, 0],
+    opacity: 100,
+    hardness: 100,
+    availableSettings: [ "color" ],
+    type: tool_types.POINT,
+    getCanvasColor
+  }
   // CURVE: {name: tool_list.CURVE}
 }
 

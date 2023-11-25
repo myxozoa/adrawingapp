@@ -56,7 +56,7 @@ function LayerStateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     layers[0].fill()
     const image = layers[0].rasterizeElement()
-    layers[0].addElementToUndoQueue(image)
+    layers[0].replaceDrawingData(image)
   }, [])
 
   useEffect(() => {

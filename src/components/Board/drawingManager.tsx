@@ -1,4 +1,4 @@
-import { tool_list } from '../../constants'
+import { tool_list, tool_types } from '../../constants'
 
 import { getRelativeMousePos, getDistance, offsetPoint, smoothPoints, findQuadtraticBezierControlPoint } from '../../utils'
 
@@ -20,7 +20,8 @@ class _DrawingManager {
     this.toolBelt = {
       [tool_list.PEN]: this.penDraw,
       [tool_list.BRUSH]: this.brushDraw,
-      [tool_list.ERASER]: this.erase
+      [tool_list.ERASER]: this.erase,
+      [tool_list.FILL]: this.fill
     }
   }
 
@@ -121,6 +122,12 @@ class _DrawingManager {
     }
   }
 
+  fill = (operation: Operation) => {
+    this.context.globalCompositeOperation ="source-over";
+
+    this.currentLayer.fill(operation.tool.getCanvasColor(false))
+  }
+
   erase = (operation: Operation) => {
     this.context.globalCompositeOperation ="destination-out";
   
@@ -153,11 +160,16 @@ class _DrawingManager {
 
   use = (relativeMouseState: MouseState, operation: Operation) => {
     operation.tool = this.currentTool
-    if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
-      operation.points.push(relativeMouseState)
-    }
-    if (operation.points.length > 2) {
-      smoothPoints(operation.points)
+
+    if (operation.tool.type === tool_types.stroke) {
+      if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
+        operation.points.push(relativeMouseState)
+      }
+      if (operation.points.length > 2) {
+        smoothPoints(operation.points)
+      }
+    } else {
+      this.toolBelt[operation.tool.name](operation)
     }
   }
 
@@ -167,11 +179,11 @@ class _DrawingManager {
     this.context.reset()
     const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
 
-    if (this.currentLayer.undoQueue.length > 0) {
-      this.context.putImageData(this.currentLayer.undoQueue[this.currentLayer.undoQueue.length - 1], 0, 0)
+    if (this.currentLayer.undoSnapshotQueue.length > 0) {
+      this.context.putImageData(this.currentLayer.undoSnapshotQueue[this.currentLayer.undoSnapshotQueue.length - 1], 0, 0)
     } else {
-      if (this.currentLayer.rasterizedEvents) {
-        this.context.putImageData(this.currentLayer.rasterizedEvents, 0, 0)
+      if (this.currentLayer.drawingData) {
+        this.context.putImageData(this.currentLayer.drawingData, 0, 0)
       }
     }
 
@@ -185,7 +197,7 @@ class _DrawingManager {
     
     if (this.currentLayer.currentOperation.points.length % 33 === 0 && this.currentLayer.currentOperation.points.length >= 33) {
       const image = this.currentLayer.rasterizeElement()
-      this.currentLayer.addElementToUndoQueue(image)
+      this.currentLayer.addElementToUndoSnapshotQueue(image)
       this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-3)
     }
   
@@ -193,8 +205,8 @@ class _DrawingManager {
   }
   
   undo = () => {
-    if (this.currentLayer.undoQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
-      this.currentLayer.undoQueue.pop()
+    if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
+      this.currentLayer.undoSnapshotQueue.pop()
     }
   }
 }
