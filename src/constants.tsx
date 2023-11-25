@@ -72,3 +72,5 @@ export const key_modifers: Record<string, Modifier> = {
 }
 
 export const smoothLength = 3
+
+export const toolPreviewSize = 100

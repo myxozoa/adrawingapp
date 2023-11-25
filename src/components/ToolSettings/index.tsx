@@ -8,7 +8,7 @@ import { ToolState } from '../../contexts/ToolState'
 
 import { throttle, hexToRgb } from '../../utils'
 
-const previewSize = 100
+import { toolPreviewSize } from '../../constants'
 
 function ToolSettings() {
   const previewCanvasRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
@@ -24,10 +24,10 @@ function ToolSettings() {
   useEffect(() => {
     if (previewCanvasRef.current) {
       const context = previewCanvasRef.current.getContext('2d') as CanvasRenderingContext2D
-      context.clearRect(0,0,previewSize,previewSize)
+      context.reset()
   
-      const x = Math.floor(previewSize / 2)
-      const y = Math.floor(previewSize / 2)
+      const x = Math.floor(toolPreviewSize / 2)
+      const y = Math.floor(toolPreviewSize / 2)
       const innerRadius = Math.min(Math.floor((toolHardness / 100) * toolSize), toolSize - 1)
       const radius = toolSize
   
@@ -76,7 +76,7 @@ function ToolSettings() {
     <Container className="tool_settings_container">
       <Panel>
         <div className='tool_settings'>
-          <canvas className='tool_preview_canvas' ref={previewCanvasRef} width={previewSize} height={previewSize} />
+          <canvas className='tool_preview_canvas' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
           <div className='tool_setting tool_color'>
             <input type="color" id="tool_color" name="tool_color" value={toolColor} onChange={toolColorThrottled} />
             <label htmlFor="tool_color">Color</label>

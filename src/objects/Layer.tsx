@@ -62,6 +62,7 @@ export class Layer implements ILayer {
     context.save()
     context.fillStyle = color
     context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+
     context.restore()
   }
 }

@@ -7,7 +7,7 @@ import { ToolName, Tool } from '../../types'
 import { rgbToHex } from '../../utils'
 
 function ToolStateProvider({ children }: { children: React.ReactNode }) {
-  const [currentTool, setCurrentToolState] = useState(tools[tool_list.BRUSH])
+  const [currentTool, setCurrentToolState] = useState(tools[tool_list.PEN])
   const [toolSize, setToolSize] = useState(currentTool.size)
   const [toolHardness, setToolHardness] = useState(currentTool.hardness)
   const [toolOpacity, setToolOpacity] = useState(currentTool.opacity)
@@ -37,7 +37,6 @@ function ToolStateProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const changeToolSetting = useCallback((newSettings: Partial<Tool>) => {
-    console.log(currentTool.name)
     Object.keys(newSettings).forEach((setting) => {
       toolStateFunctions[setting](newSettings[setting])
       currentTool[setting] = newSettings[setting]
