@@ -16,8 +16,8 @@ export function getRelativeMousePos(canvas: HTMLCanvasElement, mouseState: Mouse
   const rect = canvas.getBoundingClientRect()
 
   const relativePosition = {
-    x: mouseState.x - rect.left,
-    y: mouseState.y - rect.top
+    x: (mouseState.x * window.devicePixelRatio) - rect.left,
+    y: (mouseState.y * window.devicePixelRatio) - rect.top
   }
 
   return {
