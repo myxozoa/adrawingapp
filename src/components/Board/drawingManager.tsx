@@ -80,24 +80,19 @@ class _DrawingManager {
     const point1 = offsetPoint(_point1, -50)
     const distance = getDistance(point0, point1)
     const step = (distance / operation.tool.size)
-    let i = 0
-    let t = 0
-    let x: number
-    let y: number
 
-    while (i <= distance) {
-      t = Math.max(0, Math.min(1, i / distance));
-      x = point0.x + (point1.x - point0.x) * t;
-      y = point0.y + (point1.y - point0.y) * t;
+    for (let i = 0; i <= distance; i += step) {
+      const t = Math.max(0, Math.min(1, i / distance))
+      const x = point0.x + (point1.x - point0.x) * t
+      const y = point0.y + (point1.y - point0.y) * t
 
       if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
 
       if (operation.tool.image) {
-        this.context.drawImage(operation.tool.image, x, y);
+        this.context.drawImage(operation.tool.image, x, y)
       } else {
         console.error("No image in tool to be drawn")
       }
-      i += step
     }
   }
 
@@ -159,7 +154,7 @@ class _DrawingManager {
   use = (relativeMouseState: MouseState, operation: Operation) => {
     operation.tool = this.currentTool
     if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
-      operation.points.push(relativeMouseState);
+      operation.points.push(relativeMouseState)
     }
     if (operation.points.length > 2) {
       smoothPoints(operation.points)

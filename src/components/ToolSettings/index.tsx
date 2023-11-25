@@ -16,13 +16,9 @@ function ToolSettings() {
     currentTool,
     changeToolSetting,
     toolSize,
-    setToolSize,
     toolHardness,
-    setToolHardness,
     toolOpacity,
-    setToolOpacity,
-    toolColor,
-    setToolColor
+    toolColor
   } = useContext(ToolState)
 
   useEffect(() => {
@@ -48,33 +44,33 @@ function ToolSettings() {
       const image = new Image()
       image.src = imageData
   
-      changeToolSetting({ image, size: toolSize, hardness: toolHardness, opacity: toolOpacity, color: hexToRgb(toolColor) })
+      changeToolSetting({ image })
     }
   }, [currentTool, toolSize, toolHardness, toolOpacity, toolColor])
 
   const toolColorHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setToolColor(event.target.value)
+    changeToolSetting({ color: hexToRgb(event.target.value) })
   }
 
-  const toolColorThrottled = useCallback(throttle(toolColorHandler, 33), [])
+  const toolColorThrottled = useCallback(throttle(toolColorHandler, 33), [currentTool])
 
   const toolSizeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setToolSize(+event.target.value)
+    changeToolSetting({ size: event.target.value })
   }
 
-  const toolSizeThrottled = useCallback(throttle(toolSizeHandler, 33), [])
+  const toolSizeThrottled = useCallback(throttle(toolSizeHandler, 33), [currentTool])
 
   const toolHardnessHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setToolHardness(+event.target.value)
+    changeToolSetting({ hardness: event.target.value })
   }
 
-  const toolHardnessThrottled = useCallback(throttle(toolHardnessHandler, 33), [])
+  const toolHardnessThrottled = useCallback(throttle(toolHardnessHandler, 33), [currentTool])
 
   const toolOpacityHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setToolOpacity(+event.target.value)
+    changeToolSetting({ opacity: event.target.value })
   }
 
-  const toolOpacityThrottled = useCallback(throttle(toolOpacityHandler, 33), [])
+  const toolOpacityThrottled = useCallback(throttle(toolOpacityHandler, 33), [currentTool])
 
   return (
     <Container className="tool_settings_container">
