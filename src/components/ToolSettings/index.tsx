@@ -56,25 +56,25 @@ function ToolSettings() {
     setToolColor(event.target.value)
   }
 
-  const toolColorThrottled = useCallback(throttle(toolColorHandler, 200), [])
+  const toolColorThrottled = useCallback(throttle(toolColorHandler, 33), [])
 
   const toolSizeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setToolSize(+event.target.value)
   }
 
-  const toolSizeThrottled = useCallback(throttle(toolSizeHandler, 200), [])
+  const toolSizeThrottled = useCallback(throttle(toolSizeHandler, 33), [])
 
   const toolHardnessHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setToolHardness(+event.target.value)
   }
 
-  const toolHardnessThrottled = useCallback(throttle(toolHardnessHandler, 200), [])
+  const toolHardnessThrottled = useCallback(throttle(toolHardnessHandler, 33), [])
 
   const toolOpacityHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setToolOpacity(+event.target.value)
   }
 
-  const toolOpacityThrottled = useCallback(throttle(toolOpacityHandler, 200), [])
+  const toolOpacityThrottled = useCallback(throttle(toolOpacityHandler, 33), [])
 
   return (
     <Container className="tool_settings_container">

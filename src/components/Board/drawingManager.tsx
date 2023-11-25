@@ -4,7 +4,7 @@ import { getRelativeMousePos, getDistance } from '../../utils'
 
 import { ILayer, Tool, Point, Points, UIInteraction, MouseState, Operation } from '../../types'
 
-const smoothLength = 3
+const smoothLength = 6
 
 function offsetPoint(point: Point, offset: number) {
   return { ...point, x: point.x + offset, y: point.y + offset }
@@ -24,6 +24,12 @@ function smooth(points: Points) {
       }
       points[j] = point
   }
+}
+
+function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Point, endPoint: Point): Point {
+  const controlPoint = { x: midPoint.x * 2 - (startPoint.x + endPoint.x) / 2, y: midPoint.y * 2 - (startPoint.y + endPoint.y) / 2 }
+
+  return controlPoint
 }
 
 class _DrawingManager {
@@ -56,20 +62,23 @@ class _DrawingManager {
 
     this.context.moveTo(startPoint.x, startPoint.y);
     
-    for (let i = 1; i < operation.points.length; i++) {
-      const prevPoint = operation.points[i - 1]
-      const point = operation.points[i];
+    for (let i = 2; i < operation.points.length - 1; i++) {
+      const startPoint = operation.points[i - 2]
+      const midPoint = operation.points[i - 1]
+      const endPoint = operation.points[i]
       this.context.beginPath()
 
-      this.context.moveTo(prevPoint.x, prevPoint.y);
+      this.context.moveTo(startPoint.x, startPoint.y)
 
-      if (point.pointerType === 'pen') {
-        this.context.lineWidth = operation.tool.size * point.pressure
+      const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
+
+      if (midPoint.pointerType === 'pen') {
+        this.context.lineWidth = operation.tool.size * midPoint.pressure
       } else {
         this.context.lineWidth = operation.tool.size
       }
   
-      this.context.lineTo(point.x, point.y)
+      this.context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
       this.context.stroke()
     }
   }
@@ -78,7 +87,8 @@ class _DrawingManager {
     const point0 = offsetPoint(_point0, -50)
     const point1 = offsetPoint(_point1, -50)
     const distance = getDistance(point0, point1)
-    const step = operation.tool.size / (distance ? distance : 1)
+    // const step = operation.tool.size / (distance ? distance : 1)
+    const step = (distance / operation.tool.size)
     let i = 0
     let t = 0
     let x: number
@@ -89,7 +99,7 @@ class _DrawingManager {
       x = point0.x + (point1.x - point0.x) * t;
       y = point0.y + (point1.y - point0.y) * t;
 
-      this.context.globalAlpha = (point0.pressure / 5)
+      // if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
 
       if (operation.tool.image) {
         this.context.drawImage(operation.tool.image, x, y);
@@ -104,7 +114,22 @@ class _DrawingManager {
     for (let i = 1; i < operation.points.length; i++) {
       const point0 = operation.points[i - 1]
       const point1 = operation.points[i]
-      this.brushLine(operation, point0, point1)
+
+      const distance = getDistance(point0, point1)
+
+      if (distance > operation.tool.size) {
+        this.brushLine(operation, point0, point1)
+      } else {
+        // if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
+
+        const offsetPoint0 = offsetPoint(point0, -50)
+        this.context.drawImage(operation.tool.image, offsetPoint0.x, offsetPoint0.y)
+
+        // if (point0.pointerType === "pen") this.context.globalAlpha = (point1.pressure / 5)
+
+        const offsetPoint1 = offsetPoint(point1, -50)
+        this.context.drawImage(operation.tool.image, offsetPoint1.x, offsetPoint1.y)
+      }
     }
     // operation.points.forEach(_point => {
     //   const point = offsetPoint(_point, -50)
