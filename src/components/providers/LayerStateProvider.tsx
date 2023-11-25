@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 
 import { LayerState } from '../../contexts/LayerState'
 import { Layer } from '../../objects/Layer'
@@ -14,7 +14,7 @@ function LayerStateProvider({ children }: { children: React.ReactNode }) {
 
   const currentLayerIndex = useRef(0)
 
-  const newLayer = () => {
+  const newLayer = useCallback(() => {
     if (layers.length > 9) return;
 
     const newLayer = new Layer(`New Layer (${layers.length})`)
@@ -23,26 +23,26 @@ function LayerStateProvider({ children }: { children: React.ReactNode }) {
     setLayers([newLayer, ...layers])
 
     return newLayer
-  }
+  }, [layers, currentLayerIndex])
 
-  const removeLayer = () => {
+  const removeLayer = useCallback(() => {
     if (currentLayerIndex && currentLayer && layers.length > 1 && layers.length) {
 
       setLayers([...layers].filter((layer) => {
         return layer.id !== currentLayer.id
       }))
     }
-  }
+  }, [currentLayerIndex, currentLayer, layers])
 
-  const setCurrentLayer = (id: LayerID) => {
+  const setCurrentLayer = useCallback((id: LayerID) => {
     const _currentLayerIndex = layers.findIndex((layer) => layer.id === id)
 
     currentLayerIndex.current = _currentLayerIndex
 
     _setCurrentLayer(layers[_currentLayerIndex])
-  }
+  }, [layers, currentLayerIndex])
 
-  const saveNewName = (id: LayerID, name: LayerName) => {
+  const saveNewName = useCallback((id: LayerID, name: LayerName) => {
     setEditingLayer(0)
 
     setLayers(layers.map(layer => {
@@ -51,7 +51,7 @@ function LayerStateProvider({ children }: { children: React.ReactNode }) {
       }
       return layer
     }))
-  }
+  }, [layers])
 
   useEffect(() => {
     layers[0].fill()

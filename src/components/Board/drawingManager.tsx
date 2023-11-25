@@ -1,36 +1,8 @@
 import { tool_list } from '../../constants'
 
-import { getRelativeMousePos, getDistance } from '../../utils'
+import { getRelativeMousePos, getDistance, offsetPoint, smoothPoints, findQuadtraticBezierControlPoint } from '../../utils'
 
-import { ILayer, Tool, Point, Points, UIInteraction, MouseState, Operation } from '../../types'
-
-const smoothLength = 6
-
-function offsetPoint(point: Point, offset: number) {
-  return { ...point, x: point.x + offset, y: point.y + offset }
-}
-
-function smooth(points: Points) {
-  for (let i = 0; i < smoothLength; ++i) {
-      const j = (points.length - i) - 2
-      const point0 = points[j]
-      const point1 = points[j + 1]
-      const a = 0.2
-      const point = {
-          ...point0,
-          pressure: (point0.pressure + point1.pressure) / 2,
-          x: point0.x * (1 - a) + point1.x * a,
-          y: point0.y * (1 - a) + point1.y * a
-      }
-      points[j] = point
-  }
-}
-
-function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Point, endPoint: Point): Point {
-  const controlPoint = { x: midPoint.x * 2 - (startPoint.x + endPoint.x) / 2, y: midPoint.y * 2 - (startPoint.y + endPoint.y) / 2 }
-
-  return controlPoint
-}
+import { ILayer, Tool, Point, UIInteraction, MouseState, Operation } from '../../types'
 
 class _DrawingManager {
   context: CanvasRenderingContext2D
@@ -52,34 +24,53 @@ class _DrawingManager {
     }
   }
 
-  basePen = (operation: Operation) => {    
-    const startPoint = operation.points[0]
-    
+  basePen = (operation: Operation) => {        
     this.context.lineCap = 'round'
     this.context.lineJoin = 'round'
     this.context.miterLimit = 10
     this.context.strokeStyle = operation.tool.getCanvasColor(true)
 
-    this.context.moveTo(startPoint.x, startPoint.y);
-    
-    for (let i = 2; i < operation.points.length - 1; i++) {
-      const startPoint = operation.points[i - 2]
-      const midPoint = operation.points[i - 1]
-      const endPoint = operation.points[i]
+    if (operation.points.length < 3) {
+      const point0 = operation.points[0]
+      const point1 = operation.points[1]
       this.context.beginPath()
 
-      this.context.moveTo(startPoint.x, startPoint.y)
-
-      const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
-
-      if (midPoint.pointerType === 'pen') {
-        this.context.lineWidth = operation.tool.size * midPoint.pressure
-      } else {
-        this.context.lineWidth = operation.tool.size
-      }
-  
-      this.context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
+      this.context.moveTo(point0.x, point0.y)
+      this.context.lineTo(point1.x, point1.y)
       this.context.stroke()
+    } else {
+      for (let i = 2; i < operation.points.length - 1; i += 2) {
+        const startPoint = operation.points[i - 2]
+        const midPoint = operation.points[i - 1]
+        const endPoint = operation.points[i]
+        this.context.beginPath()
+
+        this.context.moveTo(startPoint.x, startPoint.y)
+        
+        const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
+        
+        if (midPoint.pointerType === 'pen') {
+          this.context.lineWidth = operation.tool.size * midPoint.pressure
+        } else {
+          this.context.lineWidth = operation.tool.size
+        }
+        
+        this.context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
+
+        this.context.stroke()
+      }
+
+      if (operation.points.length % 3 < 3) {
+        for (let i = operation.points.length - operation.points.length % 3; i < operation.points.length; i++) {
+          const point0 = operation.points[i - 1]
+          const point1 = operation.points[i]
+          this.context.beginPath()
+    
+          this.context.moveTo(point0.x, point0.y)
+          this.context.lineTo(point1.x, point1.y)
+          this.context.stroke()
+        }
+      }
     }
   }
 
@@ -87,7 +78,6 @@ class _DrawingManager {
     const point0 = offsetPoint(_point0, -50)
     const point1 = offsetPoint(_point1, -50)
     const distance = getDistance(point0, point1)
-    // const step = operation.tool.size / (distance ? distance : 1)
     const step = (distance / operation.tool.size)
     let i = 0
     let t = 0
@@ -99,7 +89,7 @@ class _DrawingManager {
       x = point0.x + (point1.x - point0.x) * t;
       y = point0.y + (point1.y - point0.y) * t;
 
-      // if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
+      if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
 
       if (operation.tool.image) {
         this.context.drawImage(operation.tool.image, x, y);
@@ -120,21 +110,17 @@ class _DrawingManager {
       if (distance > operation.tool.size) {
         this.brushLine(operation, point0, point1)
       } else {
-        // if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
+        if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
 
         const offsetPoint0 = offsetPoint(point0, -50)
         this.context.drawImage(operation.tool.image, offsetPoint0.x, offsetPoint0.y)
 
-        // if (point0.pointerType === "pen") this.context.globalAlpha = (point1.pressure / 5)
+        if (point0.pointerType === "pen") this.context.globalAlpha = (point1.pressure / 5)
 
         const offsetPoint1 = offsetPoint(point1, -50)
         this.context.drawImage(operation.tool.image, offsetPoint1.x, offsetPoint1.y)
       }
     }
-    // operation.points.forEach(_point => {
-    //   const point = offsetPoint(_point, -50)
-    //   this.context.drawImage(operation.tool.image, point.x, point.y)
-    // })
   }
 
   erase = (operation: Operation) => {
@@ -144,11 +130,9 @@ class _DrawingManager {
   }
 
   brushDraw = (operation: Operation) => {
-    this.context.save()
     this.context.globalCompositeOperation ="source-over";
   
     this.baseBrush(operation)
-    this.context.restore()
   }
   
   penDraw = (operation: Operation) => {
@@ -158,7 +142,9 @@ class _DrawingManager {
   }
 
   draw = (operation: Operation) => {
+    this.context.save()
     this.toolBelt[operation.tool.name](operation)
+    this.context.restore()
   }
   
   endInteraction = () => {
@@ -172,34 +158,33 @@ class _DrawingManager {
     if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
       operation.points.push(relativeMouseState);
     }
-    if (operation.points.length > smoothLength) {
-      smooth(operation.points)
+    if (operation.points.length > 2) {
+      smoothPoints(operation.points)
     }
   }
 
   interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
     if (this.currentLayer.noDraw) return
 
-    this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+    this.context.reset();
     const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
 
     if (this.currentLayer.rasterizedEvents) {
       this.context.putImageData(this.currentLayer.rasterizedEvents, 0, 0)
     }
   
-    // this.currentLayer.undoQueue.forEach(element => {
-    //   if (element.points.length > 0) this.draw(element)
-    // })
-  
-    if (this.currentLayer.undoQueue.length > 0) this.context.putImageData(this.currentLayer.undoQueue[this.currentLayer.undoQueue.length - 1], 0, 0)
+    if (this.currentLayer.undoQueue.length > 0) {
+      this.context.putImageData(this.currentLayer.undoQueue[this.currentLayer.undoQueue.length - 1], 0, 0)
+    }
 
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
       this.use(relativeMouseState, this.currentLayer.currentOperation)
     }
 
-    // if (this.currentTool.name === tool_list.BRUSH && this.currentLayer.currentOperation.points.length > 10) {
-    //   this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-10)
-    // }
+    if (this.currentLayer.currentOperation.points.length % 9 === 0 && this.currentLayer.currentOperation.points.length >= 9) {
+      console.log(this.currentLayer.currentOperation.points.length)
+      this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-9)
+    }
 
     if (this.currentLayer.currentOperation.points.length > 1) {
       this.draw(this.currentLayer.currentOperation)

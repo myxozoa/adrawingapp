@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect, useCallback } from 'react'
+import { useContext, useRef, useEffect, useCallback } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
@@ -6,24 +6,24 @@ import Container from '../Container'
 
 import { ToolState } from '../../contexts/ToolState'
 
-import { throttle, rgbToHex, hexToRgb } from '../../utils'
+import { throttle, hexToRgb } from '../../utils'
 
 const previewSize = 100
 
 function ToolSettings() {
   const previewCanvasRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
-  const { currentTool, changeToolSetting } = useContext(ToolState)
-  const [toolSize, setToolSize] = useState(currentTool.size)
-  const [toolHardness, setToolHardness] = useState(currentTool.hardness || 100)
-  const [toolOpacity, setToolOpacity] = useState(currentTool.opacity)
-  const [toolColor, setToolColor] = useState(rgbToHex(currentTool.color))
-
-  useEffect(() => {
-    setToolSize(currentTool.size)
-    setToolHardness(currentTool.hardness || 100)
-    setToolOpacity(currentTool.opacity)
-    setToolColor(rgbToHex(currentTool.color))
-  }, [currentTool])
+  const {
+    currentTool,
+    changeToolSetting,
+    toolSize,
+    setToolSize,
+    toolHardness,
+    setToolHardness,
+    toolOpacity,
+    setToolOpacity,
+    toolColor,
+    setToolColor
+  } = useContext(ToolState)
 
   useEffect(() => {
     if (previewCanvasRef.current) {

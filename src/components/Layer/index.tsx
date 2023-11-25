@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useCallback } from 'react'
 
 import './styles.css'
 
@@ -12,13 +12,13 @@ function Layer({ name, select, selected, id, editing, saveNewName }: { name: Lay
 
   const [newName, setNewName] = useState("")
 
-  const save = () => {
+  const save = useCallback(() => {
     if (newName) {
       saveNewName(id, newName)
     } else {
       saveNewName(id, name)
     }
-  }
+  }, [id, name])
 
   return (
     <PanelElement selected={selected} select={select} id={id} onDoubleClick={() => setEditingLayer(id)}>

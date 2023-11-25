@@ -23,7 +23,7 @@ function Board() {
   }, [currentTool])
 
   useEffect(() => {
-    DrawingManager.context = currentLayer.canvasRef.current.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D
+    DrawingManager.context = currentLayer.canvasRef.current.getContext("2d", { willReadFrequently: false }) as CanvasRenderingContext2D
     DrawingManager.currentLayer = currentLayer
   }, [currentLayer])
 

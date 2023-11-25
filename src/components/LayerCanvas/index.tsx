@@ -10,7 +10,7 @@ function initializeCanvas(
   canvas.height = Math.floor(height * targetDpi)
   canvas.style.width = `${width.toString()}px`
   canvas.style.height = `${height.toString()}px`
-  const context = canvas.getContext('2d', { willReadFrequently: true })
+  const context = canvas.getContext('2d', { willReadFrequently: false })
   context!.scale(targetDpi, targetDpi)
   context!.imageSmoothingQuality = 'high'
 }

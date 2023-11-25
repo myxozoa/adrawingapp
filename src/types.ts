@@ -29,6 +29,7 @@ export type ModifierState = Set<Modifier>
 export interface UIInteraction { mouseState: MouseState, modifierState: ModifierState, wheelDeltaY: number }
 
 export type ToolName = "PEN" | "BRUSH" | "ERASER" /*| "CURVE" */
+export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
 export interface Tool {
   [index: string] : any
   name: ToolName
@@ -36,6 +37,7 @@ export interface Tool {
   color: ColorArray
   opacity: number
   hardness: number
+  availableSettings: ToolSetting[]
   getCanvasColor: (opacity?: boolean, fullyTransparent?: boolean) => HexColor
   image?: Nullable<HTMLImageElement>
 }

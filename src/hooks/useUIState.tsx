@@ -35,7 +35,7 @@ function parseMouseButtons(event: PointerEvent) {
 
 function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (event?: KeyboardEvent) => void) {
   const mouseState = useRef({}) as React.MutableRefObject<MouseState>
-  const modifierState = useRef({}) as React.MutableRefObject<ModifierState>
+  const modifierState = useRef(new Set()) as React.MutableRefObject<ModifierState>
   // const commandState = useRef({ ctrlZ: false })
   const wheelDeltaY = useRef({}) as React.MutableRefObject<number>
 
@@ -43,9 +43,7 @@ function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (e
   // const prevInteraction = useRef({...defaultInteraction})
 
   useEffect(() => {
-    const updatePointer = (event: PointerEvent) => {
-      // requestAnimationFrame(() => prevInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY))
-      
+    const updatePointer = (event: PointerEvent) => {      
       const mouseButtons = parseMouseButtons(event)
       
       mouseState.current = {

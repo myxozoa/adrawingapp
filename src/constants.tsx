@@ -14,9 +14,35 @@ const getCanvasColor = function(this: Tool, opacity?: boolean, fullyTransparent?
 }
 
 export const tools: Record<ToolName, Tool> = {
-  PEN: { name: tool_list.PEN, size: 10, color: [255, 0, 0], opacity: 100, getCanvasColor } as Tool,
-  BRUSH: { name: tool_list.BRUSH, size: 10, color: [255, 0, 0], opacity: 100, getCanvasColor, image: null } as Tool,
-  ERASER: { name: tool_list.ERASER, size: 20, color: [0, 0, 0], opacity: 100, getCanvasColor, image: null } as Tool,
+  PEN: {
+    name: tool_list.PEN,
+    size: 10,
+    color: [255, 0, 0],
+    opacity: 100,
+    hardness: 100,
+    availableSettings: [ "size", "color" ],
+    getCanvasColor
+  } as Tool,
+  BRUSH: {
+    name: tool_list.BRUSH,
+    size: 10,
+    color: [255, 0, 0],
+    opacity: 100,
+    hardness: 100,
+    availableSettings: [ "size", "color", "opacity" ],
+    getCanvasColor,
+    image: null
+  } as Tool,
+  ERASER: {
+    name: tool_list.ERASER,
+    size: 20,
+    color: [0, 0, 0],
+    opacity: 100,
+    hardness: 100,
+    availableSettings: [ "size", "color", "opacity" ],
+    getCanvasColor,
+    image: null
+  } as Tool,
   // CURVE: {name: tool_list.CURVE}
 }
 
@@ -44,3 +70,5 @@ export const key_modifers: Record<string, Modifier> = {
   alt: 'alt',
   shift: 'shift'
 }
+
+export const smoothLength = 3
