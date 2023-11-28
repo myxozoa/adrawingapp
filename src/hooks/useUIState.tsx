@@ -33,7 +33,7 @@ function parseMouseButtons(event: PointerEvent) {
   return {leftMouseDown, middleMouseDown, rightMouseDown}
 }
 
-function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (event?: KeyboardEvent) => void) {
+function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args: any[]) => void) {
   const mouseState = useRef({}) as React.MutableRefObject<MouseState>
   const modifierState = useRef(new Set()) as React.MutableRefObject<ModifierState>
   // const commandState = useRef({ ctrlZ: false })
@@ -78,7 +78,7 @@ function useUIState(callbackUp: (event?: PointerEvent) => void, callbackUndo: (e
     const updateKeys = (event: KeyboardEvent) => {
       updateKeyModifiers(event)
 
-      if (event.keyCode == 90 && event.ctrlKey) callbackUndo(event)
+      if (event.keyCode == 90 && event.ctrlKey) callbackUndo()
     }
 
     document.addEventListener('pointermove', updatePointer)

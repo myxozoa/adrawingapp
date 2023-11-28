@@ -110,4 +110,4 @@ export function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Po
   return controlPoint
 }
 
-export const lerp = (x, y, a) => x * (1 - a) + y * a;
+export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
