@@ -8,7 +8,7 @@ export type ColorArray = [number, number, number]
 
 export interface Point { x: number, y: number, pressure: number, pointerType: PointerType }
 export type Points = Point[]
-export interface Operation { points: Points, tool: Tool }
+export interface Operation { interpolatedPoints: Points, points: Points, tool: Tool }
 export type Operations = Operation[]
 
 export type PointerType = "mouse" | "pen" | "touch"

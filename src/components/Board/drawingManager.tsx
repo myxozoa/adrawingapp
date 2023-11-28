@@ -11,6 +11,7 @@ class _DrawingManager {
   minDist: number
   toolBelt: Record<string, (operation: Operation) => void>
   waitUntilInteractionEnd: boolean
+  needRedraw: boolean
 
   constructor() {
     this.context = {} as CanvasRenderingContext2D
@@ -18,6 +19,7 @@ class _DrawingManager {
     this.currentTool = {} as Tool
     this.minDist = 1
     this.waitUntilInteractionEnd = false
+    this.needRedraw = false
 
     this.toolBelt = {
       [tool_list.PEN]: this.penDraw,
@@ -27,16 +29,19 @@ class _DrawingManager {
     }
   }
 
-  basePen = (operation: Operation) => {        
+  basePen = (operation: Operation) => {
+    const points = operation.points.slice(-9)
+
     this.context.lineCap = 'round'
     this.context.lineJoin = 'round'
     this.context.miterLimit = 10
     this.context.strokeStyle = operation.tool.getCanvasColor(true)
 
     // TODO: make less lazy
-    if (operation.points.length < 3) {
-      const point0 = operation.points[0]
-      const point1 = operation.points[1]
+    if (points.length < 3) {
+      const point0 = points[0]
+      const point1 = points[1]
+
       this.context.beginPath()
 
       this.context.moveTo(point0.x, point0.y)
@@ -44,10 +49,10 @@ class _DrawingManager {
       this.context.stroke()
     } else {
       // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
-      for (let i = 2; i < operation.points.length - 1; i += 1) {
-        const startPoint = operation.points[i - 2]
-        const midPoint = operation.points[i - 1]
-        const endPoint = operation.points[i]
+      for (let i = 2; i < points.length - 1; i += 1) {
+        const startPoint = points[i - 2]
+        const midPoint = points[i - 1]
+        const endPoint = points[i]
         this.context.beginPath()
 
         this.context.moveTo(startPoint.x, startPoint.y)
@@ -65,10 +70,10 @@ class _DrawingManager {
         this.context.stroke()
       }
 
-      if (operation.points.length % 3 < 3) {
-        for (let i = operation.points.length - operation.points.length % 3; i < operation.points.length; i++) {
-          const point0 = operation.points[i - 1]
-          const point1 = operation.points[i]
+      if (points.length % 3 < 3) {
+        for (let i = points.length - points.length % 3; i < points.length; i++) {
+          const point0 = points[i - 1]
+          const point1 = points[i]
           this.context.beginPath()
     
           this.context.moveTo(point0.x, point0.y)
@@ -101,9 +106,11 @@ class _DrawingManager {
   }
 
   baseBrush = (operation: Operation) => {
-    for (let i = 1; i < operation.points.length; i++) {
-      const point0 = operation.points[i - 1]
-      const point1 = operation.points[i]
+    const points = operation.points.slice(-2)
+  
+    for (let i = 1; i < points.length; i++) {
+      const point0 = points[i - 1]
+      const point1 = points[i]
 
       const distance = getDistance(point0, point1)
 
@@ -163,12 +170,13 @@ class _DrawingManager {
     this.context.restore()
   }
   
-  endInteraction = () => {
+  endInteraction = (save = true) => {
     if (this.currentLayer.noDraw) return
     
     this.waitUntilInteractionEnd = false
+    this.needRedraw = true
 
-    this.currentLayer.saveAndStartNewOperation()
+    if(save) this.currentLayer.saveAndStartNewOperation()
   }
 
   use = (relativeMouseState: MouseState, operation: Operation) => {
@@ -195,16 +203,27 @@ class _DrawingManager {
   interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
     if (this.currentLayer.noDraw) return
 
-    this.context.reset()
-    const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
+    if (this.needRedraw) {
+      this.context.save()
+  
+      this.context.setTransform(1, 0, 0, 1, 0, 0)
+      this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height)
+  
+      this.context.restore()
 
-    if (this.currentLayer.undoSnapshotQueue.length > 0) {
-      this.context.putImageData(this.currentLayer.undoSnapshotQueue[this.currentLayer.undoSnapshotQueue.length - 1], 0, 0)
-    } else {
-      if (this.currentLayer.drawingData) {
-        this.context.putImageData(this.currentLayer.drawingData, 0, 0)
+      this.needRedraw = false
+  
+      if (this.currentLayer.undoSnapshotQueue.length > 0) {
+        this.context.putImageData(this.currentLayer.undoSnapshotQueue[this.currentLayer.undoSnapshotQueue.length - 1], 0, 0)
+      } else {
+        if (this.currentLayer.drawingData) {
+          this.context.putImageData(this.currentLayer.drawingData, 0, 0)
+        }
       }
     }
+
+    const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
+
 
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
       this.use(relativeMouseState, this.currentLayer.currentOperation)
@@ -212,12 +231,6 @@ class _DrawingManager {
 
     if (this.currentLayer.currentOperation.tool) {
       this.draw(this.currentLayer.currentOperation)
-      
-      if (this.currentLayer.currentOperation.points.length % 33 === 0 && this.currentLayer.currentOperation.points.length >= 33) {
-        const image = this.currentLayer.getImageData()
-        this.currentLayer.addElementToUndoSnapshotQueue(image)
-        this.currentLayer.currentOperation.points = this.currentLayer.currentOperation.points.slice(-3)
-      }
     }
   
     requestAnimationFrame(() => this.interactLoop(currentUIInteraction))
@@ -227,6 +240,7 @@ class _DrawingManager {
     if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
       this.currentLayer.undoSnapshotQueue.pop()
     }
+    this.endInteraction(false)
   }
 }
 

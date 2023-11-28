@@ -34,10 +34,7 @@ export class Layer implements ILayer {
   }
 
   addElementToUndoSnapshotQueue = (image: ImageData) => {
-    console.log("saved an undo")
     this.undoSnapshotQueue.push(image)
-
-    console.log(image)
 
     if (this.undoSnapshotQueue.length > 5) {
       this.drawingData = this.undoSnapshotQueue.shift()!

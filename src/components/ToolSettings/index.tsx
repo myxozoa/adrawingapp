@@ -24,7 +24,13 @@ function ToolSettings() {
   useEffect(() => {
     if (previewCanvasRef.current) {
       const context = previewCanvasRef.current.getContext('2d') as CanvasRenderingContext2D
-      context.reset()
+      context.save();
+
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.clearRect(0, 0, previewCanvasRef.current.width, previewCanvasRef.current.height);
+
+      context.restore();
+
   
       const x = Math.floor(toolPreviewSize / 2)
       const y = Math.floor(toolPreviewSize / 2)
