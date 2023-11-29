@@ -1,19 +1,6 @@
 import { useEffect, memo, forwardRef } from 'react'
 
-function initializeCanvas(
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number
-) {
-  const targetDpi = window.devicePixelRatio
-  canvas.width = Math.floor(width * targetDpi)
-  canvas.height = Math.floor(height * targetDpi)
-  canvas.style.width = `${width.toString()}px`
-  canvas.style.height = `${height.toString()}px`
-  const context = canvas.getContext('2d')
-  context!.scale(targetDpi, targetDpi)
-  context!.imageSmoothingQuality = 'high'
-}
+import { initializeCanvas } from '../../utils';
 
 function _LayerCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasElement>) {
 

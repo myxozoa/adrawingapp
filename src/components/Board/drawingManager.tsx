@@ -8,7 +8,6 @@ class _DrawingManager {
   context: CanvasRenderingContext2D
   currentLayer: ILayer
   currentTool: Tool
-  minDist: number
   toolBelt: Record<string, (operation: Operation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
@@ -17,7 +16,6 @@ class _DrawingManager {
     this.context = {} as CanvasRenderingContext2D
     this.currentLayer = {} as ILayer
     this.currentTool = {} as Tool
-    this.minDist = 1
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
@@ -85,12 +83,12 @@ class _DrawingManager {
   }
 
   brushLine = (operation: Operation, _point0: Point, _point1: Point) => {
-    const point0 = offsetPoint(_point0, -50)
-    const point1 = offsetPoint(_point1, -50)
+    const point0 = offsetPoint(_point0, -operation.tool.image.height / 2)
+    const point1 = offsetPoint(_point1, -operation.tool.image.height / 2)
     const distance = getDistance(point0, point1)
-    const step = (distance / operation.tool.size!)
+    const step = operation.tool.size * (operation.tool.spacing / 100)
 
-    for (let i = 0; i <= distance; i += step) {
+    for (let i = 0; i < distance; i += step) {
       const t = Math.max(0, Math.min(1, i / distance))
       const x = point0.x + (point1.x - point0.x) * t
       const y = point0.y + (point1.y - point0.y) * t
@@ -106,35 +104,41 @@ class _DrawingManager {
   }
 
   baseBrush = (operation: Operation) => {
-    const points = operation.points.slice(-2)
-  
-    for (let i = 1; i < points.length; i++) {
-      const point0 = points[i - 1]
-      const point1 = points[i]
+    const i = operation.points.length - 1
+    const point0 = operation.points[i - 1]
+    const point1 = operation.points[i]
 
-      const distance = getDistance(point0, point1)
+    const distance = getDistance(point0, point1)
 
-      if (distance > operation.tool.size!) {
-        this.brushLine(operation, point0, point1)
-      } else {
-        if (!operation.tool.image) throw new Error("Tool is missing image")
+    if (i === 0) {
+      const offset = offsetPoint(operation.points[i], -operation.tool.image.height / 2)
+      this.context.drawImage(operation.tool.image, offset.x, offset.y)
 
-        // TODO: make less lazy
-        if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
+      operation.points[i].drawn = true
 
-        const offsetPoint0 = offsetPoint(point0, -50)
-        this.context.drawImage(operation.tool.image, offsetPoint0.x, offsetPoint0.y)
+      return
+    }
 
-        if (point0.pointerType === "pen") this.context.globalAlpha = (point1.pressure / 5)
+    const spacing = operation.tool.size * (operation.tool.spacing / 100)
 
-        const offsetPoint1 = offsetPoint(point1, -50)
-        this.context.drawImage(operation.tool.image, offsetPoint1.x, offsetPoint1.y)
-      }
+    if (distance > spacing) {
+      this.brushLine(operation, point0, point1)
+      point0.drawn = true
+      point1.drawn = true
+    } else {
+      if (!operation.tool.image) throw new Error("Tool is missing image")
+
+      if (point0.pointerType === "pen") this.context.globalAlpha = (point1.pressure / 5)
+
+      const offsetPoint1 = offsetPoint(point1, -operation.tool.image.height / 2)
+      this.context.drawImage(operation.tool.image, offsetPoint1.x, offsetPoint1.y)
+
+      point1.drawn = true
     }
   }
 
   fill = (operation: Operation) => {
-    this.context.globalCompositeOperation ="source-over";
+    this.context.globalCompositeOperation ="source-over"
 
     this.currentLayer.fill(operation.tool.getCanvasColor(false))
   }
@@ -142,15 +146,15 @@ class _DrawingManager {
   erase = (operation: Operation) => {
     if (this.currentLayer.currentOperation.points.length <= 1) return
 
-    this.context.globalCompositeOperation ="destination-out";
+    this.context.globalCompositeOperation ="destination-out"
   
-    this.basePen(operation)
+    this.baseBrush(operation)
   }
 
   brushDraw = (operation: Operation) => {
-    if (this.currentLayer.currentOperation.points.length <= 1) return
+    this.context.globalCompositeOperation ="source-over"
 
-    this.context.globalCompositeOperation ="source-over";
+    this.context.globalAlpha = (operation.tool.opacity / 100).toFixed(2)
   
     this.baseBrush(operation)
   }
@@ -158,12 +162,15 @@ class _DrawingManager {
   penDraw = (operation: Operation) => {
     if (this.currentLayer.currentOperation.points.length <= 1) return
 
+    smoothPoints(this.currentLayer.currentOperation.points)
+
     this.context.globalCompositeOperation ="source-over";
   
     this.basePen(operation)
   }
 
   draw = (operation: Operation) => {
+    if (operation.points.length !== 0 && operation.points[operation.points.length - 1].drawn) return
 
     this.context.save()
     this.toolBelt[operation.tool.name](operation)
@@ -180,17 +187,18 @@ class _DrawingManager {
   }
 
   use = (relativeMouseState: MouseState, operation: Operation) => {
-    operation.tool = this.currentTool
-
+    if (!operation.tool) {
+      operation.tool = this.currentTool
+      operation.readyToDraw = true
+    }
+    
     if (this.waitUntilInteractionEnd) return
-
+    const spacing = operation.tool.size * (operation.tool.spacing / 100)
+    
     switch(operation.tool.type) {
       case tool_types.STROKE:
-        if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) > this.minDist) {
-          operation.points.push(relativeMouseState)
-        }
-        if (operation.points.length > 2) {
-          smoothPoints(operation.points)
+        if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) >= spacing) {
+          operation.points.push({...relativeMouseState, drawn: false })
         }
         break
 

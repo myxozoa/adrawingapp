@@ -111,3 +111,23 @@ export function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Po
 }
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
+
+
+export function initializeCanvas(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number
+) {
+  const targetDpi = window.devicePixelRatio * 2
+  canvas.width = Math.floor(width * targetDpi)
+  canvas.height = Math.floor(height * targetDpi)
+  canvas.style.width = `${width.toString()}px`
+  canvas.style.height = `${height.toString()}px`
+  const context = canvas.getContext('2d', {
+    alpha: true,
+    desynchronized: true,
+  }) as CanvasRenderingContext2D
+  context.scale(targetDpi, targetDpi)
+  context.imageSmoothingQuality = 'high'
+  context.imageSmoothingEnabled = true
+}

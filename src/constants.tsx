@@ -29,6 +29,7 @@ export const tools: Record<ToolName, Tool> = {
     color: [255, 0, 0],
     opacity: 100,
     hardness: 100,
+    spacing: 1,
     availableSettings: [ "color", "size" ],
     type: tool_types.STROKE,
     continuous: true,
@@ -40,7 +41,8 @@ export const tools: Record<ToolName, Tool> = {
     color: [255, 0, 0],
     opacity: 100,
     hardness: 100,
-    availableSettings: [ "color", "size", "hardness", "opacity" ],
+    spacing: 25,
+    availableSettings: [ "color", "size", "hardness", "opacity", "spacing" ],
     getCanvasColor,
     type: tool_types.STROKE,
     continuous: true,
@@ -52,7 +54,8 @@ export const tools: Record<ToolName, Tool> = {
     color: [0, 0, 0],
     opacity: 100,
     hardness: 100,
-    availableSettings: [ "color", "size", "opacity" ],
+    spacing: 25,
+    availableSettings: [ "color", "size", "opacity", "spacing" ],
     getCanvasColor,
     type: tool_types.STROKE,
     continuous: true,
@@ -64,6 +67,7 @@ export const tools: Record<ToolName, Tool> = {
     color: [255, 0, 0],
     opacity: 100,
     hardness: 100,
+    spacing: 0,
     availableSettings: [ "color" ],
     type: tool_types.POINT,
     continuous: false,
@@ -97,6 +101,6 @@ export const key_modifers: Record<string, Modifier> = {
   shift: 'shift'
 }
 
-export const smoothLength = 3
+export const smoothLength = 6
 
 export const toolPreviewSize = 100

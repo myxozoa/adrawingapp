@@ -19,7 +19,7 @@ export class Layer implements ILayer {
     this.name = name
     this.id = Math.random() * Math.random()
     this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
-    this.currentOperation = { points: [] } as unknown as Operation
+    this.currentOperation = { points: [], readyToDraw: false } as unknown as Operation
     this.undoSnapshotQueue = []
     this.drawingData = new ImageData(1, 1)
     this.noDraw = false
@@ -30,7 +30,7 @@ export class Layer implements ILayer {
 
     this.addElementToUndoSnapshotQueue(image)
 
-    this.currentOperation = { points: [] } as unknown as Operation // TODO: make these initializations more
+    this.currentOperation = { points: [], readyToDraw: false } as unknown as Operation // TODO: make these initializations more
   }
 
   addElementToUndoSnapshotQueue = (image: ImageData) => {

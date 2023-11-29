@@ -12,12 +12,14 @@ function ToolStateProvider({ children }: { children: React.ReactNode }) {
   const [toolHardness, setToolHardness] = useState(currentTool.hardness!)
   const [toolOpacity, setToolOpacity] = useState(currentTool.opacity!)
   const [toolColor, setToolColor] = useState(rgbToHex(currentTool.color!))
+  const [toolSpacing, setToolSpacing] = useState(currentTool.spacing)
 
   const toolStateFunctions: Record<keyof Tool, React.SetStateAction<any>> = {
     size: setToolSize,
     hardness: setToolHardness,
     opacity: setToolOpacity,
     color: setToolColor,
+    spacing: setToolSpacing,
     image: (_image: HTMLImageElement) => currentTool.image = _image
   }
 
@@ -26,6 +28,7 @@ function ToolStateProvider({ children }: { children: React.ReactNode }) {
     setToolHardness(currentTool.hardness!)
     setToolOpacity(currentTool.opacity!)
     setToolColor(rgbToHex(currentTool.color!))
+    setToolSpacing(currentTool.spacing)
   }, [currentTool])
 
   const setCurrentTool = useCallback((name: ToolName) => {
@@ -61,7 +64,9 @@ function ToolStateProvider({ children }: { children: React.ReactNode }) {
         setToolOpacity,
         toolColor,
         setToolColor,
-        setCurrentTool
+        setCurrentTool,
+        toolSpacing,
+        setToolSpacing
         }}>
         {children}
       </ToolState.Provider>
