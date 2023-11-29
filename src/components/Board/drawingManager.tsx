@@ -83,6 +83,10 @@ class _DrawingManager {
   }
 
   brushLine = (operation: Operation, _point0: Point, _point1: Point) => {
+    if (!operation.tool.image) {
+      throw new Error("Brush has no image to draw with")
+    }
+
     const point0 = offsetPoint(_point0, -operation.tool.image.height / 2)
     const point1 = offsetPoint(_point1, -operation.tool.image.height / 2)
     const distance = getDistance(point0, point1)
@@ -104,6 +108,10 @@ class _DrawingManager {
   }
 
   baseBrush = (operation: Operation) => {
+    if (!operation.tool.image) {
+      throw new Error("Brush has no image to draw with")
+    }
+
     const i = operation.points.length - 1
     const point0 = operation.points[i - 1]
     const point1 = operation.points[i]
@@ -154,7 +162,7 @@ class _DrawingManager {
   brushDraw = (operation: Operation) => {
     this.context.globalCompositeOperation ="source-over"
 
-    this.context.globalAlpha = (operation.tool.opacity / 100).toFixed(2)
+    this.context.globalAlpha = operation.tool.opacity / 100
   
     this.baseBrush(operation)
   }

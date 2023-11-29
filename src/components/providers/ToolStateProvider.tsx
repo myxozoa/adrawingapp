@@ -44,7 +44,7 @@ function ToolStateProvider({ children }: { children: React.ReactNode }) {
       toolStateFunctions[setting](newSettings[setting])
 
       if (setting === "color") {
-        currentTool[setting] = hexToRgb(newSettings[setting])
+        currentTool[setting] = hexToRgb(newSettings[setting])!
       } else {
         currentTool[setting] = newSettings[setting]
       }

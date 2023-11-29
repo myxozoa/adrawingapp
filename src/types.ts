@@ -6,9 +6,9 @@ export type ColorValue = number
 export type ColorValueString = string
 export type ColorArray = [number, number, number]
 
-export interface Point { x: number, y: number, pressure: number, pointerType: PointerType }
+export interface Point { x: number, y: number, pressure: number, pointerType: PointerType, drawn?: boolean }
 export type Points = Point[]
-export interface Operation { interpolatedPoints: Points, points: Points, tool: Tool }
+export interface Operation { interpolatedPoints: Points, points: Points, tool: Tool, readyToDraw: boolean }
 export type Operations = Operation[]
 
 export type PointerType = "mouse" | "pen" | "touch"
@@ -34,10 +34,10 @@ export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "
 export interface Tool {
   [index: string] : any
   name: ToolName
-  size?: number
-  color?: ColorArray
-  opacity?: number
-  hardness?: number
+  size: number
+  color: ColorArray
+  opacity: number
+  hardness: number
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
@@ -52,11 +52,13 @@ export interface ToolState {
   toolHardness: number
   toolOpacity: number
   toolColor: string
+  toolSpacing: number
   setCurrentTool: (name: ToolName) => void
   setToolSize: React.Dispatch<React.SetStateAction<number>>
   setToolHardness: React.Dispatch<React.SetStateAction<number>>
   setToolOpacity: React.Dispatch<React.SetStateAction<number>>
   setToolColor: React.Dispatch<React.SetStateAction<string>>
+  setToolSpacing: React.Dispatch<React.SetStateAction<number>>
   changeToolSetting: (newSettings: any) => void
 }
 
