@@ -8,7 +8,7 @@ function _LayerCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvas
     const refTypeHack = ref as React.MutableRefObject<HTMLCanvasElement>
     const rect = refTypeHack.current!.parentElement!.getBoundingClientRect();
 
-    initializeCanvas(refTypeHack.current!, rect.width, rect.height)
+    initializeCanvas(refTypeHack.current!, rect.width, rect.height, true)
   }, [])
 
   const canvasId = `canvas_${id}`

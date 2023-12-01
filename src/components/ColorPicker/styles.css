@@ -1,0 +1,17 @@
+.color-picker-container {
+  position: relative;
+}
+
+.color-picker-indicator-canvas, .color-picker-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.color-picker-indicator-canvas {
+  z-index: 1;
+}
+
+.color-picker-canvas {
+  z-index: 0;
+}

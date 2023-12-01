@@ -7,6 +7,7 @@ import { LayerCanvas } from '../LayerCanvas'
 
 import { LayerState } from "../../contexts/LayerState"
 import { ToolState } from '../../contexts/ToolState'
+import { MainState } from '../../contexts/MainState'
 import useUIState from '../../hooks/useUIState'
 
 import { DrawingManager } from './drawingManager'
@@ -17,6 +18,9 @@ function Board() {
   const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
   const { layers, currentLayer } = useContext(LayerState)
   const { currentTool } = useContext(ToolState)
+  const _MainState = useContext(MainState)
+
+  DrawingManager.main = _MainState
 
   useEffect(() => {
     DrawingManager.currentTool = currentTool

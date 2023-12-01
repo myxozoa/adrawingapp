@@ -35,13 +35,11 @@ export interface Tool {
   [index: string] : any
   name: ToolName
   size: number
-  color: ColorArray
   opacity: number
   hardness: number
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
-  getCanvasColor: (opacity?: boolean, fullyTransparent?: boolean) => HexColor
   image?: Nullable<HTMLImageElement>
 }
 
@@ -51,13 +49,11 @@ export interface ToolState {
   toolSize: number
   toolHardness: number
   toolOpacity: number
-  toolColor: string
   toolSpacing: number
   setCurrentTool: (name: ToolName) => void
   setToolSize: React.Dispatch<React.SetStateAction<number>>
   setToolHardness: React.Dispatch<React.SetStateAction<number>>
   setToolOpacity: React.Dispatch<React.SetStateAction<number>>
-  setToolColor: React.Dispatch<React.SetStateAction<string>>
   setToolSpacing: React.Dispatch<React.SetStateAction<number>>
   changeToolSetting: (newSettings: any) => void
 }
@@ -91,4 +87,9 @@ export interface LayerState {
   saveNewName: (id: LayerID, name: LayerName) => void
   editingLayer: number
   setEditingLayer: React.Dispatch<React.SetStateAction<number>>
+}
+
+export interface MainStateType { 
+  color: ColorArray
+  changeSetting: (newSettings: any) => void
 }

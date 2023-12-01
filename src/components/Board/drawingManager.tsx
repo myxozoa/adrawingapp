@@ -1,8 +1,8 @@
 import { tool_list, tool_types } from '../../constants'
 
-import { getRelativeMousePos, getDistance, offsetPoint, smoothPoints, findQuadtraticBezierControlPoint } from '../../utils'
+import { getRelativeMousePos, getDistance, offsetPoint, smoothPoints, findQuadtraticBezierControlPoint, getCanvasColor } from '../../utils'
 
-import { ILayer, Tool, Point, UIInteraction, MouseState, Operation } from '../../types'
+import { ILayer, Tool, Point, UIInteraction, MouseState, Operation, MainStateType } from '../../types'
 
 class _DrawingManager {
   context: CanvasRenderingContext2D
@@ -11,6 +11,7 @@ class _DrawingManager {
   toolBelt: Record<string, (operation: Operation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
+  main: MainStateType
 
   constructor() {
     this.context = {} as CanvasRenderingContext2D
@@ -33,7 +34,7 @@ class _DrawingManager {
     this.context.lineCap = 'round'
     this.context.lineJoin = 'round'
     this.context.miterLimit = 10
-    this.context.strokeStyle = operation.tool.getCanvasColor(true)
+    this.context.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
 
     // TODO: make less lazy
     if (points.length < 3) {
@@ -145,10 +146,10 @@ class _DrawingManager {
     }
   }
 
-  fill = (operation: Operation) => {
+  fill = () => {
     this.context.globalCompositeOperation ="source-over"
 
-    this.currentLayer.fill(operation.tool.getCanvasColor(false))
+    this.currentLayer.fill(getCanvasColor(this.main.color))
   }
 
   erase = (operation: Operation) => {
@@ -160,7 +161,7 @@ class _DrawingManager {
   }
 
   brushDraw = (operation: Operation) => {
-    this.context.globalCompositeOperation ="source-over"
+    this.context.globalCompositeOperation = "source-over"
 
     this.context.globalAlpha = operation.tool.opacity / 100
   
