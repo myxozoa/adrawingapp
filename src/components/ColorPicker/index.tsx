@@ -20,39 +20,44 @@ function getDimensions(context: CanvasRenderingContext2D, hsvState: HSV) {
   
   const radius = canvasWidth / 2
   
-  const circleSelectorInnerWidth = radius * 0.8
+  const circleTrackSelectorInnerWidth = radius * 0.8
   
-  const circleSelectorWidth = radius - circleSelectorInnerWidth
-  const indicatorLocation = radius - (circleSelectorWidth / 2)
+  const circleTrackSelectorWidth = radius - circleTrackSelectorInnerWidth
+  const hueIndicatorTrack = radius - (circleTrackSelectorWidth / 2)
   
-  const x = indicatorLocation + indicatorLocation * Math.cos(degreesToRadians(hsvState.hue))
-  const y = indicatorLocation + indicatorLocation * Math.sin(degreesToRadians(hsvState.hue))
-  
-  const indicatorSize = (circleSelectorWidth * 0.8) / 2
+  const hueIndicatorX = hueIndicatorTrack + hueIndicatorTrack * Math.cos(degreesToRadians(hsvState.hue)) + (circleTrackSelectorWidth / 2)
+  const hueIndicatorY = hueIndicatorTrack + hueIndicatorTrack * Math.sin(degreesToRadians(hsvState.hue))+ (circleTrackSelectorWidth / 2)
+
+  const indicatorSize = (circleTrackSelectorWidth * 0.8) / 2
   const indicatorLineWidth = 2
-  
-  const hueIndicatorX = x + (circleSelectorWidth / 2)
-  const hueIndicatorY = y + (circleSelectorWidth / 2)
     
-  const svBoxWidth = circleSelectorInnerWidth * 1.2
+  const svBoxWidth = circleTrackSelectorInnerWidth * 1.2
   
   const svBoxX = (canvasWidth / 2) - (svBoxWidth / 2)
   const svBoxY = (canvasHeight / 2) - (svBoxWidth / 2)
+
+  const saturation = scaleNumberToRange(hsvState.saturation, 0, 100, 0, svBoxWidth)
+  const value = scaleNumberToRange(hsvState.value, 0, 100, 0, svBoxWidth)
+
+  const svIndicatorX = saturation + svBoxX
+  const svIndicatorY = value + svBoxY
 
   return {
     canvasWidth,
     canvasHeight,
     radius,
-    circleSelectorInnerWidth,
-    circleSelectorWidth,
-    indicatorLocation,
+    circleTrackSelectorInnerWidth,
+    circleTrackSelectorWidth,
+    hueIndicatorTrack,
     indicatorSize,
     indicatorLineWidth,
     hueIndicatorX,
     hueIndicatorY,
     svBoxWidth,
     svBoxX,
-    svBoxY
+    svBoxY,
+    svIndicatorX,
+    svIndicatorY
   }
 }
 
@@ -87,18 +92,14 @@ const drawSVPanel = (context: CanvasRenderingContext2D, hsvState: HSV) => {
 
 const drawSVIndicator = (context: CanvasRenderingContext2D, hsvState: HSV) => {
   const {
-    svBoxWidth,
-    svBoxX,
-    svBoxY,
+    svIndicatorY,
+    svIndicatorX,
     indicatorSize
   } = getDimensions(context, hsvState)
 
   // Saturation and Value Indicator Drawing
-  const sat = scaleNumberToRange(hsvState.saturation, 0, 100, 0, svBoxWidth)
-  const lum = scaleNumberToRange(hsvState.value, 0, 100, 0, svBoxWidth)
-
   context.beginPath()
-  context.arc(sat + svBoxX, lum + svBoxY, indicatorSize, 0, Math.PI * 2, true)
+  context.arc(svIndicatorX, svIndicatorY, indicatorSize, 0, Math.PI * 2, true)
   context.closePath()
   context.stroke()
 }
@@ -128,7 +129,7 @@ const drawHueIndicator = (context: CanvasRenderingContext2D, hsvState: HSV) => {
 }
 
 const drawHueRing = (context: CanvasRenderingContext2D, hsvState: HSV) => {
-  const { radius, circleSelectorInnerWidth, canvasWidth, canvasHeight } = getDimensions(context, hsvState)
+  const { radius, circleTrackSelectorInnerWidth, canvasWidth, canvasHeight } = getDimensions(context, hsvState)
   const step = 1 / radius
   
   context.save()
@@ -147,7 +148,7 @@ const drawHueRing = (context: CanvasRenderingContext2D, hsvState: HSV) => {
   // Drawing Inside Circle
   context.fillStyle = '#333333'
   context.beginPath()
-  context.arc(radius, radius, circleSelectorInnerWidth, 0, Math.PI * 2, true)
+  context.arc(radius, radius, circleTrackSelectorInnerWidth, 0, Math.PI * 2, true)
   context.closePath()
   context.fill()
 
@@ -266,14 +267,14 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
     const indicatorContext = indicatorRef.current.getContext('2d') as CanvasRenderingContext2D
 
     const {
-      circleSelectorInnerWidth,
+      circleTrackSelectorInnerWidth,
       radius
     } = getDimensions(indicatorContext, hsvState)
 
     const {x, y} = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
 
     // Setting Saturation/Value if click landed on inside circle for more forgiving target
-    if (getDistance({ x, y }, { x: radius, y: radius }) <= circleSelectorInnerWidth) {
+    if (getDistance({ x, y }, { x: radius, y: radius }) <= circleTrackSelectorInnerWidth) {
       selectingSV.current = true
       selectSaturationValue(event)
     } else {
