@@ -6,11 +6,8 @@ import {
   ColorValueString,
   Operations,
   Point,
-  Points,
   MouseState
 } from "./types";
-
-import { smoothLength } from "./constants";
 
 // TODO: Type this function better
 export function getRelativeMousePos(canvas: HTMLCanvasElement, mouseState: MouseState | { x: number, y: number }): MouseState {
@@ -86,23 +83,6 @@ export function rgbToHex(color: ColorArray): HexColor {
 
 export function offsetPoint(point: Point, offset: number) {
   return { ...point, x: point.x + offset, y: point.y + offset }
-}
-
-export function smoothPoints(points: Points) {
-  for (let i = 0; i < Math.min(smoothLength, points.length - 1); ++i) {
-      const j = (points.length - i) - 2
-      const point0 = points[j]
-      const point1 = points[j + 1]
-
-      const a = 0.2
-      const updatedPoint = {
-          ...point0,
-          pressure: (point0.pressure + point1.pressure) / 2,
-          x: point0.x * (1 - a) + point1.x * a,
-          y: point0.y * (1 - a) + point1.y * a
-      }
-      points[j] = updatedPoint
-  }
 }
 
 export function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Point, endPoint: Point): Pick<Point, "x" | "y"> {

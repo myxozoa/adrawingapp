@@ -16,7 +16,7 @@ import { throttle } from '../../utils'
 
 function Board() {
   const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
-  const { layers, currentLayer } = useContext(LayerState)
+  const { currentLayer } = useContext(LayerState)
   const { currentTool } = useContext(ToolState)
   const _MainState = useContext(MainState)
 
@@ -38,8 +38,8 @@ function Board() {
   return (
     <Container className="board">
       <Panel className="canvases">
-        <div key={`canvas_${layer.id}`} className="layer_canvas_container" style={{ zIndex: (1 - idx) + layers.length, mixBlendMode: layer.blendMode }}>
-          <DrawCanvas ref={layer.canvasRef} id={layer.id} />
+        <div key={`draw_canvas`} className="layer_canvas_container" style={{ zIndex: 5 }}>
+          <DrawCanvas ref={currentLayer.canvasRef} id={"draw_canvas"} />
         </div>
         <div className='layer_canvas_container canvas_separator'/>
       </Panel>

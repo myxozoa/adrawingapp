@@ -85,8 +85,6 @@ export const key_modifers: Record<string, Modifier> = {
   shift: 'shift'
 }
 
-export const smoothLength = 6
-
 export const toolPreviewSize = 100
 
 export const enum COLOR_PICKER_ACTIONS {

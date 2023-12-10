@@ -1,6 +1,6 @@
 import { tool_list, tool_types } from '../../constants'
 
-import { getRelativeMousePos, getDistance, offsetPoint, smoothPoints, findQuadtraticBezierControlPoint, getCanvasColor } from '../../utils'
+import { getRelativeMousePos, getDistance, offsetPoint, findQuadtraticBezierControlPoint, getCanvasColor, lerp } from '../../utils'
 
 import { ILayer, Tool, Point, UIInteraction, MouseState, Operation, MainStateType } from '../../types'
 
@@ -29,7 +29,7 @@ class _DrawingManager {
   }
 
   basePen = (operation: Operation) => {
-    const points = operation.points.slice(-9)
+    const points = operation.points
 
     this.context.lineCap = 'round'
     this.context.lineJoin = 'round'
@@ -83,6 +83,13 @@ class _DrawingManager {
     }
   }
 
+  stamp = (point: Point, image: HTMLImageElement, offset = true) => {
+    const _offsetPoint = offset ? offsetPoint(point, -image.height / 2) : point
+    this.context.drawImage(image, _offsetPoint.x, _offsetPoint.y)
+
+    point.drawn = true
+  }
+
   brushLine = (operation: Operation, _point0: Point, _point1: Point) => {
     if (!operation.tool.image) {
       throw new Error("Brush has no image to draw with")
@@ -93,6 +100,7 @@ class _DrawingManager {
     const distance = getDistance(point0, point1)
     const step = operation.tool.size * (operation.tool.spacing / 100)
 
+    // Stamp at space interval between the two points
     for (let i = 0; i < distance; i += step) {
       const t = Math.max(0, Math.min(1, i / distance))
       const x = point0.x + (point1.x - point0.x) * t
@@ -113,36 +121,29 @@ class _DrawingManager {
       throw new Error("Brush has no image to draw with")
     }
 
-    const i = operation.points.length - 1
-    const point0 = operation.points[i - 1]
-    const point1 = operation.points[i]
+    const lastIndex = operation.points.length - 1
+    const prevPoint = operation.points.at(-2)
+    const currentPoint = operation.points.at(-1)
 
-    const distance = getDistance(point0, point1)
+    const distance = getDistance(prevPoint, currentPoint)
 
-    if (i === 0) {
-      const offset = offsetPoint(operation.points[i], -operation.tool.image.height / 2)
-      this.context.drawImage(operation.tool.image, offset.x, offset.y)
-
-      operation.points[i].drawn = true
-
+    if (lastIndex === 0) {
+      this.stamp(operation.points[0], operation.tool.image)
       return
     }
 
     const spacing = operation.tool.size * (operation.tool.spacing / 100)
 
-    if (distance > spacing) {
-      this.brushLine(operation, point0, point1)
-      point0.drawn = true
-      point1.drawn = true
+    if (distance > spacing * 2) {
+      this.brushLine(operation, prevPoint, currentPoint)
+      prevPoint.drawn = true
+      currentPoint.drawn = true
     } else {
       if (!operation.tool.image) throw new Error("Tool is missing image")
 
-      if (point0.pointerType === "pen") this.context.globalAlpha = (point1.pressure / 5)
+      if (prevPoint.pointerType === "pen") this.context.globalAlpha = (currentPoint.pressure / 5)
 
-      const offsetPoint1 = offsetPoint(point1, -operation.tool.image.height / 2)
-      this.context.drawImage(operation.tool.image, offsetPoint1.x, offsetPoint1.y)
-
-      point1.drawn = true
+      this.stamp(currentPoint, operation.tool.image)
     }
   }
 
@@ -171,15 +172,13 @@ class _DrawingManager {
   penDraw = (operation: Operation) => {
     if (this.currentLayer.currentOperation.points.length <= 1) return
 
-    smoothPoints(this.currentLayer.currentOperation.points)
-
     this.context.globalCompositeOperation ="source-over";
   
     this.basePen(operation)
   }
 
   draw = (operation: Operation) => {
-    if (operation.points.length !== 0 && operation.points[operation.points.length - 1].drawn) return
+    if (operation.points.length !== 0 && operation.points.at(-1).drawn) return
 
     this.context.save()
     this.toolBelt[operation.tool.name](operation)
@@ -203,11 +202,21 @@ class _DrawingManager {
     
     if (this.waitUntilInteractionEnd) return
     const spacing = operation.tool.size * (operation.tool.spacing / 100)
+    const prevLocation = operation.points.at(-1)
+
+    const smoothing = 0.2
     
     switch(operation.tool.type) {
       case tool_types.STROKE:
-        if (operation.points.length === 0 || getDistance(operation.points[operation.points.length - 1], relativeMouseState) >= spacing) {
-          operation.points.push({...relativeMouseState, drawn: false })
+        if (operation.points.length === 0 || getDistance(prevLocation, relativeMouseState) >= spacing) {
+          const interpolatedLocation = { ...relativeMouseState  }
+          
+          if (operation.points.length !== 0) {
+            interpolatedLocation.x = lerp(prevLocation.x, interpolatedLocation.x, smoothing)
+            interpolatedLocation.y = lerp(prevLocation.y, interpolatedLocation.y, smoothing)
+          }
+
+          operation.points.push({...interpolatedLocation, drawn: false })
         }
         break
 
@@ -231,7 +240,7 @@ class _DrawingManager {
       this.needRedraw = false
   
       if (this.currentLayer.undoSnapshotQueue.length > 0) {
-        this.context.putImageData(this.currentLayer.undoSnapshotQueue[this.currentLayer.undoSnapshotQueue.length - 1], 0, 0)
+        this.context.putImageData(this.currentLayer.undoSnapshotQueue.at(-1), 0, 0)
       } else {
         if (this.currentLayer.drawingData) {
           this.context.putImageData(this.currentLayer.drawingData, 0, 0)
@@ -255,7 +264,7 @@ class _DrawingManager {
   
   undo = () => {
     if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
-      this.currentLayer.undoSnapshotQueue.pop()
+      this.currentLayer.redoSnapshotQueue(this.currentLayer.undoSnapshotQueue.pop())
     }
     this.endInteraction(false)
   }
