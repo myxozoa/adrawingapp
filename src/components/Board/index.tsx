@@ -3,7 +3,7 @@ import { useContext, useEffect } from 'react'
 import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
-import { LayerCanvas } from '../LayerCanvas'
+import { DrawCanvas } from '../DrawCanvas'
 
 import { LayerState } from "../../contexts/LayerState"
 import { ToolState } from '../../contexts/ToolState'
@@ -38,13 +38,9 @@ function Board() {
   return (
     <Container className="board">
       <Panel className="canvases">
-        {layers.map((layer, idx) => {
-          return (
-            <div key={`canvas_${layer.id}`} className="layer_canvas_container" style={{ zIndex: (1 - idx) + layers.length, mixBlendMode: layer.blendMode }}>
-              <LayerCanvas ref={layer.canvasRef} id={layer.id} />
-            </div>
-          )
-        })}
+        <div key={`canvas_${layer.id}`} className="layer_canvas_container" style={{ zIndex: (1 - idx) + layers.length, mixBlendMode: layer.blendMode }}>
+          <DrawCanvas ref={layer.canvasRef} id={layer.id} />
+        </div>
         <div className='layer_canvas_container canvas_separator'/>
       </Panel>
     </Container>

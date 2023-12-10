@@ -2,7 +2,7 @@ import { useEffect, memo, forwardRef } from 'react'
 
 import { initializeCanvas } from '../../utils';
 
-function _LayerCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasElement>) {
+function _DrawCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasElement>) {
 
   useEffect(() => {
     const refTypeHack = ref as React.MutableRefObject<HTMLCanvasElement>
@@ -20,4 +20,4 @@ function hasChanged(prevProps: Readonly<React.ComponentProps<any>>, nextProps: R
   return prevProps.id === nextProps.id
 }
 
-export const LayerCanvas = memo(forwardRef(_LayerCanvas), hasChanged)
+export const DrawCanvas = memo(forwardRef(_DrawCanvas), hasChanged)
