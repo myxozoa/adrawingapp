@@ -109,8 +109,6 @@ export function initializeCanvas(
     desynchronized: desynchronized,
   }) as CanvasRenderingContext2D
   context.scale(targetDpi, targetDpi)
-  // context.imageSmoothingQuality = 'high'
-  // context.imageSmoothingEnabled = true
   context.imageSmoothingEnabled = false
 }
 

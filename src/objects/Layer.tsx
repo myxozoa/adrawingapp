@@ -21,6 +21,7 @@ export class Layer implements ILayer {
     this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
     this.currentOperation = { points: [], readyToDraw: false } as unknown as Operation
     this.undoSnapshotQueue = []
+    this.redoSnapshotQueue = []
     this.drawingData = new ImageData(1, 1)
     this.noDraw = false
   }

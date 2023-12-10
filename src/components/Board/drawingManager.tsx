@@ -153,6 +153,15 @@ class _DrawingManager {
     this.currentLayer.fill(getCanvasColor(this.main.color))
   }
 
+  clear = () => {
+    this.context.save()
+  
+    this.context.setTransform(1, 0, 0, 1, 0, 0)
+    this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height)
+
+    this.context.restore()
+  }
+
   erase = (operation: Operation) => {
     if (this.currentLayer.currentOperation.points.length <= 1) return
 
@@ -230,12 +239,7 @@ class _DrawingManager {
     if (this.currentLayer.noDraw) return
 
     if (this.needRedraw) {
-      this.context.save()
-  
-      this.context.setTransform(1, 0, 0, 1, 0, 0)
-      this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height)
-  
-      this.context.restore()
+      this.clear()
 
       this.needRedraw = false
   
@@ -264,7 +268,7 @@ class _DrawingManager {
   
   undo = () => {
     if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
-      this.currentLayer.redoSnapshotQueue(this.currentLayer.undoSnapshotQueue.pop())
+      this.currentLayer.redoSnapshotQueue.push(this.currentLayer.undoSnapshotQueue.pop())
     }
     this.endInteraction(false)
   }
