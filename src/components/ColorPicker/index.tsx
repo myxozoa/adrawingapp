@@ -7,6 +7,9 @@ import { getRelativeMousePos, initializeCanvas, degreesToRadians, radiansToDegre
 import { COLOR_PICKER_ACTIONS } from '../../constants'
 import { ColorArray } from '../../types'
 
+
+// TODO: Maybe an SVG Version would be better than canvas?
+
 function getHSV(value: ColorArray) {  
   const { h, s, v } = RGBtoHSV(value[0], value[1], value[2])
 
@@ -15,10 +18,12 @@ function getHSV(value: ColorArray) {
 }
 
 function getDimensions(context: CanvasRenderingContext2D, hsvState: HSV) {
-  const canvasWidth = context.canvas.width / window.devicePixelRatio
-  const canvasHeight = context.canvas.height / window.devicePixelRatio
+  const rect = context.canvas.getBoundingClientRect()
+
+  const canvasWidth = rect.width
+  const canvasHeight = rect.height
   
-  const radius = canvasWidth / 2
+  const radius = (canvasWidth / 2)
   
   const circleTrackSelectorInnerWidth = radius * 0.8
   
@@ -226,8 +231,8 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   const selectHue = (event: PointerEvent | React.PointerEvent<HTMLCanvasElement>) => {
     const {x: relativeX, y: relativeY} = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
 
-    const centerX = indicatorRef.current.width / 2
-    const centerY = indicatorRef.current.height / 2
+    const centerX = (indicatorRef.current.width / 2) * window.devicePixelRatio
+    const centerY = (indicatorRef.current.height / 2) * window.devicePixelRatio
     const angle = Math.atan2(relativeY - centerY, relativeX - centerX);
 
     let angleDegrees = radiansToDegrees(angle)

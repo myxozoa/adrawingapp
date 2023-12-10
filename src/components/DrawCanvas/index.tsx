@@ -8,7 +8,11 @@ function _DrawCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasE
     const refTypeHack = ref as React.MutableRefObject<HTMLCanvasElement>
     const rect = refTypeHack.current!.parentElement!.getBoundingClientRect();
 
-    initializeCanvas(refTypeHack.current!, rect.width, rect.height, true)
+    const context = initializeCanvas(refTypeHack.current!, rect.width, rect.height, true, true)
+
+    if (!context) {
+      throw new Error("WebGL2 is not supported")
+    }
   }, [])
 
   const canvasId = `canvas_${id}`

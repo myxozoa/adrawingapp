@@ -18,6 +18,9 @@ export function getRelativeMousePos(canvas: HTMLCanvasElement, mouseState: Mouse
     y: (mouseState.y) - rect.top
   }
 
+  relativePosition.x = relativePosition.x * window.devicePixelRatio
+  relativePosition.y = relativePosition.y * window.devicePixelRatio
+
   return {
     inbounds: relativePosition.x >= 0 && relativePosition.y >= 0 && relativePosition.x <= (rect.width * window.devicePixelRatio) && relativePosition.y <= (rect.height * window.devicePixelRatio),
     ...mouseState,
@@ -93,23 +96,127 @@ export function findQuadtraticBezierControlPoint(startPoint: Point, midPoint: Po
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
 
+let canvasToDisplaySizeMap
+let resizeObserver
+
 export function initializeCanvas(
   canvas: HTMLCanvasElement,
   width: number,
   height: number,
-  desynchronized = false
+  desynchronized = false,
+  resize = false,
+  performance = "high-performance",
 ) {
+
   const targetDpi = window.devicePixelRatio
-  canvas.width = Math.floor(width * targetDpi)
-  canvas.height = Math.floor(height * targetDpi)
-  canvas.style.width = `${width.toString()}px`
-  canvas.style.height = `${height.toString()}px`
+
+  if (!resize) {
+    canvas.width = Math.floor(width * targetDpi)
+    canvas.height = Math.floor(height * targetDpi)
+    canvas.style.width = `${width.toString()}px`
+    canvas.style.height = `${height.toString()}px`
+  }
+
   const context = canvas.getContext('2d', {
     alpha: true,
     desynchronized: desynchronized,
+    powerPreference: performance,
+    premultipliedAlpha: false
   }) as CanvasRenderingContext2D
   context.scale(targetDpi, targetDpi)
   context.imageSmoothingEnabled = false
+  
+  if (resize) {
+    canvasToDisplaySizeMap = new Map([[canvas, [width, height]]])
+    resizeObserver = new ResizeObserver(onResize)
+    resizeObserver.observe(canvas, {box: 'content-box'})
+  }
+
+  return context
+}
+
+// https://webgl2fundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
+
+function onResize(entries) {
+  for (const entry of entries) {
+    let width
+    let height
+    let dpr = window.devicePixelRatio
+    if (entry.devicePixelContentBoxSize) {
+      // NOTE: Only this path gives the correct answer
+      // The other 2 paths are an imperfect fallback
+      // for browsers that don't provide anyway to do this
+      width = entry.devicePixelContentBoxSize[0].inlineSize
+      height = entry.devicePixelContentBoxSize[0].blockSize
+      dpr = 1; // it's already in width and height
+    } else if (entry.contentBoxSize) {
+      if (entry.contentBoxSize[0]) {
+        width = entry.contentBoxSize[0].inlineSize
+        height = entry.contentBoxSize[0].blockSize
+      } else {
+        // legacy
+        width = entry.contentBoxSize.inlineSize
+        height = entry.contentBoxSize.blockSize
+      }
+    } else {
+      // legacy
+      width = entry.contentRect.width
+      height = entry.contentRect.height
+    }
+    const displayWidth = Math.round(width * dpr)
+    const displayHeight = Math.round(height * dpr)
+    canvasToDisplaySizeMap.set(entry.target, [displayWidth, displayHeight])
+  }
+}
+
+export function resizeCanvasToDisplaySize(canvas, callback) {
+  // Get the size the browser is displaying the canvas in device pixels.
+  const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)
+
+  // Check if the canvas is not the same size.
+  const needResize = canvas.width  !== displayWidth ||
+                     canvas.height !== displayHeight
+
+  if (needResize) {
+    // Make the canvas the same size
+    canvas.width  = displayWidth
+    canvas.height = displayHeight
+
+    callback()
+  }
+
+  return needResize
+}
+
+export function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type)
+  gl.shaderSource(shader, source)
+  gl.compileShader(shader)
+  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+  if (success) {
+    return shader
+  }
+ 
+  console.error(gl.getShaderInfoLog(shader))
+  gl.deleteShader(shader)
+}
+
+export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+  const program = gl.createProgram()
+  gl.attachShader(program, vertexShader)
+  gl.attachShader(program, fragmentShader)
+  gl.linkProgram(program)
+  const success = gl.getProgramParameter(program, gl.LINK_STATUS)
+  if (success) {
+    return program
+  }
+ 
+  console.error(gl.getProgramInfoLog(program))
+  gl.deleteProgram(program)
+}
+
+export function initializeGL(gl: WebGL2RenderingContext) {
+  
 }
 
 // https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately/35363027#35363027

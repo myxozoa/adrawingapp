@@ -1,6 +1,6 @@
 import { tool_list, tool_types } from '../../constants'
 
-import { getRelativeMousePos, getDistance, offsetPoint, findQuadtraticBezierControlPoint, getCanvasColor, lerp } from '../../utils'
+import { getRelativeMousePos, getDistance, offsetPoint, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize } from '../../utils'
 
 import { ILayer, Tool, Point, UIInteraction, MouseState, Operation, MainStateType } from '../../types'
 
@@ -214,16 +214,16 @@ class _DrawingManager {
     const prevLocation = operation.points.at(-1)
 
     const smoothing = 0.2
+    const interpolatedLocation = { ...relativeMouseState  }
     
     switch(operation.tool.type) {
       case tool_types.STROKE:
-        if (operation.points.length === 0 || getDistance(prevLocation, relativeMouseState) >= spacing) {
-          const interpolatedLocation = { ...relativeMouseState  }
-          
-          if (operation.points.length !== 0) {
-            interpolatedLocation.x = lerp(prevLocation.x, interpolatedLocation.x, smoothing)
-            interpolatedLocation.y = lerp(prevLocation.y, interpolatedLocation.y, smoothing)
-          }
+        if (operation.points.length !== 0) {
+          interpolatedLocation.x = lerp(prevLocation.x, interpolatedLocation.x, smoothing)
+          interpolatedLocation.y = lerp(prevLocation.y, interpolatedLocation.y, smoothing)
+        }
+
+        if (operation.points.length === 0 || getDistance(prevLocation, interpolatedLocation) >= spacing) {
 
           operation.points.push({...interpolatedLocation, drawn: false })
 
@@ -240,6 +240,8 @@ class _DrawingManager {
   }
 
   interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
+    resizeCanvasToDisplaySize(this.currentLayer.canvasRef.current, () => this.needRedraw = true)
+  
     if (this.currentLayer.noDraw) return
 
     if (this.needRedraw) {
