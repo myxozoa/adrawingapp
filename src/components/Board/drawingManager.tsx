@@ -226,6 +226,10 @@ class _DrawingManager {
           }
 
           operation.points.push({...interpolatedLocation, drawn: false })
+
+          if (operation.points.length > 6) {
+            operation.points.shift()
+          }
         }
         break
 

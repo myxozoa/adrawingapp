@@ -20,7 +20,7 @@ export const tools: Record<ToolName, Tool> = {
     size: 10,
     opacity: 100,
     hardness: 100,
-    spacing: 1,
+    spacing: 10,
     availableSettings: [ "color", "size" ],
     type: tool_types.STROKE,
     continuous: true
