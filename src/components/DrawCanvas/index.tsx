@@ -2,8 +2,8 @@ import { useEffect, memo, forwardRef } from 'react'
 
 import { initializeCanvas } from '../../utils';
 
-function _DrawCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasElement>) {
-
+function _DrawCanvas(_, ref: React.ForwardedRef<HTMLCanvasElement>) {
+  console.count("canvas")
   useEffect(() => {
     const refTypeHack = ref as React.MutableRefObject<HTMLCanvasElement>
     const rect = refTypeHack.current!.parentElement!.getBoundingClientRect();
@@ -15,13 +15,7 @@ function _DrawCanvas({ id }: { id: number }, ref: React.ForwardedRef<HTMLCanvasE
     }
   }, [])
 
-  const canvasId = `canvas_${id}`
-  return <canvas ref={ref} className="layer_canvas" id={canvasId} />
+  return <canvas ref={ref} className="layer_canvas" />
 }
 
-
-function hasChanged(prevProps: Readonly<React.ComponentProps<any>>, nextProps: Readonly<React.ComponentProps<any>>): boolean {
-  return prevProps.id === nextProps.id
-}
-
-export const DrawCanvas = memo(forwardRef(_DrawCanvas), hasChanged)
+export const DrawCanvas = memo(forwardRef(_DrawCanvas))

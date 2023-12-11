@@ -240,34 +240,34 @@ class _DrawingManager {
   }
 
   interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
-    resizeCanvasToDisplaySize(this.currentLayer.canvasRef.current, () => this.needRedraw = true)
+    // resizeCanvasToDisplaySize(this.currentLayer.canvasRef.current, () => this.needRedraw = true)
   
-    if (this.currentLayer.noDraw) return
+    // if (this.currentLayer.noDraw) return
 
-    if (this.needRedraw) {
-      this.clear()
+    // if (this.needRedraw) {
+    //   this.clear()
 
-      this.needRedraw = false
+    //   this.needRedraw = false
   
-      if (this.currentLayer.undoSnapshotQueue.length > 0) {
-        this.context.putImageData(this.currentLayer.undoSnapshotQueue.at(-1), 0, 0)
-      } else {
-        if (this.currentLayer.drawingData) {
-          this.context.putImageData(this.currentLayer.drawingData, 0, 0)
-        }
-      }
-    }
+    //   if (this.currentLayer.undoSnapshotQueue.length > 0) {
+    //     this.context.putImageData(this.currentLayer.undoSnapshotQueue.at(-1), 0, 0)
+    //   } else {
+    //     if (this.currentLayer.drawingData) {
+    //       this.context.putImageData(this.currentLayer.drawingData, 0, 0)
+    //     }
+    //   }
+    // }
 
-    const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
+    // const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
 
 
-    if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
-      this.use(relativeMouseState, this.currentLayer.currentOperation)
-    }
+    // if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
+    //   this.use(relativeMouseState, this.currentLayer.currentOperation)
+    // }
 
-    if (this.currentLayer.currentOperation.tool) {
-      this.draw(this.currentLayer.currentOperation)
-    }
+    // if (this.currentLayer.currentOperation.tool) {
+    //   this.draw(this.currentLayer.currentOperation)
+    // }
   
     requestAnimationFrame(() => this.interactLoop(currentUIInteraction))
   }

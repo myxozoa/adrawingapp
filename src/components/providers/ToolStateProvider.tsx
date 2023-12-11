@@ -38,7 +38,7 @@ function ToolStateProvider({ children }: { children: React.ReactNode }) {
   const changeToolSetting = useCallback((newSettings: any) => {
     Object.keys(newSettings).forEach((setting) => {
       toolStateFunctions[setting](newSettings[setting])
-        currentTool[setting] = newSettings[setting]
+      currentTool[setting] = newSettings[setting]
     })
   }, [currentTool])
 

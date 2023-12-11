@@ -199,8 +199,8 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   const [hsvState, hsvDispatch] = useReducer(hsvReducer, getHSV(value))
   
   useEffect(() => {
-    initializeCanvas(pickerRef.current, size, size, true)
-    initializeCanvas(indicatorRef.current, size, size, true)
+    initializeCanvas(pickerRef.current, size, size, true, false, "2d")
+    initializeCanvas(indicatorRef.current, size, size, true, false, "2d")
 
     window.addEventListener("pointermove", mouseMove)
     window.addEventListener("pointerup", mouseUp)

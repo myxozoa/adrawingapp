@@ -103,11 +103,11 @@ export function initializeCanvas(
   canvas: HTMLCanvasElement,
   width: number,
   height: number,
-  desynchronized = false,
+  desynchronized = true,
   resize = false,
-  performance = "high-performance",
+  contextType = "webgl2",
+  performance = "high-performance"
 ) {
-
   const targetDpi = window.devicePixelRatio
 
   if (!resize) {
@@ -117,13 +117,14 @@ export function initializeCanvas(
     canvas.style.height = `${height.toString()}px`
   }
 
-  const context = canvas.getContext('2d', {
+  const context = canvas.getContext(contextType, {
     alpha: true,
     desynchronized: desynchronized,
     powerPreference: performance,
     premultipliedAlpha: false
   }) as CanvasRenderingContext2D
-  context.scale(targetDpi, targetDpi)
+
+  if (contextType === "2d") context.scale(targetDpi, targetDpi)
   context.imageSmoothingEnabled = false
   
   if (resize) {

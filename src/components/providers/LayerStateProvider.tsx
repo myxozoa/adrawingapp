@@ -54,9 +54,9 @@ function LayerStateProvider({ children }: { children: React.ReactNode }) {
   }, [layers])
 
   useEffect(() => {
-    layers[0].fill()
-    const image = layers[0].getImageData()
-    layers[0].replaceDrawingData(image)
+    // layers[0].fill()
+    // const image = layers[0].getImageData()
+    // layers[0].replaceDrawingData(image)
   }, [])
 
   useEffect(() => {

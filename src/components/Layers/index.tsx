@@ -1,4 +1,4 @@
-import { useContext } from "react"
+import { useContext, memo } from "react"
 
 import "./styles.css"
 import Panel from '../Panel'
@@ -7,7 +7,7 @@ import Layer from '../Layer'
 
 import { LayerState } from "../../contexts/LayerState"
 
-function Layers() {
+function _Layers() {
   const { layers, currentLayer, setCurrentLayer, newLayer, removeLayer, saveNewName, editingLayer } = useContext(LayerState)
 
   return (
@@ -37,4 +37,4 @@ function Layers() {
   )
 }
 
-export default Layers
+export const Layers = memo(_Layers)

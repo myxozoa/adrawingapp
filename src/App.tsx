@@ -1,8 +1,8 @@
 import './App.css'
-import Board from './components/Board/'
-import Layers from './components/Layers/'
-import Tools from './components/Tools/'
-import ToolSettings from './components/ToolSettings'
+import { Board } from './components/Board/'
+import { Layers } from './components/Layers/'
+import { Tools } from './components/Tools/'
+import { ToolSettings } from './components/ToolSettings'
 
 import LayerStateProvider from './components/providers/LayerStateProvider'
 import ToolStateProvider from './components/providers/ToolStateProvider'

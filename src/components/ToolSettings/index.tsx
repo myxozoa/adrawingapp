@@ -1,66 +1,19 @@
-import { useContext, useRef, useEffect, useCallback } from 'react'
+import { useContext, useCallback, memo } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
 import ColorPicker from '../ColorPicker'
+import { ToolPreview } from '../ToolPreview'
 
 import { ToolState } from '../../contexts/ToolState'
 import { MainState } from '../../contexts/MainState'
 
-import { throttle, initializeCanvas, rgbToHex } from '../../utils'
+import { throttle } from '../../utils'
 
-import { toolPreviewSize } from '../../constants'
 import { ColorArray } from '../../types'
 
-const jitterAlpha = (context: CanvasRenderingContext2D, width: number, height: number, amount: number) => {
-  const imageData = context.getImageData(0, 0, width, height)
-
-  for (let i = 0; i < imageData.data.length; i += 4) {
-
-    const randomVariation = Math.floor(Math.random() * (amount)) - (amount - 1);
-
-    if (imageData.data[i + 3] > 1) {
-      imageData.data[i + 3] = Math.round(imageData.data[i + 3] + randomVariation)
-    }
-  }
-
-  context.putImageData(imageData, 0, 0)
-}
-
-const radialFeather = (context: CanvasRenderingContext2D, size: number, hardness: number, width: number, height: number) => {
-  const x = Math.floor(toolPreviewSize / 2)
-  const y = Math.floor(toolPreviewSize / 2)
-  const innerRadius = Math.min(Math.floor((hardness / 100) * size), size - 1)
-  const radius = size
-  
-  context.save()
-  const gradient = context.createRadialGradient(x, y, innerRadius, x, y, radius)
-  gradient.addColorStop(0, 'rgba(0, 0, 0, 0)')
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 1)')
-
-  context.arc(x, y, radius, 0, 2 * Math.PI)
-
-  context.fillStyle = gradient
-  context.globalCompositeOperation = 'destination-out'
-  context.fillRect(0, 0, width, height)
-  context.restore()
-}
-
-const drawBrushImage = (context: CanvasRenderingContext2D, size: number, hardness: number, color: ColorArray) => {
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height)
-
-  context.fillStyle = rgbToHex(color)
-
-  context.fillRect(0, 0, context.canvas.width, context.canvas.height)
-
-  radialFeather(context, size, hardness, context.canvas.width, context.canvas.height)
-
-  jitterAlpha(context, context.canvas.width, context.canvas.height, 3)
-}
-
-function ToolSettings() {
-  const previewCanvasRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
+function _ToolSettings() {
   const {
     currentTool,
     changeToolSetting,
@@ -71,20 +24,6 @@ function ToolSettings() {
   } = useContext(ToolState)
 
   const { color, changeSetting } = useContext(MainState)
-
-  useEffect(() => {
-    initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize)
-  }, [previewCanvasRef.current])
-
-  useEffect(() => {
-    if (previewCanvasRef.current) {
-      const context = previewCanvasRef.current.getContext('2d') as CanvasRenderingContext2D
-
-      drawBrushImage(context, toolSize, toolHardness, color)
-  
-      changeToolSetting({ image: previewCanvasRef.current })
-    }
-  }, [currentTool, toolSize, toolHardness, toolOpacity, color])
 
   const colorHandler = (value: ColorArray) => {
     changeSetting({ color: value })
@@ -127,7 +66,7 @@ function ToolSettings() {
     </div>
 
   const toolHardnessElement = <div key="tool_hardness_setting" className='tool_setting tool_hardness'>
-      <input type="range" id="tool_hardness" name="tool_hardness" min="1" max="100" value={toolHardness} onChange={toolHardnessThrottled} />
+      <input type="range" id="tool_hardness" name="tool_hardness" min="1" max="98" value={toolHardness} onChange={toolHardnessThrottled} />
       <label htmlFor="tool_hardness">Hardness</label>
     </div>
 
@@ -153,7 +92,7 @@ function ToolSettings() {
     <Container className="tool_settings_container">
       <Panel>
         <div className='tool_settings'>
-          <canvas className='tool_preview_canvas' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
+          <ToolPreview />
           {currentTool.availableSettings.map((setting) => {
             return elements[setting]
           })}
@@ -163,4 +102,4 @@ function ToolSettings() {
   )
 }
 
-export default ToolSettings
+export const ToolSettings = memo(_ToolSettings)

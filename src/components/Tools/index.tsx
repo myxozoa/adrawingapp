@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, memo } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
@@ -7,7 +7,7 @@ import Tool from '../Tool'
 
 import { ToolState } from '../../contexts/ToolState'
 
-function Tools() {
+function _Tools() {
   const { tools, currentTool, setCurrentTool } = useContext(ToolState);
 
   return (
@@ -20,4 +20,4 @@ function Tools() {
   )
 }
 
-export default Tools
+export const Tools = memo(_Tools)
