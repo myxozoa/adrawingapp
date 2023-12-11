@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react'
 
-import './styles.css'
-
 import PanelElement from '../PanelElement'
 
 import { useLayerStore } from '../../stores/LayerStore'
@@ -25,9 +23,9 @@ function Layer({ name, select, selected, id, editing, saveNewName }: { name: Lay
   return (
     <PanelElement selected={selected} select={select} id={id} onDoubleClick={() => setEditingLayer(id)}>
         {!editing ? 
-        <p className='layer_label'>{name}</p>
+        <p className='m-0'>{name}</p>
         :
-        <input autoFocus placeholder={name} value={newName} onBlur={save} onChange={(event) => setNewName(event.target.value)} onKeyDown={(event) => {
+        <input className='w-28' autoFocus placeholder={name} value={newName} onBlur={save} onChange={(event) => setNewName(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter") {
             save()
           }

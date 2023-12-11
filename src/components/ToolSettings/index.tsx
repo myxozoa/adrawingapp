@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 
-import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
 import ColorPicker from '../ColorPicker'
@@ -72,27 +71,27 @@ function _ToolSettings() {
   const toolSpacingThrottled = useCallback(throttle(toolSpacingHandler, 16), [currentTool])
 
   // TODO: componentify
-  const toolColorElement = <div key="tool_color_setting" className='tool_setting tool_color'>
+  const toolColorElement = <div key="tool_color_setting" className='w-28 tool_color'>
       <ColorPicker size={100} value={color} onChange={colorThrottled} />
     </div>
 
-  const toolSizeElement = <div key="tool_size_setting" className='tool_setting tool_size'>
-      <input type="range" id="tool_size" name="tool_size" min="5" max="50" value={toolSize} onChange={toolSizeThrottled} />
+  const toolSizeElement = <div key="tool_size_setting" className='w-30 flex flex-col tool_size'>
+      <input className='w-28' type="range" id="tool_size" name="tool_size" min="5" max="50" value={toolSize} onChange={toolSizeThrottled} />
       <label htmlFor="tool_size">Size</label>
     </div>
 
-  const toolHardnessElement = <div key="tool_hardness_setting" className='tool_setting tool_hardness'>
-      <input type="range" id="tool_hardness" name="tool_hardness" min="1" max="98" value={toolHardness} onChange={toolHardnessThrottled} />
+  const toolHardnessElement = <div key="tool_hardness_setting" className='w-28 flex flex-col tool_hardness'>
+      <input className='w-28' type="range" id="tool_hardness" name="tool_hardness" min="1" max="98" value={toolHardness} onChange={toolHardnessThrottled} />
       <label htmlFor="tool_hardness">Hardness</label>
     </div>
 
-  const toolOpacityElement = <div key="tool_opacity_setting" className='tool_setting tool_opacity'>
-      <input type="range" id="tool_opacity" name="tool_opacity" min="1" max="100" value={toolOpacity} onChange={toolOpacityThrottled} />
+  const toolOpacityElement = <div key="tool_opacity_setting" className='w-28 flex flex-col tool_opacity'>
+      <input className='w-28' type="range" id="tool_opacity" name="tool_opacity" min="1" max="100" value={toolOpacity} onChange={toolOpacityThrottled} />
       <label htmlFor="tool_opacity">Opacity</label>
     </div>
 
-  const toolSpacingElement = <div key="tool_spacing_setting" className='tool_setting tool_spacing'>
-    <input type="range" id="tool_spacing" name="tool_spacing" min="5" max="100" value={toolSpacing} onChange={toolSpacingThrottled} />
+  const toolSpacingElement = <div key="tool_spacing_setting" className='w-28 flex flex-col tool_spacing'>
+    <input className='w-28' type="range" id="tool_spacing" name="tool_spacing" min="5" max="100" value={toolSpacing} onChange={toolSpacingThrottled} />
     <label htmlFor="tool_spacing">Spacing</label>
     </div>
 
@@ -105,9 +104,9 @@ function _ToolSettings() {
   }
 
   return (
-    <Container className="tool_settings_container">
-      <Panel>
-        <div className='tool_settings'>
+    <Container className="h-25">
+      <Panel className='w-full'>
+        <div className='flex flex-row'>
           <ToolPreview />
           {currentTool.availableSettings.map((setting) => {
             return elements[setting]

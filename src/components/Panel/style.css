@@ -1,7 +1,4 @@
 .panel {
   background-color: rgb(49, 49, 49);
-  flex-grow: 1;
-  width: 100%;
   border: 1px solid grey;
-  user-select: none;
 }

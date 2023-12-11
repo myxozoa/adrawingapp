@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
 import { DrawCanvas } from '../DrawCanvas'
@@ -34,12 +33,12 @@ function _Board() {
   }, [])
 
   return (
-    <Container className="board">
-      <Panel className="canvases">
-        <div key={`draw_canvas`} className="layer_canvas_container" style={{ zIndex: 5 }}>
+    <Container className="grow">
+      <Panel className="flex relative w-full h-full">
+        <div key={`draw_canvas`} className="absolute w-full h-full" style={{ zIndex: 5 }}>
           <DrawCanvas ref={currentLayer.canvasRef} />
         </div>
-        <div className='layer_canvas_container canvas_separator'/>
+        <div className='absolute w-full h-full canvas_separator'/>
       </Panel>
     </Container>
   )

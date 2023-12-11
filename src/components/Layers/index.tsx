@@ -1,4 +1,3 @@
-import "./styles.css"
 import Panel from '../Panel'
 import Container from '../Container'
 import Layer from '../Layer'
@@ -15,12 +14,12 @@ function _Layers() {
   const editingLayer = useLayerStore.use.editingLayer()
 
   return (
-    <Container className="layers">
+    <Container className="w-38">
       {/* <Panel className="layer_settings">
         <span>blend mode</span>
         <span>opacity</span>
       </Panel> */}
-      <Panel className="layer_list">
+      <Panel className="grow w-full overflow-y-auto">
         {layers.map((layer, idx) => {
           return <Layer
             saveNewName={saveNewName}
@@ -33,7 +32,7 @@ function _Layers() {
           />})}
 
       </Panel>
-      <Panel className="edit_layers">
+      <Panel className="mt-0">
         <button onClick={() => newLayer()}>ADD</button>
         <button onClick={() => removeLayer()}>REMOVE</button>
       </Panel>

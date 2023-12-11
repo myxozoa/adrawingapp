@@ -1,7 +1,5 @@
 import { useRef, useEffect } from 'react'
 
-import './styles.css'
-
 import { initializeCanvas, createProgram, createShader, scaleNumberToRange } from '../../utils'
 
 import { toolPreviewSize } from '../../constants'
@@ -92,7 +90,7 @@ function _ToolPreview() {
   }, [currentTool.size, currentTool.hardness, color])
 
   return (
-    <canvas className='tool_preview_canvas' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
+    <canvas className='w-12 h-12 bg-black' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
   )
 }
 

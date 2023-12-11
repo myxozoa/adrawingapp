@@ -1,6 +1,5 @@
 import { memo } from 'react'
 
-import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
 import Tool from '../Tool'
@@ -13,8 +12,8 @@ function _Tools() {
   const setCurrentTool = useToolStore.use.setCurrentTool()
 
   return (
-    <Container className="tools">
-      <Panel>
+    <Container className="w-20">
+      <Panel className='grow w-full'>
         {Object.values(tools).map((tool) => {
           return <Tool key={tool.name} name={tool.name} select={setCurrentTool} selected={currentTool.name === tool.name} />})}
       </Panel>

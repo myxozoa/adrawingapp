@@ -1,7 +1,5 @@
 import { useReducer, useRef, useEffect, MutableRefObject } from 'react'
 
-import './styles.css'
-
 import { getRelativeMousePos, initializeCanvas, degreesToRadians, radiansToDegrees, scaleNumberToRange, HSVtoRGB, RGBtoHSV, getDistance } from '../../utils'
 
 import { COLOR_PICKER_ACTIONS } from '../../constants'
@@ -318,9 +316,9 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
     }, [hsvState.hue, hsvState.saturation, hsvState.value])
 
   return (
-    <div className='color-picker-container' style={{ width: `${size}px`, height: `${size}px` }}>
-      <canvas width={size} height={size} className="color-picker-indicator-canvas" ref={indicatorRef} onPointerDown={(e) => mouseDown(e)} />
-      <canvas width={size} height={size} className='color-picker-canvas' ref={pickerRef} />
+    <div className='relative' style={{ width: `${size}px`, height: `${size}px` }}>
+      <canvas width={size} height={size} className="absolute top-0 left-0 z-10" ref={indicatorRef} onPointerDown={(e) => mouseDown(e)} />
+      <canvas width={size} height={size} className='absolute top-0 left-0 z-0' ref={pickerRef} />
     </div>
   )
 }
