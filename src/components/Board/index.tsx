@@ -1,14 +1,15 @@
-import { useContext, useEffect, memo } from 'react'
+import { useContext, useEffect } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
 import { DrawCanvas } from '../DrawCanvas'
 
-import { LayerState } from "../../contexts/LayerState"
-import { ToolState } from '../../contexts/ToolState'
 import { MainState } from '../../contexts/MainState'
 import useUIState from '../../hooks/useUIState'
+
+import { useToolStore } from '../../stores/ToolStore'
+import { useLayerStore } from '../../stores/LayerStore'
 
 import { DrawingManager } from './drawingManager'
 
@@ -16,9 +17,10 @@ import { throttle } from '../../utils'
 
 function _Board() {
   const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
-  const { currentLayer } = useContext(LayerState)
-  const { currentTool } = useContext(ToolState)
+  const currentLayer = useLayerStore.use.currentLayer()
   const _MainState = useContext(MainState)
+
+  const currentTool = useToolStore.use.currentTool()
 
   DrawingManager.main = _MainState
 
@@ -47,4 +49,4 @@ function _Board() {
   )
 }
 
-export const Board = memo(_Board)
+export const Board = _Board

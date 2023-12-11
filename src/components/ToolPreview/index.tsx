@@ -6,8 +6,9 @@ import { initializeCanvas, createProgram, createShader, scaleNumberToRange } fro
 
 import { toolPreviewSize } from '../../constants'
 
-import { ToolState } from '../../contexts/ToolState'
 import { MainState } from '../../contexts/MainState'
+
+import { useToolStore } from '../../stores/ToolStore'
 
 import fragment from '../../shaders/Brush/fragment.glsl?raw'
 import vertex from '../../shaders/Brush/vertex.glsl?raw'
@@ -64,11 +65,7 @@ const initGL = (gl: WebGL2RenderingContext) => {
 
 function _ToolPreview() {
   const previewCanvasRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
-  const {
-    currentTool,
-    toolSize,
-    toolHardness
-  } = useContext(ToolState)
+  const currentTool = useToolStore.use.currentTool()
 
   const { color } = useContext(MainState)
 
@@ -89,16 +86,16 @@ function _ToolPreview() {
 
       gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
       gl.uniform3fv(brushColorUniformLocation, color.map(c => c / 255))
-      gl.uniform1f(softnessUniformLocation, toolHardness / 100)
-      gl.uniform1f(sizeUniformLocation, 40 - scaleNumberToRange(toolSize, 5, 50, 25, 38))
+      gl.uniform1f(softnessUniformLocation, currentTool.hardness / 100)
+      gl.uniform1f(sizeUniformLocation, 40 - scaleNumberToRange(currentTool.size, 5, 50, 25, 38))
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
     }
-  }, [currentTool, toolSize, toolHardness, color])
+  }, [currentTool.size, currentTool.hardness, color])
 
   return (
     <canvas className='tool_preview_canvas' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
   )
 }
 
-export const ToolPreview = memo(_ToolPreview)
+export const ToolPreview = _ToolPreview

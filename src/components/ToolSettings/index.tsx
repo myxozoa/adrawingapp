@@ -1,4 +1,4 @@
-import { useContext, useCallback, memo } from 'react'
+import { useState, useContext, useCallback } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
@@ -6,22 +6,40 @@ import Container from '../Container'
 import ColorPicker from '../ColorPicker'
 import { ToolPreview } from '../ToolPreview'
 
-import { ToolState } from '../../contexts/ToolState'
+// import { ToolState } from '../../contexts/ToolState'
 import { MainState } from '../../contexts/MainState'
+
+import { useToolStore } from '../../stores/ToolStore'
 
 import { throttle } from '../../utils'
 
 import { ColorArray } from '../../types'
 
 function _ToolSettings() {
-  const {
-    currentTool,
-    changeToolSetting,
-    toolSize,
-    toolHardness,
-    toolOpacity,
-    toolSpacing
-  } = useContext(ToolState)
+  const currentTool = useToolStore.use.currentTool()
+  const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
+
+  const [toolSize, setToolSize] = useState(currentTool.size!)
+  const [toolHardness, setToolHardness] = useState(currentTool.hardness!)
+  const [toolOpacity, setToolOpacity] = useState(currentTool.opacity!)
+  const [toolSpacing, setToolSpacing] = useState(currentTool.spacing)
+
+  const toolStateFunctions: Record<keyof Tool, React.SetStateAction<any>> = {
+    size: setToolSize,
+    hardness: setToolHardness,
+    opacity: setToolOpacity,
+    spacing: setToolSpacing,
+    image: (_image: HTMLImageElement) => currentTool.image = _image
+  }
+
+  const changeToolSetting = useCallback((newSettings: any) => {
+    Object.keys(newSettings).forEach((setting) => {
+      toolStateFunctions[setting](newSettings[setting])
+    })
+    
+    changeCurrentToolSetting(newSettings)
+  }, [currentTool])
+
 
   const { color, changeSetting } = useContext(MainState)
 
@@ -102,4 +120,4 @@ function _ToolSettings() {
   )
 }
 
-export const ToolSettings = memo(_ToolSettings)
+export const ToolSettings = _ToolSettings

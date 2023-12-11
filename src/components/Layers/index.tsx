@@ -1,14 +1,18 @@
-import { useContext, memo } from "react"
-
 import "./styles.css"
 import Panel from '../Panel'
 import Container from '../Container'
 import Layer from '../Layer'
 
-import { LayerState } from "../../contexts/LayerState"
+import { useLayerStore } from "../../stores/LayerStore"
 
 function _Layers() {
-  const { layers, currentLayer, setCurrentLayer, newLayer, removeLayer, saveNewName, editingLayer } = useContext(LayerState)
+  const layers = useLayerStore.use.layers()
+  const currentLayer = useLayerStore.use.currentLayer()
+  const setCurrentLayer = useLayerStore.use.setCurrentLayer()
+  const newLayer = useLayerStore.use.newLayer()
+  const removeLayer = useLayerStore.use.removeLayer()
+  const saveNewName = useLayerStore.use.saveNewName()
+  const editingLayer = useLayerStore.use.editingLayer()
 
   return (
     <Container className="layers">
@@ -37,4 +41,4 @@ function _Layers() {
   )
 }
 
-export const Layers = memo(_Layers)
+export const Layers = _Layers

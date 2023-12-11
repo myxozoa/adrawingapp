@@ -49,7 +49,7 @@ export const tools: Record<ToolName, Tool> = {
   } as Tool,
   FILL: {
     name: tool_list.FILL,
-    size: 10,
+    size: 100,
     opacity: 100,
     hardness: 98,
     spacing: 0,

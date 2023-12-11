@@ -1,24 +1,26 @@
-import { useState, useContext, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 import './styles.css'
 
 import PanelElement from '../PanelElement'
 
-import { LayerState } from "../../contexts/LayerState"
+import { useLayerStore } from '../../stores/LayerStore'
+
 import { LayerName, LayerID } from '../../types'
 
 function Layer({ name, select, selected, id, editing, saveNewName }: { name: LayerName, select: (id: number) => void, selected: boolean, id: LayerID, editing: boolean, saveNewName: (id: number, name: string) => void }) {
-  const { setEditingLayer } = useContext(LayerState)
+  const setEditingLayer = useLayerStore.use.setEditingLayer()
 
   const [newName, setNewName] = useState("")
 
   const save = useCallback(() => {
+    console.log(newName)
     if (newName) {
       saveNewName(id, newName)
     } else {
       saveNewName(id, name)
     }
-  }, [id, name])
+  }, [id, name, newName])
 
   return (
     <PanelElement selected={selected} select={select} id={id} onDoubleClick={() => setEditingLayer(id)}>
