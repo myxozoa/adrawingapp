@@ -35,11 +35,11 @@ const initGL = (gl: WebGL2RenderingContext) => {
 
   const positions = [
     -1, -1,  // first triangle
-      1, -1,
+    1, -1,
     -1,  1,
     -1,  1,  // second triangle
-      1, -1,
-      1,  1,
+    1, -1,
+    1,  1,
   ]
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
 
@@ -90,7 +90,7 @@ function _ToolPreview() {
   }, [currentTool.size, currentTool.hardness, color])
 
   return (
-    <canvas className='w-12 h-12 bg-black' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
+    <canvas className='bg-black' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
   )
 }
 

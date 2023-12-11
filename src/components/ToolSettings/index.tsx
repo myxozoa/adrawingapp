@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 import Panel from '../Panel'
 import Container from '../Container'
@@ -16,9 +16,9 @@ function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
   const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
 
-  const [toolSize, setToolSize] = useState(currentTool.size!)
-  const [toolHardness, setToolHardness] = useState(currentTool.hardness!)
-  const [toolOpacity, setToolOpacity] = useState(currentTool.opacity!)
+  const [toolSize, setToolSize] = useState(currentTool.size)
+  const [toolHardness, setToolHardness] = useState(currentTool.hardness)
+  const [toolOpacity, setToolOpacity] = useState(currentTool.opacity)
   const [toolSpacing, setToolSpacing] = useState(currentTool.spacing)
 
   const toolStateFunctions: Record<keyof Tool, React.SetStateAction<any>> = {
@@ -39,6 +39,13 @@ function _ToolSettings() {
 
   const color = useMainStore.use.color()
   const setColor = useMainStore.use.setColor()
+
+  useEffect(() => {
+    setToolSize(currentTool.size)
+    setToolHardness(currentTool.hardness)
+    setToolOpacity(currentTool.opacity)
+    setToolSpacing(currentTool.spacing)
+  }, [currentTool])
 
   const colorHandler = (value: ColorArray) => {
     setColor(value)
