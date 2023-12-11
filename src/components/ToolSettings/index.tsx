@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
@@ -6,10 +6,8 @@ import Container from '../Container'
 import ColorPicker from '../ColorPicker'
 import { ToolPreview } from '../ToolPreview'
 
-// import { ToolState } from '../../contexts/ToolState'
-import { MainState } from '../../contexts/MainState'
-
 import { useToolStore } from '../../stores/ToolStore'
+import { useMainStore } from '../../stores/MainStore'
 
 import { throttle } from '../../utils'
 
@@ -40,11 +38,11 @@ function _ToolSettings() {
     changeCurrentToolSetting(newSettings)
   }, [currentTool])
 
-
-  const { color, changeSetting } = useContext(MainState)
+  const color = useMainStore.use.color()
+  const setColor = useMainStore.use.setColor()
 
   const colorHandler = (value: ColorArray) => {
-    changeSetting({ color: value })
+    setColor(value)
   }
 
   const colorThrottled = useCallback(throttle(colorHandler, 16), [currentTool])

@@ -1,4 +1,4 @@
-import { useContext, useRef, useEffect, memo } from 'react'
+import { useRef, useEffect } from 'react'
 
 import './styles.css'
 
@@ -6,9 +6,8 @@ import { initializeCanvas, createProgram, createShader, scaleNumberToRange } fro
 
 import { toolPreviewSize } from '../../constants'
 
-import { MainState } from '../../contexts/MainState'
-
 import { useToolStore } from '../../stores/ToolStore'
+import { useMainStore } from '../../stores/MainStore'
 
 import fragment from '../../shaders/Brush/fragment.glsl?raw'
 import vertex from '../../shaders/Brush/vertex.glsl?raw'
@@ -66,8 +65,7 @@ const initGL = (gl: WebGL2RenderingContext) => {
 function _ToolPreview() {
   const previewCanvasRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
   const currentTool = useToolStore.use.currentTool()
-
-  const { color } = useContext(MainState)
+  const color = useMainStore.use.color()
 
   useEffect(() => {
     initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize)

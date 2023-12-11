@@ -1,11 +1,10 @@
-import { useContext, useEffect } from 'react'
+import { useEffect } from 'react'
 
 import './styles.css'
 import Panel from '../Panel'
 import Container from '../Container'
 import { DrawCanvas } from '../DrawCanvas'
 
-import { MainState } from '../../contexts/MainState'
 import useUIState from '../../hooks/useUIState'
 
 import { useToolStore } from '../../stores/ToolStore'
@@ -18,11 +17,8 @@ import { throttle } from '../../utils'
 function _Board() {
   const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
   const currentLayer = useLayerStore.use.currentLayer()
-  const _MainState = useContext(MainState)
 
   const currentTool = useToolStore.use.currentTool()
-
-  DrawingManager.main = _MainState
 
   useEffect(() => {
     DrawingManager.currentTool = currentTool
