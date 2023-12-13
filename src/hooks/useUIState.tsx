@@ -81,22 +81,23 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
       if (event.keyCode == 90 && event.ctrlKey) callbackUndo()
     }
 
-    document.addEventListener('pointermove', updatePointer)
-    document.addEventListener('pointerdown', updatePointer)
-    document.addEventListener('pointerup', onPointerUp)
-    // document.addEventListener('pointerout', onPointerUp)
-    document.addEventListener('wheel', updateWheelDeltaY)
-    document.addEventListener('keydown', updateKeys)
-    document.addEventListener('keyup', updateKeys)
+    const mapping = {
+      pointermove: updatePointer,
+      pointerdown: updatePointer,
+      pointerup: onPointerUp,
+      wheel: updateWheelDeltaY,
+      keydown: updateKeys,
+      keyup: updateKeys
+    }
+
+    for (const [name, callback] of Object.entries(mapping)) {
+      document.addEventListener(name, callback)
+    }
 
     return () => {
-      document.removeEventListener('pointermove', updatePointer)
-      document.removeEventListener('pointerdown', updatePointer)
-      document.removeEventListener('pointerup', onPointerUp)
-      // document.removeEventListener('pointerout', onPointerUp)
-      document.removeEventListener('wheel', updateWheelDeltaY)
-    document.removeEventListener('keydown', updateKeys)
-    document.removeEventListener('keyup', updateKeys)
+      for (const [name, callback] of Object.entries(mapping)) {
+        document.removeEventListener(name, callback)
+      }
     }
   }, [])
 

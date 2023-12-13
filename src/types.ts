@@ -31,7 +31,8 @@ export interface UIInteraction { mouseState: MouseState, modifierState: Modifier
 export type ToolType = "STROKE" | "POINT"
 export type ToolName = "PEN" | "BRUSH" | "ERASER" | "FILL" /*| "CURVE" */
 export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
-export interface Tool {
+
+export interface ITool {
   [index: string] : any
   name: ToolName
   size: number

@@ -3,7 +3,9 @@ import { Tool, ToolName } from '../types'
 
 import { createSelectors } from './selectors'
 
-import { tool_list, tools } from '../constants'
+import { tool_list } from '../constants'
+
+import { tools } from '../objects/Tool'
 
 type State = {
   currentTool: Tool

@@ -3,7 +3,6 @@ import { useEffect, memo, forwardRef } from 'react'
 import { initializeCanvas } from '../../utils';
 
 function _DrawCanvas(_, ref: React.ForwardedRef<HTMLCanvasElement>) {
-  console.count("canvas")
   useEffect(() => {
     const refTypeHack = ref as React.MutableRefObject<HTMLCanvasElement>
     const rect = refTypeHack.current!.parentElement!.getBoundingClientRect();

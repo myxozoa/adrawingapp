@@ -4,8 +4,9 @@ import Panel from '../Panel'
 import Container from '../Container'
 import Tool from '../Tool'
 
-import { tools } from '../../constants'
 import { useToolStore } from '../../stores/ToolStore'
+
+import { tools } from '../../objects/Tool'
 
 function _Tools() {
   const currentTool = useToolStore.use.currentTool()

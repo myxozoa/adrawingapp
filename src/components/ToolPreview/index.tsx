@@ -1,6 +1,8 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useLayoutEffect } from 'react'
 
-import { initializeCanvas, createProgram, createShader, scaleNumberToRange } from '../../utils'
+import { initializeCanvas, scaleNumberToRange } from '../../utils'
+
+import { createProgram, createShader } from '../../glutils'
 
 import { toolPreviewSize } from '../../constants'
 
@@ -10,11 +12,11 @@ import { useMainStore } from '../../stores/MainStore'
 import fragment from '../../shaders/Brush/fragment.glsl?raw'
 import vertex from '../../shaders/Brush/vertex.glsl?raw'
 
-let memoObj = null
+let cache = null
 
 const initGL = (gl: WebGL2RenderingContext) => {
-  if (memoObj) {
-    return memoObj
+  if (cache) {
+    return cache
   }
 
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragment)
@@ -53,11 +55,9 @@ const initGL = (gl: WebGL2RenderingContext) => {
 
   gl.useProgram(program)
 
-  gl.bindVertexArray(vao)
+  cache = { program, vao, resolutionUniformLocation, brushColorUniformLocation, softnessUniformLocation, sizeUniformLocation }
 
-  memoObj = { program, vao, resolutionUniformLocation, brushColorUniformLocation, softnessUniformLocation, sizeUniformLocation }
-
-  return memoObj
+  return cache
 }
 
 function _ToolPreview() {
@@ -65,11 +65,11 @@ function _ToolPreview() {
   const currentTool = useToolStore.use.currentTool()
   const color = useMainStore.use.color()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize)
   }, [previewCanvasRef.current])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previewCanvasRef.current) {
       const gl = previewCanvasRef.current.getContext('webgl2') as WebGL2RenderingContext
 
