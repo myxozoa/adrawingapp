@@ -48,7 +48,7 @@ export function getUniformLocations(gl, program, list: string[]) {
   return uniforms
 }
 
-export function getAttributeLocations(gl: WebGL2RenderingContext, program, list: string[]) {
+export function getAttributeLocations(gl: WebGL2RenderingContext, program: WebGLProgram, list: string[]) {
   const attributes = {}
 
   for (const attribute of list) {

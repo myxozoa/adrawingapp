@@ -1,6 +1,6 @@
 import { tool_list, tool_types } from '../../constants'
 
-import { getRelativeMousePos, getDistance, offsetPoint, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize, scaleNumberToRange } from '../../utils'
+import { getRelativeMousePos, getDistance, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize, scaleNumberToRange } from '../../utils'
 
 import { ILayer, ITool, Point, UIInteraction, MouseState, IOperation, MainStateType } from '../../types'
 import { Operation } from '../../objects/Operation'
@@ -46,55 +46,56 @@ class _DrawingManager {
   }
 
   basePen = (operation: IOperation) => {
+    const gl = this.gl
     const points = operation.points
 
-    this.gl.lineCap = 'round'
-    this.gl.lineJoin = 'round'
-    this.gl.miterLimit = 10
-    this.gl.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
+    gl.lineCap = 'round'
+    gl.lineJoin = 'round'
+    gl.miterLimit = 10
+    gl.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
 
     // TODO: make less lazy
     if (points.length < 3) {
       const point0 = points[0]
       const point1 = points[1]
 
-      this.gl.beginPath()
+      gl.beginPath()
 
-      this.gl.moveTo(point0.x, point0.y)
-      this.gl.lineTo(point1.x, point1.y)
-      this.gl.stroke()
+      gl.moveTo(point0.x, point0.y)
+      gl.lineTo(point1.x, point1.y)
+      gl.stroke()
     } else {
       // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
       for (let i = 2; i < points.length - 1; i += 1) {
         const startPoint = points[i - 2]
         const midPoint = points[i - 1]
         const endPoint = points[i]
-        this.gl.beginPath()
+        gl.beginPath()
 
-        this.gl.moveTo(startPoint.x, startPoint.y)
+        gl.moveTo(startPoint.x, startPoint.y)
         
         const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
         
         if (midPoint.pointerType === 'pen') {
-          this.gl.lineWidth = operation.tool.size! * midPoint.pressure
+          gl.lineWidth = operation.tool.size! * midPoint.pressure
         } else {
-          this.gl.lineWidth = operation.tool.size!
+          gl.lineWidth = operation.tool.size!
         }
         
-        this.gl.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
+        gl.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
 
-        this.gl.stroke()
+        gl.stroke()
       }
 
       if (points.length % 3 < 3) {
         for (let i = points.length - points.length % 3; i < points.length; i++) {
           const point0 = points[i - 1]
           const point1 = points[i]
-          this.gl.beginPath()
+          gl.beginPath()
     
-          this.gl.moveTo(point0.x, point0.y)
-          this.gl.lineTo(point1.x, point1.y)
-          this.gl.stroke()
+          gl.moveTo(point0.x, point0.y)
+          gl.lineTo(point1.x, point1.y)
+          gl.stroke()
         }
       }
     }
@@ -286,25 +287,27 @@ class _DrawingManager {
     }
   }
 
-  initBrush = () => {
-    const gl = this.gl
-
+  setupBrushProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
     const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
     const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
   
-    this.brushProgram = glUtils.createProgram(gl, vertexShader, fragmentShader)
+    const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
   
     const attributeNames = ["a_position"]
 
-    const attributes = glUtils.getAttributeLocations(gl, this.brushProgram, attributeNames)
+    const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
   
     const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_size", "u_flow"]
   
-    this.uniforms = glUtils.getUniformLocations(gl, this.brushProgram, uniformNames)
+    const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
+
+    return { program, attributes, uniforms }
+  }
+
+  setupBrushVBO = (gl: WebGL2RenderingContext) => {
+    const vbo = gl.createBuffer()
   
-    this.brushPositionBuffer = gl.createBuffer()
-  
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushPositionBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
   
     const positions = [
       // Triangle 1
@@ -319,57 +322,88 @@ class _DrawingManager {
   ]
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-  
-    // glUtils.createVAO(gl)
 
-    this.brushVao = gl.createVertexArray()
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
 
-    gl.bindVertexArray(this.brushVao)
+    return vbo
+  }
+
+  setupBrushVAO = (gl: WebGL2RenderingContext, attribute: number) => {
+    const vao = gl.createVertexArray()
+
+    gl.bindVertexArray(vao)
   
-    gl.enableVertexAttribArray(attributes.a_position)
+    gl.enableVertexAttribArray(attribute)
   
-    gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
+    gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0)
+
+    // Unbind
+    gl.bindVertexArray(null)
+
+    return vao
+  }
+
+  initBrush = () => {
+    const gl = this.gl
+
+    const { program, attributes, uniforms } = this.setupBrushProgramAndAttributeUniforms(gl)
+    this.brushProgram = program
+    this.uniforms = uniforms
+  
+    this.brushVBO = this.setupBrushVBO(gl)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushVBO)
+
+    this.brushVAO = this.setupBrushVAO(gl, attributes.a_position)
+    gl.bindVertexArray(this.brushVAO)
   
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindVertexArray(null)
   }
 
-  initRenderTexture = () => {
-    const gl = this.gl
-  
-    const targetTextureWidth = gl.canvas.width
-    const targetTextureHeight = gl.canvas.height
+  createRenderTexture = (gl: WebGL2RenderingContext, width: number, height: number) => {
+    const texture = gl.createTexture()
 
-    this.targetTexture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+    if (!texture) {
+      throw new Error("Error creating render texture")
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, texture)
     
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F,
-                  targetTextureWidth, targetTextureHeight, 0,
-                  gl.RGBA, gl.FLOAT, new Float32Array(gl.canvas.width * gl.canvas.height * 4).fill(1))
+                  width, height, 0,
+                  gl.RGBA, gl.FLOAT, new Float32Array(width * height * 4).fill(1))
   
+    // No filtering is supported on floating point textures
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
-    this.textureFB = gl.createFramebuffer()
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
-    
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.targetTexture, 0)
+    // Unbind
+    gl.bindTexture(gl.TEXTURE_2D, null)
 
+    return texture
+  }
+
+  setupRenderTextureProgramAndAttributes = (gl: WebGL2RenderingContext) => {
     const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, rtFragment)
     const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, rtVertex)
   
-    this.rtProgram = glUtils.createProgram(gl, vertexShader, fragmentShader)
+    const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
   
     const attributeNames = ["a_position", "a_tex_coord"]
 
-    const attributes = glUtils.getAttributeLocations(gl, this.rtProgram, attributeNames)
+    const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
+
+    return { attributes, program }
+  }
+
+  setupRenderTextureVBO = (gl: WebGL2RenderingContext) => {
+    const buffer = gl.createBuffer()
   
-    this.rtPositionBuffer = gl.createBuffer()
-  
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtPositionBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
   
     const positions = [
       // Triangle 1
@@ -384,19 +418,16 @@ class _DrawingManager {
   ]
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-  
-    // glUtils.createVAO(gl)
 
-    this.rtVao = gl.createVertexArray()
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
 
-    gl.bindVertexArray(this.rtVao)
-  
-    gl.enableVertexAttribArray(attributes.a_position)
-  
-    gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
+    return buffer
+  }
 
-    const textureCoordBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
+  setupRenderTextureUVBuffer = (gl: WebGL2RenderingContext) => {
+    const buffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
 
     const textureCoordinates = [
       // Triangle 1
@@ -415,6 +446,63 @@ class _DrawingManager {
       new Float32Array(textureCoordinates),
       gl.STATIC_DRAW,
     )
+
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+
+    return buffer
+  }
+
+  setupRenderTextureVAO = (gl: WebGL2RenderingContext, attribute: number) => {
+    const vao = gl.createVertexArray()
+
+    gl.bindVertexArray(vao)
+  
+    gl.enableVertexAttribArray(attribute)
+  
+    gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0)
+
+    // Unbind
+    gl.bindVertexArray(null)
+
+    return vao
+  }
+
+  setupRenderTextureFramebuffer = (gl: WebGL2RenderingContext, texture: WebGLTexture) => {
+    const fb = gl.createFramebuffer()
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+    
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+
+    // Unbind
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
+    return fb
+  }
+
+  initRenderTexture = () => {
+    const gl = this.gl
+  
+    const targetTextureWidth = gl.canvas.width
+    const targetTextureHeight = gl.canvas.height
+
+    this.targetTexture = this.createRenderTexture(gl, targetTextureWidth, targetTextureHeight)
+    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+
+    this.textureFB = this.setupRenderTextureFramebuffer(gl, this.targetTexture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
+
+    const { program, attributes } = this.setupRenderTextureProgramAndAttributes(gl)
+    this.rtProgram = program
+  
+    this.rtVBO = this.setupRenderTextureVBO(gl)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtVBO)
+
+    this.rtVAO = this.setupRenderTextureVAO(gl, attributes.a_position)
+    gl.bindVertexArray(this.rtVAO)
+
+    const uvBuffer = this.setupRenderTextureUVBuffer(gl)
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
 
     gl.vertexAttribPointer(
       attributes.a_tex_coord,
@@ -449,10 +537,54 @@ class _DrawingManager {
 
     this.initRenderTexture()
     this.initBrush()
-}
+  }
+
+  drawCurrentOperation = () => {
+    const gl = this.gl
+  
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    
+    gl.useProgram(this.brushProgram)
+    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushVBO)
+    gl.bindVertexArray(this.brushVAO)
+    
+    this.draw(this.currentOperation)
+
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindVertexArray(null)
+  }
+
+  render = () => {
+    const gl = this.gl
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  
+    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+    gl.useProgram(this.rtProgram)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtVBO)
+    gl.bindVertexArray(this.rtVAO)
+
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindVertexArray(null)
+  }
 
   loop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
     const gl = this.gl
+  
     resizeCanvasToDisplaySize(this.canvasRef.current, () => this.needRedraw = true)
   
     // if (this.currentLayer.noDraw) return
@@ -470,32 +602,16 @@ class _DrawingManager {
     //     }
     //   }
     // }
-  
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
-
-    gl.useProgram(this.brushProgram)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushPositionBuffer)
-    gl.bindVertexArray(this.brushVao)
-
-    const relativeMouseState = getRelativeMousePos(this.gl.canvas, currentUIInteraction.current.mouseState)
     
+    const relativeMouseState = getRelativeMousePos(this.gl.canvas, currentUIInteraction.current.mouseState)
+  
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
       this.use(relativeMouseState, this.currentOperation)
     }
-    
-    this.draw(this.currentOperation)
-    
-    gl.useProgram(this.rtProgram)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtPositionBuffer)
-    gl.bindVertexArray(this.rtVao)
 
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
+    this.drawCurrentOperation()
+    
+    this.render()
 
     const error = gl.getError()
 

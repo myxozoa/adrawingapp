@@ -143,16 +143,8 @@ export function initializeCanvas(
     powerPreference: options.performance,
     premultipliedAlpha: false,
     colorSpace: "srgb",
-    preserveDrawingBuffer: false
-  })
-
-  console.log(options.contextType, {
-    alpha: options.alpha,
-    desynchronized: options.desynchronized,
-    powerPreference: options.performance,
-    premultipliedAlpha: false,
-    colorSpace: "srgb",
-    preserveDrawingBuffer: false
+    preserveDrawingBuffer: false,
+    antialias: false
   })
 
   if (options.contextType === "2d") context.scale(targetDpi, targetDpi)

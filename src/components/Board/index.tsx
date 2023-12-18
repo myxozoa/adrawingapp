@@ -45,7 +45,21 @@ function _Board() {
     DrawingManager.loop(currentUIInteraction)
   }, [])
 
+  // const saveImage = () => {
+  //   DrawingManager.render()
+
+  //   const downloadLink = document.createElement('a')
+  //   downloadLink.setAttribute('download', 'CanvasAsImage.png')
+
+  //   boardRef.current.toBlob(function(blob) {
+  //     const url = URL.createObjectURL(blob)
+  //     downloadLink.setAttribute('href', url)
+  //     downloadLink.click()
+  //   })
+  // }
+
   return (
+    <>
     <Container className="grow">
       <Panel className="flex relative w-full h-full">
         <div key={`draw_canvas`} className="absolute w-full h-full" style={{ zIndex: 5 }}>
@@ -54,6 +68,8 @@ function _Board() {
         <div className='absolute w-full h-full canvas_separator'/>
       </Panel>
     </Container>
+    {/* <button onClick={() => saveImage()}>SAVE</button> */}
+    </>
   )
 }
 
