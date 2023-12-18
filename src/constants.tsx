@@ -1,4 +1,3 @@
-import { Tool } from "./objects/Tool"
 import { BlendModes, Modifier, ToolName, ToolType } from "./types"
 
 export const tool_list: Record<ToolName, ToolName> = {

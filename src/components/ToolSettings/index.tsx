@@ -98,7 +98,7 @@ function _ToolSettings() {
     </div>
 
   const toolSpacingElement = <div key="tool_spacing_setting" className='w-28 flex flex-col tool_spacing'>
-    <input className='w-28' type="range" id="tool_spacing" name="tool_spacing" min="5" max="100" value={toolSpacing} onChange={toolSpacingThrottled} />
+    <input className='w-28' type="range" id="tool_spacing" name="tool_spacing" min="1" max="50" value={toolSpacing} onChange={toolSpacingThrottled} />
     <label htmlFor="tool_spacing">Spacing</label>
     </div>
 

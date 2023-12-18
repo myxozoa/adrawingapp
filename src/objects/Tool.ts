@@ -18,7 +18,7 @@ const toolDefaults: Record<ToolName, ITool> = {
     size: 10,
     opacity: 100,
     hardness: 98,
-    spacing: 25,
+    spacing: 5,
     availableSettings: [ "color", "size", "hardness", "opacity", "spacing" ],
     type: tool_types.STROKE,
     continuous: true,
