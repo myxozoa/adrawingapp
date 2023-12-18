@@ -121,8 +121,10 @@ export function initializeCanvas(
     alpha: true,
     desynchronized: desynchronized,
     powerPreference: performance,
-    premultipliedAlpha: false
-  }) as CanvasRenderingContext2D
+    premultipliedAlpha: false,
+    colorSpace: "srgb",
+    preserveDrawingBuffer: false
+  })
 
   if (contextType === "2d") context.scale(targetDpi, targetDpi)
   context.imageSmoothingEnabled = false

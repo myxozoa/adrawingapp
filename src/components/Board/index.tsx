@@ -1,4 +1,6 @@
-import { useEffect } from 'react'
+import './styles.css'
+
+import { useEffect, useRef } from 'react'
 
 import Panel from '../Panel'
 import Container from '../Container'
@@ -11,12 +13,12 @@ import { useLayerStore } from '../../stores/LayerStore'
 
 import { DrawingManager } from './drawingManager'
 
-import { throttle } from '../../utils'
+import { throttle, initializeCanvas } from '../../utils'
 
 function _Board() {
+  const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
   const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
   const currentLayer = useLayerStore.use.currentLayer()
-
   const currentTool = useToolStore.use.currentTool()
 
   useEffect(() => {
@@ -24,19 +26,30 @@ function _Board() {
   }, [currentTool])
 
   useEffect(() => {
-    DrawingManager.context = currentLayer.canvasRef.current.getContext("2d") as CanvasRenderingContext2D
     DrawingManager.currentLayer = currentLayer
   }, [currentLayer])
 
   useEffect(() => {
-    DrawingManager.interactLoop(currentUIInteraction);
+    const rect = boardRef.current.parentElement!.getBoundingClientRect()
+
+    const context = initializeCanvas(boardRef.current, rect.width, rect.height, true, true)
+
+    if (!context) {
+      throw new Error("WebGL2 is not supported")
+    }
+
+    DrawingManager.gl = context
+    DrawingManager.canvasRef = boardRef
+
+    DrawingManager.init()
+    DrawingManager.loop(currentUIInteraction)
   }, [])
 
   return (
     <Container className="grow">
       <Panel className="flex relative w-full h-full">
         <div key={`draw_canvas`} className="absolute w-full h-full" style={{ zIndex: 5 }}>
-          <DrawCanvas ref={currentLayer.canvasRef} />
+          <DrawCanvas ref={boardRef} />
         </div>
         <div className='absolute w-full h-full canvas_separator'/>
       </Panel>

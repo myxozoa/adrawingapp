@@ -1,22 +1,39 @@
 import { tool_list, tool_types } from '../../constants'
 
-import { getRelativeMousePos, getDistance, offsetPoint, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize } from '../../utils'
+import { getRelativeMousePos, getDistance, offsetPoint, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize, scaleNumberToRange } from '../../utils'
 
-import { ILayer, Tool, Point, UIInteraction, MouseState, Operation, MainStateType } from '../../types'
+import { ILayer, ITool, Point, UIInteraction, MouseState, IOperation, MainStateType } from '../../types'
+import { Operation } from '../../objects/Operation'
+
+import brushFragment from '../../shaders/Brush/brush.frag?raw'
+import brushVertex from '../../shaders/Brush/brush.vert?raw'
+
+import rtFragment from '../../shaders/TexToScreen/texToScreen.frag?raw'
+import rtVertex from '../../shaders/TexToScreen/texToScreen.vert?raw'
+
+import * as glUtils from '../../glutils'
+
+import { useMainStore } from '../../stores/MainStore'
+
+import * as m4 from '../../m4.ts'
+
+import * as v3 from '../../v3.ts'
 
 class _DrawingManager {
-  context: CanvasRenderingContext2D
+  gl: WebGL2RenderingContext
   currentLayer: ILayer
-  currentTool: Tool
-  toolBelt: Record<string, (operation: Operation) => void>
+  currentTool: ITool
+  currentOperation: IOperation
+  toolBelt: Record<string, (operation: IOperation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
   main: MainStateType
 
   constructor() {
-    this.context = {} as CanvasRenderingContext2D
+    this.gl = {} as WebGL2RenderingContext
     this.currentLayer = {} as ILayer
-    this.currentTool = {} as Tool
+    this.currentTool = {} as ITool
+    this.currentOperation = new Operation({} as ITool)
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
@@ -28,75 +45,100 @@ class _DrawingManager {
     }
   }
 
-  basePen = (operation: Operation) => {
+  basePen = (operation: IOperation) => {
     const points = operation.points
 
-    this.context.lineCap = 'round'
-    this.context.lineJoin = 'round'
-    this.context.miterLimit = 10
-    this.context.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
+    this.gl.lineCap = 'round'
+    this.gl.lineJoin = 'round'
+    this.gl.miterLimit = 10
+    this.gl.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
 
     // TODO: make less lazy
     if (points.length < 3) {
       const point0 = points[0]
       const point1 = points[1]
 
-      this.context.beginPath()
+      this.gl.beginPath()
 
-      this.context.moveTo(point0.x, point0.y)
-      this.context.lineTo(point1.x, point1.y)
-      this.context.stroke()
+      this.gl.moveTo(point0.x, point0.y)
+      this.gl.lineTo(point1.x, point1.y)
+      this.gl.stroke()
     } else {
       // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
       for (let i = 2; i < points.length - 1; i += 1) {
         const startPoint = points[i - 2]
         const midPoint = points[i - 1]
         const endPoint = points[i]
-        this.context.beginPath()
+        this.gl.beginPath()
 
-        this.context.moveTo(startPoint.x, startPoint.y)
+        this.gl.moveTo(startPoint.x, startPoint.y)
         
         const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
         
         if (midPoint.pointerType === 'pen') {
-          this.context.lineWidth = operation.tool.size! * midPoint.pressure
+          this.gl.lineWidth = operation.tool.size! * midPoint.pressure
         } else {
-          this.context.lineWidth = operation.tool.size!
+          this.gl.lineWidth = operation.tool.size!
         }
         
-        this.context.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
+        this.gl.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
 
-        this.context.stroke()
+        this.gl.stroke()
       }
 
       if (points.length % 3 < 3) {
         for (let i = points.length - points.length % 3; i < points.length; i++) {
           const point0 = points[i - 1]
           const point1 = points[i]
-          this.context.beginPath()
+          this.gl.beginPath()
     
-          this.context.moveTo(point0.x, point0.y)
-          this.context.lineTo(point1.x, point1.y)
-          this.context.stroke()
+          this.gl.moveTo(point0.x, point0.y)
+          this.gl.lineTo(point1.x, point1.y)
+          this.gl.stroke()
         }
       }
     }
   }
 
-  stamp = (point: Point, image: HTMLImageElement, offset = true) => {
-    const _offsetPoint = offset ? offsetPoint(point, -image.height / 2) : point
-    this.context.drawImage(image, _offsetPoint.x, _offsetPoint.y)
+  stamp = (point: Point) => {
+    // const _offsetPoint = offsetPoint(point, -image.height / 2)
+    // this.gl.drawImage(image, _offsetPoint.x, _offsetPoint.y)
+
+    const gl = this.gl
+
+    const color = useMainStore.getState().color
+
+    let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
+
+    const locationVector = v3.create(point.x, point.y, 0)
+  
+    matrix = m4.translate(matrix, locationVector)
+  
+    const scaleVector = v3.create(100, 100, 1)
+  
+    matrix = m4.scale(matrix, scaleVector)
+  
+    gl.uniformMatrix4fv(this.uniforms.u_matrix, true, matrix)
+
+    gl.uniform2f(this.uniforms.u_resolution, 100, 100)
+    gl.uniform2f(this.uniforms.u_point, point.x, gl.canvas.height - point.y)
+    gl.uniform3fv(this.uniforms.u_brush_color, color.map(c => c / 255))
+    gl.uniform1f(this.uniforms.u_softness, this.currentTool.hardness / 100)
+    gl.uniform1f(this.uniforms.u_size, 40 - scaleNumberToRange(this.currentTool.size, 5, 50, 25, 38))
+    gl.uniform1f(this.uniforms.u_flow, this.currentTool.opacity / 100)
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     point.drawn = true
   }
 
-  brushLine = (operation: Operation, _point0: Point, _point1: Point) => {
-    if (!operation.tool.image) {
-      throw new Error("Brush has no image to draw with")
-    }
+  brushLine = (operation: IOperation, point0: Point, point1: Point) => {
+    // if (!operation.tool.image) {
+    //   throw new Error("Brush has no image to draw with")
+    // }
 
-    const point0 = offsetPoint(_point0, -operation.tool.image.height / 2)
-    const point1 = offsetPoint(_point1, -operation.tool.image.height / 2)
+    // const point0 = offsetPoint(_point0, -operation.tool.image.height / 2)
+    // const point1 = offsetPoint(_point1, -operation.tool.image.height / 2)
     const distance = getDistance(point0, point1)
     const step = operation.tool.size * (operation.tool.spacing / 100)
 
@@ -106,20 +148,21 @@ class _DrawingManager {
       const x = point0.x + (point1.x - point0.x) * t
       const y = point0.y + (point1.y - point0.y) * t
 
-      if (point0.pointerType === "pen") this.context.globalAlpha = (point0.pressure / 5)
+      if (point0.pointerType === "pen") this.gl.globalAlpha = (point0.pressure / 5)
 
-      if (operation.tool.image) {
-        this.context.drawImage(operation.tool.image, x, y)
-      } else {
-        console.error("No image in tool to be drawn")
-      }
+      // if (operation.tool.image) {
+        // this.gl.drawImage(operation.tool.image, x, y)
+        this.stamp({x, y})
+      // } else {
+      //   console.error("No image in tool to be drawn")
+      // }
     }
   }
 
-  baseBrush = (operation: Operation) => {
-    if (!operation.tool.image) {
-      throw new Error("Brush has no image to draw with")
-    }
+  baseBrush = (operation: IOperation) => {
+    // if (!operation.tool.image) {
+    //   throw new Error("Brush has no image to draw with")
+    // }
 
     const lastIndex = operation.points.length - 1
     const prevPoint = operation.points.at(-2)
@@ -128,7 +171,7 @@ class _DrawingManager {
     const distance = getDistance(prevPoint, currentPoint)
 
     if (lastIndex === 0) {
-      this.stamp(operation.points[0], operation.tool.image)
+      this.stamp(operation.points[0])
       return
     }
 
@@ -139,59 +182,69 @@ class _DrawingManager {
       prevPoint.drawn = true
       currentPoint.drawn = true
     } else {
-      if (!operation.tool.image) throw new Error("Tool is missing image")
+      // if (!operation.tool.image) throw new Error("Tool is missing image")
 
-      if (prevPoint.pointerType === "pen") this.context.globalAlpha = (currentPoint.pressure / 5)
+      // if (prevPoint.pointerType === "pen") this.gl.globalAlpha = (currentPoint.pressure / 5)
 
-      this.stamp(currentPoint, operation.tool.image)
+      this.stamp(currentPoint)
     }
   }
 
   fill = () => {
-    this.context.globalCompositeOperation ="source-over"
+    // this.gl.globalCompositeOperation ="source-over"
 
-    this.currentLayer.fill(getCanvasColor(this.main.color))
+    // this.currentLayer.fill(getCanvasColor(this.main.color))
   }
 
   clear = () => {
-    this.context.save()
-  
-    this.context.setTransform(1, 0, 0, 1, 0, 0)
-    this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height)
+    const gl = this.gl
 
-    this.context.restore()
+    gl.clearBufferfv(gl.COLOR, 0, new Float32Array([1, 1, 1, 1]))
   }
 
-  erase = (operation: Operation) => {
-    if (this.currentLayer.currentOperation.points.length <= 1) return
+  erase = (operation: IOperation) => {
+    const gl = this.gl
+    // if (this.currentOperation.points.length <= 1) return
 
-    this.context.globalCompositeOperation ="destination-out"
+    // this.gl.globalCompositeOperation ="destination-out"
+
+    gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
+
+    gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
   
     this.baseBrush(operation)
   }
 
-  brushDraw = (operation: Operation) => {
-    this.context.globalCompositeOperation = "source-over"
+  brushDraw = (operation: IOperation) => {
+    const gl = this.gl
+    // this.gl.globalCompositeOperation = "source-over"
 
-    this.context.globalAlpha = operation.tool.opacity / 100
+    // this.gl.globalAlpha = operation.tool.opacity / 100
+
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
+
+    gl.blendEquation(gl.FUNC_ADD)
   
     this.baseBrush(operation)
   }
   
-  penDraw = (operation: Operation) => {
-    if (this.currentLayer.currentOperation.points.length <= 1) return
+  penDraw = (operation: IOperation) => {
+    // if (this.currentOperation.points.length <= 1) return
 
-    this.context.globalCompositeOperation ="source-over";
+    // this.gl.globalCompositeOperation ="source-over";
   
-    this.basePen(operation)
+    // this.basePen(operation)
   }
 
-  draw = (operation: Operation) => {
-    if (operation.points.length !== 0 && operation.points.at(-1).drawn) return
+  draw = (operation: IOperation) => {
+    if (operation.points.length === 0 || operation.points.at(-1).drawn) return
 
-    this.context.save()
+    // this.gl.save()
     this.toolBelt[operation.tool.name](operation)
-    this.context.restore()
+
+    // this.gl.restore()
   }
   
   endInteraction = (save = true) => {
@@ -200,10 +253,13 @@ class _DrawingManager {
     this.waitUntilInteractionEnd = false
     this.needRedraw = true
 
-    if(save) this.currentLayer.saveAndStartNewOperation()
+    if (save) {
+      this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
+      this.currentOperation = new Operation(this.currentTool)
+    }
   }
 
-  use = (relativeMouseState: MouseState, operation: Operation) => {
+  use = (relativeMouseState: MouseState, operation: IOperation) => {
     if (!operation.tool) {
       operation.tool = this.currentTool
       operation.readyToDraw = true
@@ -213,7 +269,7 @@ class _DrawingManager {
     const spacing = operation.tool.size * (operation.tool.spacing / 100)
     const prevLocation = operation.points.at(-1)
 
-    const smoothing = 0.2
+    const smoothing = 0.8
     const interpolatedLocation = { ...relativeMouseState  }
     
     switch(operation.tool.type) {
@@ -239,41 +295,236 @@ class _DrawingManager {
     }
   }
 
-  interactLoop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
-    // resizeCanvasToDisplaySize(this.currentLayer.canvasRef.current, () => this.needRedraw = true)
+  initBrush = () => {
+    const gl = this.gl
+
+    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
+    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
+  
+    this.brushProgram = glUtils.createProgram(gl, vertexShader, fragmentShader)
+  
+    const attributeNames = ["a_position"]
+
+    const attributes = glUtils.getAttributeLocations(gl, this.brushProgram, attributeNames)
+  
+    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_size", "u_flow"]
+  
+    this.uniforms = glUtils.getUniformLocations(gl, this.brushProgram, uniformNames)
+  
+    this.brushPositionBuffer = gl.createBuffer()
+  
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushPositionBuffer)
+  
+    const positions = [
+      // Triangle 1
+      -1.0,  1.0, // Top left
+      -1.0, -1.0, // Bottom left
+       1.0,  1.0, // Top right
+  
+      // Triangle 2
+      -1.0, -1.0, // Bottom left
+       1.0, -1.0, // Bottom right
+       1.0,  1.0,  // Top right
+  ]
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
+  
+    // glUtils.createVAO(gl)
+
+    this.brushVao = gl.createVertexArray()
+
+    gl.bindVertexArray(this.brushVao)
+  
+    gl.enableVertexAttribArray(attributes.a_position)
+  
+    gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
+  
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindVertexArray(null)
+  }
+
+  initRenderTexture = () => {
+    const gl = this.gl
+
+    const targetTextureWidth = gl.canvas.width
+    const targetTextureHeight = gl.canvas.height
+    this.targetTexture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F,
+                  targetTextureWidth, targetTextureHeight, 0,
+                  gl.RGBA, gl.FLOAT, new Float32Array(gl.canvas.width * gl.canvas.height * 4).fill(1))
+  
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+////////////////////////////////////
+
+    this.textureFB = gl.createFramebuffer()
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
+
+    // gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA16F, targetTextureWidth, targetTextureHeight);
+    
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.targetTexture, 0)
+
+//////////////////////////////////////
+
+    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, rtFragment)
+    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, rtVertex)
+  
+    this.rtProgram = glUtils.createProgram(gl, vertexShader, fragmentShader)
+  
+    const attributeNames = ["a_position", "a_tex_coord"]
+
+    const attributes = glUtils.getAttributeLocations(gl, this.rtProgram, attributeNames)
+  
+    this.rtPositionBuffer = gl.createBuffer()
+  
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtPositionBuffer)
+  
+    const positions = [
+      // Triangle 1
+      -1.0,  1.0, // Top left
+      -1.0, -1.0, // Bottom left
+       1.0,  1.0, // Top right
+  
+      // Triangle 2
+      -1.0, -1.0, // Bottom left
+       1.0, -1.0, // Bottom right
+       1.0,  1.0,  // Top right
+  ]
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
+  
+    // glUtils.createVAO(gl)
+
+    this.rtVao = gl.createVertexArray()
+
+    gl.bindVertexArray(this.rtVao)
+  
+    gl.enableVertexAttribArray(attributes.a_position)
+  
+    gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
+
+    const textureCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
+
+    const textureCoordinates = [
+      // Triangle 1
+      0.0, 1.0, // Top left
+      0.0, 0.0, // Bottom left
+      1.0, 1.0, // Top right
+
+      // Triangle 2
+      0.0, 0.0, // Bottom left
+      1.0, 0.0, // Bottom right
+      1.0, 1.0,  // Top right
+  ]
+
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(textureCoordinates),
+      gl.STATIC_DRAW,
+    )
+
+    // gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
+    gl.vertexAttribPointer(
+      attributes.a_tex_coord,
+      2,
+      gl.FLOAT,
+      false,
+      0,
+      0,
+    )
+    gl.enableVertexAttribArray(attributes.a_tex_coord)
+
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindVertexArray(null)
+  }
+
+  init = () => {
+    const gl = this.gl
+
+    gl.depthFunc(gl.LEQUAL)
+    gl.disable(gl.DEPTH_TEST)
+    gl.depthMask(false)
+
+    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
+    const floatTextureExt = gl.getExtension("OES_texture_float_linear")
+
+    if (!floatBufferExt || !floatTextureExt) {
+      throw new Error("Does not support floating point textures/buffers. The dev should implement 8bit fallback.")
+    }
+
+    this.initRenderTexture()
+    this.initBrush()
+}
+
+  loop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
+    const gl = this.gl
+    resizeCanvasToDisplaySize(this.canvasRef.current, () => this.needRedraw = true)
   
     // if (this.currentLayer.noDraw) return
 
+    // this.clear()
     // if (this.needRedraw) {
-    //   this.clear()
 
     //   this.needRedraw = false
   
     //   if (this.currentLayer.undoSnapshotQueue.length > 0) {
-    //     this.context.putImageData(this.currentLayer.undoSnapshotQueue.at(-1), 0, 0)
+    //     this.gl.putImageData(this.currentLayer.undoSnapshotQueue.at(-1), 0, 0)
     //   } else {
     //     if (this.currentLayer.drawingData) {
-    //       this.context.putImageData(this.currentLayer.drawingData, 0, 0)
+    //       this.gl.putImageData(this.currentLayer.drawingData, 0, 0)
     //     }
     //   }
     // }
-
-    // const relativeMouseState = getRelativeMousePos(this.context.canvas, currentUIInteraction.current.mouseState)
-
-
-    // if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
-    //   this.use(relativeMouseState, this.currentLayer.currentOperation)
-    // }
-
-    // if (this.currentLayer.currentOperation.tool) {
-    //   this.draw(this.currentLayer.currentOperation)
-    // }
   
-    requestAnimationFrame(() => this.interactLoop(currentUIInteraction))
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+
+    gl.useProgram(this.brushProgram)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushPositionBuffer)
+    gl.bindVertexArray(this.brushVao)
+
+    const relativeMouseState = getRelativeMousePos(this.gl.canvas, currentUIInteraction.current.mouseState)
+    
+    if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
+      this.use(relativeMouseState, this.currentOperation)
+    }
+    
+    if (this.currentOperation.tool) {
+      this.draw(this.currentOperation)
+    }
+    
+    gl.useProgram(this.rtProgram)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtPositionBuffer)
+    gl.bindVertexArray(this.rtVao)
+
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+    const error = gl.getError()
+
+    if (error !== gl.NO_ERROR) {
+        console.error("WebGL error: " + error)
+    }    
+
+    requestAnimationFrame(() => this.loop(currentUIInteraction))
   }
   
   undo = () => {
-    if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentLayer.currentOperation.points.length === 0) {
+    if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentOperation.points.length === 0) {
       this.currentLayer.redoSnapshotQueue.push(this.currentLayer.undoSnapshotQueue.pop())
     }
     this.endInteraction(false)

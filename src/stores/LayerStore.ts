@@ -23,7 +23,7 @@ type Action = {
   keepCurrentLayerInSync: () => void
 }
 
-const baseLayer = new Layer("New Layer")
+const baseLayer = new Layer("New Layer", { width: 1000, height: 1000 })
 
 let currentLayerIndex = 0
 
@@ -54,7 +54,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
   newLayer: () => set((state) => {
     if (state.layers.length > 9) return
 
-    const newLayer = new Layer(`New Layer (${state.layers.length})`)
+    const newLayer = new Layer(`New Layer (${state.layers.length})`, { width: 1000, height: 1000 })
     currentLayerIndex = 0
 
     return { currentLayer: newLayer, layers: [newLayer, ...state.layers] }

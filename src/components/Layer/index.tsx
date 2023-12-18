@@ -12,7 +12,6 @@ function Layer({ name, select, selected, id, editing, saveNewName }: { name: Lay
   const [newName, setNewName] = useState(name)
 
   const save = useCallback(() => {
-    console.log(newName)
     if (newName) {
       saveNewName(id, newName)
     } else {

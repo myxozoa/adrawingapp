@@ -2,15 +2,15 @@ import { useRef, useLayoutEffect } from 'react'
 
 import { initializeCanvas, scaleNumberToRange } from '../../utils'
 
-import { createProgram, createShader } from '../../glutils'
+import * as glUtils from '../../glutils'
 
 import { toolPreviewSize } from '../../constants'
 
 import { useToolStore } from '../../stores/ToolStore'
 import { useMainStore } from '../../stores/MainStore'
 
-import fragment from '../../shaders/Brush/fragment.glsl?raw'
-import vertex from '../../shaders/Brush/vertex.glsl?raw'
+import fragment from '../../shaders/BrushPreview/brushPreview.frag?raw'
+import vertex from '../../shaders/BrushPreview/brushPreview.vert?raw'
 
 let cache = null
 
@@ -19,17 +19,18 @@ const initGL = (gl: WebGL2RenderingContext) => {
     return cache
   }
 
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragment)
-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertex)
+  const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, fragment)
+  const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, vertex)
 
-  const program = createProgram(gl, vertexShader, fragmentShader)
+  const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
 
-  const positionAttributeLocation = gl.getAttribLocation(program, "a_position")
+  const attributeNames = ["a_position"]
 
-  const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution")
-  const brushColorUniformLocation = gl.getUniformLocation(program, "u_brush_color")
-  const softnessUniformLocation = gl.getUniformLocation(program, "u_softness")
-  const sizeUniformLocation = gl.getUniformLocation(program, "u_size")
+  const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
+
+  const uniformNames = ["u_resolution", "u_brush_color", "u_softness", "u_size", "u_opacity"]
+
+  const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
   const positionBuffer = gl.createBuffer()
 
@@ -45,17 +46,20 @@ const initGL = (gl: WebGL2RenderingContext) => {
   ]
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
 
+  // const vao = glUtils.createVAO(gl)
+
+  
   const vao = gl.createVertexArray()
 
   gl.bindVertexArray(vao)
 
-  gl.enableVertexAttribArray(positionAttributeLocation)
+  gl.enableVertexAttribArray(attributes.a_position)
 
-  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0)
+  gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
 
   gl.useProgram(program)
 
-  cache = { program, vao, resolutionUniformLocation, brushColorUniformLocation, softnessUniformLocation, sizeUniformLocation }
+  cache = { program, vao, uniforms }
 
   return cache
 }
@@ -71,23 +75,29 @@ function _ToolPreview() {
 
   useLayoutEffect(() => {
     if (previewCanvasRef.current) {
-      const gl = previewCanvasRef.current.getContext('webgl2') as WebGL2RenderingContext
+      const gl = previewCanvasRef.current.getContext('webgl2', {
+        alpha: true,
+        desynchronized: true,
+        powerPreference: 'low-power',
+        premultipliedAlpha: false
+      }) as WebGL2RenderingContext
 
-      const { resolutionUniformLocation, brushColorUniformLocation, softnessUniformLocation, sizeUniformLocation } = initGL(gl)
+      const { uniforms } = initGL(gl)
 
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
       gl.clearColor(0, 0, 0, 0)
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
-      gl.uniform3fv(brushColorUniformLocation, color.map(c => c / 255))
-      gl.uniform1f(softnessUniformLocation, currentTool.hardness / 100)
-      gl.uniform1f(sizeUniformLocation, 40 - scaleNumberToRange(currentTool.size, 5, 50, 25, 38))
+      gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
+      gl.uniform3fv(uniforms.u_brush_color, color.map(c => c / 255))
+      gl.uniform1f(uniforms.u_softness, currentTool.hardness / 100)
+      gl.uniform1f(uniforms.u_size, 40 - scaleNumberToRange(currentTool.size, 5, 50, 25, 38))
+      gl.uniform1f(uniforms.u_opacity, currentTool.opacity / 100)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
     }
-  }, [currentTool.size, currentTool.hardness, color])
+  }, [currentTool.size, currentTool.hardness, currentTool.opacity, color])
 
   return (
     <canvas className='bg-black' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />

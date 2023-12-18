@@ -17,7 +17,7 @@ type Action = {
 }
 
 const useToolStoreBase = create<State & Action>((set) => ({
-  currentTool: tools[tool_list.PEN],
+  currentTool: tools[tool_list.BRUSH],
   changeToolSetting: (newSettings: any) => set((state) => {
 
     const _state = { ...state }

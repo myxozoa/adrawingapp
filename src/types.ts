@@ -6,15 +6,29 @@ export type ColorValue = number
 export type ColorValueString = string
 export type ColorArray = [number, number, number]
 
-export interface Point { x: number, y: number, pressure: number, pointerType: PointerType, drawn?: boolean }
-export type Points = Point[]
-export interface Operation { interpolatedPoints: Points, points: Points, tool: Tool, readyToDraw: boolean }
-export type Operations = Operation[]
+export interface Size {
+  width: number
+  height: number
+}
 
-export type PointerType = "mouse" | "pen" | "touch"
-export interface MouseState { 
+export interface Location {
   x: number
   y: number
+}
+
+export type Box = Size & Location 
+
+export interface Point extends Location { pressure: number, pointerType: PointerType, drawn?: boolean }
+export type Points = Point[]
+export interface IOperation {
+  points: Points,
+  tool: Tool,
+  readyToDraw: boolean
+}
+export type Operations = IOperation[]
+
+export type PointerType = "mouse" | "pen" | "touch"
+export interface MouseState extends Location {
   leftMouseDown: boolean
   rightMouseDown: boolean
   middleMouseDown: boolean
@@ -62,16 +76,18 @@ export interface ToolState {
 export type BlendModes = "normal" | "multiply" | "screen" | "overlay" | "darken" | "lighten" | "color-dodge" | "color-burn" | "hard-light" | "soft-light" | "difference" | "exclusion" | "hue" | "saturation" | "color" | "luminosity"
 
 export type LayerName = string
-export type LayerID = number
+export type LayerID = string
 export interface ILayer {
   blendMode: BlendModes
   name: LayerName
   id: LayerID
   canvasRef: React.MutableRefObject<HTMLCanvasElement>
-  currentOperation: Operation
+  currentOperation: IOperation
   undoSnapshotQueue: ImageData[]
   drawingData: ImageData
   noDraw: boolean
+  size: Size
+  boundingBox: Box
   saveAndStartNewOperation(): void
   getImageData(): ImageData
   addElementToUndoSnapshotQueue(image: ImageData): void

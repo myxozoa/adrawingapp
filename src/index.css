@@ -20,7 +20,7 @@
 * {
   box-sizing: border-box;
   touch-action: none;
-
+  min-width: 0;
 }
 
 html,

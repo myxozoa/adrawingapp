@@ -1,73 +1,65 @@
-import { createRef } from "react"
-
 import { blend_modes } from "../constants"
 
-import { ILayer, LayerID, LayerName, Operation, BlendModes } from "../types"
+import { ILayer, LayerID, LayerName, Operation, BlendModes, Size, Box } from "../types"
+import { Operation, Operation } from "./Operation"
 
 export class Layer implements ILayer {
   blendMode: BlendModes
   name: LayerName
   id: LayerID
-  canvasRef: React.MutableRefObject<HTMLCanvasElement>
   currentOperation: Operation
-  undoSnapshotQueue: ImageData[]
+  undoSnapshotQueue: Uint32Array[]
+  redoSnapshotQueue: Uint32Array[]
   drawingData: ImageData
   noDraw: boolean
+  size: Size
+  boundingBox: Box
 
-  constructor(name: LayerName) {
+  constructor(name: LayerName, size: Size ) {
     this.blendMode = blend_modes.normal
     this.name = name
-    this.id = Math.random() * Math.random()
-    this.canvasRef = createRef() as React.MutableRefObject<HTMLCanvasElement>
-    this.currentOperation = { points: [], readyToDraw: false } as unknown as Operation
+    this.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random() * Math.random()).toString()
     this.undoSnapshotQueue = []
     this.redoSnapshotQueue = []
-    this.drawingData = new ImageData(1, 1)
+    this.drawingData = new Uint32Array(4 * size.width * size.height)
     this.noDraw = false
+    this.size = size
+    this.boundingBox = { x: 0, y: 0, ...size }
   }
 
-  saveAndStartNewOperation = () => {
-    const image = this.getImageData()
+  addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {
+    const image = this.getImageData(gl)
 
     this.addElementToUndoSnapshotQueue(image)
-
-    this.currentOperation = { points: [], readyToDraw: false } as unknown as Operation // TODO: make these initializations more
   }
 
-  addElementToUndoSnapshotQueue = (image: ImageData) => {
+  addElementToUndoSnapshotQueue = (image: Uint32Array) => {
     this.undoSnapshotQueue.push(image)
 
     if (this.undoSnapshotQueue.length > 5) {
-      this.drawingData = this.undoSnapshotQueue.shift()!
+      this.drawingData = this.undoSnapshotQueue.shift()
     }
   }
 
-  replaceDrawingData = (image: ImageData) => {
+  replaceDrawingData = (image: Uint32Array) => {
     this.drawingData = image
   }
 
-  getImageData = (): ImageData => {
-    if (!this.canvasRef.current) throw new Error("Unable to find Canvas")
-
+  getImageData = (gl: WebGL2RenderingContext): Uint32Array => {
     this.noDraw = true
-
-    const context = this.canvasRef.current.getContext("2d") as CanvasRenderingContext2D
-
-    const image = context.getImageData(0, 0, this.canvasRef.current.width, this.canvasRef.current.height)
+  
+    // gl.readPixels(0, 0, this.size.width, this.size.height, gl.RGBA_INTEGER, gl.UNSIGNED_INT, this.drawingData)
 
     this.noDraw = false
 
-    return image
+    return this.drawingData
   }
 
-  fill = (color = 'white') => {
-    if (!this.canvasRef.current) throw new Error("Unable to find Canvas")
-  
-    const context = this.canvasRef.current.getContext("2d") as CanvasRenderingContext2D
-    context.save()
-    context.fillStyle = color
-    context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+  fill = (gl:WebGL2RenderingContext, color = 'white') => {
+    // context.save()
+    // context.fillStyle = color
+    // context.fillRect(0, 0, context.canvas.width, context.canvas.height)
 
-    context.restore()
+    // context.restore()
   }
 }
