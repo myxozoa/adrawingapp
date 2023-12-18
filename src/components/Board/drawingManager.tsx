@@ -11,9 +11,9 @@ import brushVertex from '../../shaders/Brush/brush.vert?raw'
 import rtFragment from '../../shaders/TexToScreen/texToScreen.frag?raw'
 import rtVertex from '../../shaders/TexToScreen/texToScreen.vert?raw'
 
-import * as glUtils from '../../glutils'
-
 import { useMainStore } from '../../stores/MainStore'
+
+import * as glUtils from '../../glutils'
 
 import * as m4 from '../../m4.ts'
 

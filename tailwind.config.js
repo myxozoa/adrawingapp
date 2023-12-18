@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+/*eslint-env node*/
+
 export default {
   content: [
     "./index.html",
@@ -7,6 +9,9 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require("daisyui"),
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require("tailwindcss-radix")(),
+  ],
 }
-

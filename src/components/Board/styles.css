@@ -1,24 +1,3 @@
-.board {
-  flex-grow: 1;
-}
-
-.canvases {
-  display: flex;
-  position: relative;
-}
-
-.layer_canvas {
-  flex-grow: 1;
-  touch-action: none;
-  cursor: crosshair;
-}
-
-.layer_canvas_container {
-  position: absolute;
-  /* visibility: hidden; */
-  /* display: none; */
-}
-
 .canvas_separator {
   background-image: /* tint image */
                     linear-gradient(to right, rgba(192, 192, 192, 0.75), rgba(192, 192, 192, 0.75)),
@@ -30,10 +9,4 @@
   width: 100%;
   height: 100%;
   /* z-index: 11; */
-}
-
-.layer_canvas_container,
-.layer_canvas {
-  width: 100%;
-  height: 100%;
 }
