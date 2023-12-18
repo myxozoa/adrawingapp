@@ -83,7 +83,7 @@ function _ToolSettings() {
     </div>
 
   const toolSizeElement = <div key="tool_size_setting" className='w-30 flex flex-col tool_size'>
-      <input className='w-28' type="range" id="tool_size" name="tool_size" min="5" max="50" value={toolSize} onChange={toolSizeThrottled} />
+      <input className='w-28' type="range" id="tool_size" name="tool_size" min="1" max="50" value={toolSize} onChange={toolSizeThrottled} />
       <label htmlFor="tool_size">Size</label>
     </div>
 

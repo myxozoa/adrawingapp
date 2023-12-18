@@ -101,9 +101,6 @@ class _DrawingManager {
   }
 
   stamp = (point: Point) => {
-    // const _offsetPoint = offsetPoint(point, -image.height / 2)
-    // this.gl.drawImage(image, _offsetPoint.x, _offsetPoint.y)
-
     const gl = this.gl
 
     const color = useMainStore.getState().color
@@ -114,7 +111,16 @@ class _DrawingManager {
   
     matrix = m4.translate(matrix, locationVector)
   
-    const scaleVector = v3.create(100, 100, 1)
+    const baseSize = 100
+
+    let size = 40 - scaleNumberToRange(this.currentTool.size, 1, 50, 10, 38)
+
+    if (point.pointerType === "pen") {
+      const pressure = point.pressure
+      size = size / pressure
+    }
+
+    const scaleVector = v3.create(baseSize, baseSize, 1)
   
     matrix = m4.scale(matrix, scaleVector)
   
@@ -124,7 +130,7 @@ class _DrawingManager {
     gl.uniform2f(this.uniforms.u_point, point.x, gl.canvas.height - point.y)
     gl.uniform3fv(this.uniforms.u_brush_color, color.map(c => c / 255))
     gl.uniform1f(this.uniforms.u_softness, this.currentTool.hardness / 100)
-    gl.uniform1f(this.uniforms.u_size, 40 - scaleNumberToRange(this.currentTool.size, 5, 50, 25, 38))
+    gl.uniform1f(this.uniforms.u_size, size)
     gl.uniform1f(this.uniforms.u_flow, this.currentTool.opacity / 100)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
@@ -133,12 +139,6 @@ class _DrawingManager {
   }
 
   brushLine = (operation: IOperation, point0: Point, point1: Point) => {
-    // if (!operation.tool.image) {
-    //   throw new Error("Brush has no image to draw with")
-    // }
-
-    // const point0 = offsetPoint(_point0, -operation.tool.image.height / 2)
-    // const point1 = offsetPoint(_point1, -operation.tool.image.height / 2)
     const distance = getDistance(point0, point1)
     const step = operation.tool.size * (operation.tool.spacing / 100)
 
@@ -148,22 +148,13 @@ class _DrawingManager {
       const x = point0.x + (point1.x - point0.x) * t
       const y = point0.y + (point1.y - point0.y) * t
 
-      if (point0.pointerType === "pen") this.gl.globalAlpha = (point0.pressure / 5)
-
-      // if (operation.tool.image) {
-        // this.gl.drawImage(operation.tool.image, x, y)
-        this.stamp({x, y})
-      // } else {
-      //   console.error("No image in tool to be drawn")
-      // }
+      const pressure = lerp(point0.pressure, point1.pressure, 0.5)
+      
+      this.stamp({x, y, pointerType: point0.pointerType, pressure })
     }
   }
 
   baseBrush = (operation: IOperation) => {
-    // if (!operation.tool.image) {
-    //   throw new Error("Brush has no image to draw with")
-    // }
-
     const lastIndex = operation.points.length - 1
     const prevPoint = operation.points.at(-2)
     const currentPoint = operation.points.at(-1)
@@ -175,17 +166,18 @@ class _DrawingManager {
       return
     }
 
-    const spacing = operation.tool.size * (operation.tool.spacing / 100)
+    let spacing = operation.tool.size * (operation.tool.spacing / 100)
+
+    if (currentPoint.pointerType === "pen") {
+      const pressure = currentPoint.pressure
+      spacing = spacing * pressure
+    }
 
     if (distance > spacing * 2) {
       this.brushLine(operation, prevPoint, currentPoint)
       prevPoint.drawn = true
       currentPoint.drawn = true
     } else {
-      // if (!operation.tool.image) throw new Error("Tool is missing image")
-
-      // if (prevPoint.pointerType === "pen") this.gl.globalAlpha = (currentPoint.pressure / 5)
-
       this.stamp(currentPoint)
     }
   }
@@ -204,11 +196,8 @@ class _DrawingManager {
 
   erase = (operation: IOperation) => {
     const gl = this.gl
-    // if (this.currentOperation.points.length <= 1) return
 
-    // this.gl.globalCompositeOperation ="destination-out"
-
-    gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFunc(gl.CONSTANT_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.BLEND)
 
     gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
@@ -218,9 +207,6 @@ class _DrawingManager {
 
   brushDraw = (operation: IOperation) => {
     const gl = this.gl
-    // this.gl.globalCompositeOperation = "source-over"
-
-    // this.gl.globalAlpha = operation.tool.opacity / 100
 
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.BLEND)
@@ -241,10 +227,7 @@ class _DrawingManager {
   draw = (operation: IOperation) => {
     if (operation.points.length === 0 || operation.points.at(-1).drawn) return
 
-    // this.gl.save()
     this.toolBelt[operation.tool.name](operation)
-
-    // this.gl.restore()
   }
   
   endInteraction = (save = true) => {
@@ -266,22 +249,30 @@ class _DrawingManager {
     }
     
     if (this.waitUntilInteractionEnd) return
-    const spacing = operation.tool.size * (operation.tool.spacing / 100)
-    const prevLocation = operation.points.at(-1)
+    let spacing = operation.tool.size * (operation.tool.spacing / 100)
 
-    const smoothing = 0.8
-    const interpolatedLocation = { ...relativeMouseState  }
+    if (relativeMouseState.pointerType === "pen") {
+      const pressure = relativeMouseState.pressure
+      spacing = spacing * pressure
+    }
+
+    const prevPoint = operation.points.at(-1)
+
+    const smoothing = 0.4
+    const interpolatedPoint = { ...relativeMouseState  }
     
     switch(operation.tool.type) {
       case tool_types.STROKE:
         if (operation.points.length !== 0) {
-          interpolatedLocation.x = lerp(prevLocation.x, interpolatedLocation.x, smoothing)
-          interpolatedLocation.y = lerp(prevLocation.y, interpolatedLocation.y, smoothing)
+          interpolatedPoint.x = lerp(prevPoint.x, interpolatedPoint.x, smoothing)
+          interpolatedPoint.y = lerp(prevPoint.y, interpolatedPoint.y, smoothing)
+
+          interpolatedPoint.pressure = lerp(prevPoint.pressure, interpolatedPoint.pressure, 0.5)
         }
 
-        if (operation.points.length === 0 || getDistance(prevLocation, interpolatedLocation) >= spacing) {
+        if (operation.points.length === 0 || getDistance(prevPoint, interpolatedPoint) >= spacing) {
 
-          operation.points.push({...interpolatedLocation, drawn: false })
+          operation.points.push({...interpolatedPoint, drawn: false })
 
           if (operation.points.length > 6) {
             operation.points.shift()
@@ -346,9 +337,10 @@ class _DrawingManager {
 
   initRenderTexture = () => {
     const gl = this.gl
-
+  
     const targetTextureWidth = gl.canvas.width
     const targetTextureHeight = gl.canvas.height
+
     this.targetTexture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
     
@@ -361,16 +353,10 @@ class _DrawingManager {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
-////////////////////////////////////
-
     this.textureFB = gl.createFramebuffer()
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
-
-    // gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA16F, targetTextureWidth, targetTextureHeight);
     
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.targetTexture, 0)
-
-//////////////////////////////////////
 
     const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, rtFragment)
     const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, rtVertex)
@@ -430,7 +416,6 @@ class _DrawingManager {
       gl.STATIC_DRAW,
     )
 
-    // gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
     gl.vertexAttribPointer(
       attributes.a_tex_coord,
       2,
@@ -500,9 +485,7 @@ class _DrawingManager {
       this.use(relativeMouseState, this.currentOperation)
     }
     
-    if (this.currentOperation.tool) {
-      this.draw(this.currentOperation)
-    }
+    this.draw(this.currentOperation)
     
     gl.useProgram(this.rtProgram)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)

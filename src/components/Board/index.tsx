@@ -32,7 +32,7 @@ function _Board() {
   useEffect(() => {
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
-    const context = initializeCanvas(boardRef.current, rect.width, rect.height, true, true)
+    const context = initializeCanvas(boardRef.current, rect.width, rect.height, { desynchronized: true, resize: true })
 
     if (!context) {
       throw new Error("WebGL2 is not supported")

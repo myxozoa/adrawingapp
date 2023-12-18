@@ -70,7 +70,7 @@ function _ToolPreview() {
   const color = useMainStore.use.color()
 
   useLayoutEffect(() => {
-    initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize)
+    initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize, { desynchronized: true, resize: false, performance: 'low-power' })
   }, [previewCanvasRef.current])
 
   useLayoutEffect(() => {
@@ -92,7 +92,7 @@ function _ToolPreview() {
       gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
       gl.uniform3fv(uniforms.u_brush_color, color.map(c => c / 255))
       gl.uniform1f(uniforms.u_softness, currentTool.hardness / 100)
-      gl.uniform1f(uniforms.u_size, 40 - scaleNumberToRange(currentTool.size, 5, 50, 25, 38))
+      gl.uniform1f(uniforms.u_size, 40 - scaleNumberToRange(currentTool.size, 1, 50, 10, 38))
       gl.uniform1f(uniforms.u_opacity, currentTool.opacity / 100)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)

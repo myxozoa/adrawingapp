@@ -99,37 +99,66 @@ export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a;
 let canvasToDisplaySizeMap
 let resizeObserver
 
+type Options = {
+  desynchronized: boolean,
+  resize: boolean,
+  contextType: '2d' | 'webgl' | 'webgl2',
+  performance: 'default' | 'low-power' | 'high-performance',
+  alpha: boolean
+}
+
 export function initializeCanvas(
   canvas: HTMLCanvasElement,
   width: number,
   height: number,
-  desynchronized = true,
-  resize = false,
-  contextType = "webgl2",
-  performance = "high-performance"
+  _options: Options = {}
 ) {
-  const targetDpi = window.devicePixelRatio
+  const defaultOptions: Options = {
+    desynchronized: true,
+    resize: false,
+    contextType: "webgl2",
+    performance: "high-performance",
+    alpha: true
+  }
+  const options: Options = Object.fromEntries(Object.entries(defaultOptions).map(([option]) => {
+    if (_options[option] !== undefined) {
+      return [option, _options[option]]
+    } else {
+      return [option, defaultOptions[option]]
+    }
+  }))
 
-  if (!resize) {
+  const targetDpi = window.devicePixelRatio * 2
+
+  if (!options.resize) {
     canvas.width = Math.floor(width * targetDpi)
     canvas.height = Math.floor(height * targetDpi)
     canvas.style.width = `${width.toString()}px`
     canvas.style.height = `${height.toString()}px`
   }
 
-  const context = canvas.getContext(contextType, {
-    alpha: true,
-    desynchronized: desynchronized,
-    powerPreference: performance,
+  const context = canvas.getContext(options.contextType, {
+    alpha: options.alpha,
+    desynchronized: options.desynchronized,
+    powerPreference: options.performance,
     premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false
   })
 
-  if (contextType === "2d") context.scale(targetDpi, targetDpi)
+  console.log(options.contextType, {
+    alpha: options.alpha,
+    desynchronized: options.desynchronized,
+    powerPreference: options.performance,
+    premultipliedAlpha: false,
+    colorSpace: "srgb",
+    preserveDrawingBuffer: false
+  })
+
+  if (options.contextType === "2d") context.scale(targetDpi, targetDpi)
   context.imageSmoothingEnabled = false
   
-  if (resize) {
+  if (options.resize) {
     canvasToDisplaySizeMap = new Map([[canvas, [width, height]]])
     resizeObserver = new ResizeObserver(onResize)
     resizeObserver.observe(canvas, {box: 'content-box'})

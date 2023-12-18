@@ -11,7 +11,6 @@ import { ColorArray } from '../../types'
 function getHSV(value: ColorArray) {  
   const { h, s, v } = RGBtoHSV(value[0], value[1], value[2])
 
-  // TODO: Get rid of the value inversion here
   return { hue: h * 360, saturation: s * 100, value: 100 - (v * 100) }
 }
 
@@ -197,23 +196,22 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   const [hsvState, hsvDispatch] = useReducer(hsvReducer, getHSV(value))
   
   useEffect(() => {
-    initializeCanvas(pickerRef.current, size, size, true, false, "2d")
-    initializeCanvas(indicatorRef.current, size, size, true, false, "2d")
+    const pickerContext = initializeCanvas(pickerRef.current, size, size, { desynchronized: true, resize: false, contextType: '2d', performance: 'low-power' })
+    initializeCanvas(indicatorRef.current, size, size, { desynchronized: true, resize: false, contextType: '2d', performance: 'low-power' })
 
     window.addEventListener("pointermove", mouseMove)
     window.addEventListener("pointerup", mouseUp)
+
+    const hsv = getHSV(value)
+
+    hsvDispatch({ type: COLOR_PICKER_ACTIONS.SET_HUE_SAT_VAL, data: hsv })
+
+    drawHueRing(pickerContext, hsvState)
 
     return () => {
       window.removeEventListener("pointermove", mouseMove)
       window.removeEventListener("pointerup", mouseUp)
     }
-  }, [])
-
-  // Sync Local State with Outer State
-  useEffect(() => {
-    const hsv = getHSV(value)
-
-    hsvDispatch({ type: COLOR_PICKER_ACTIONS.SET_HUE_SAT_VAL, data: hsv })
   }, [])
 
   // Sync Outer State with Local State
@@ -224,6 +222,15 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
     const { r, g, b } = HSVtoRGB(hsvState.hue / 360, saturationPercentage, 1 - valuePercentage)
 
     onChange([r, g, b])
+
+    const pickerContext = pickerRef.current.getContext('2d') as CanvasRenderingContext2D
+    const indicatorContext = indicatorRef.current.getContext('2d') as CanvasRenderingContext2D
+      
+    drawHueIndicator(indicatorContext, hsvState)
+
+    drawSVPanel(pickerContext, hsvState)
+
+    drawSVIndicator(indicatorContext, hsvState)
   }, [hsvState])
 
   const selectHue = (event: PointerEvent | React.PointerEvent<HTMLCanvasElement>) => {
@@ -295,25 +302,6 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
     selectingHue.current = false
     selectingSV.current = false
   }
-
-  // Draw Hue Ring
-  useEffect(() => {
-    const context = pickerRef.current.getContext('2d') as CanvasRenderingContext2D
-
-    drawHueRing(context, hsvState)
-  }, [])
-
-  // Draw Saturation/Value Box and Indicators
-  useEffect(() => {
-    const pickerContext = pickerRef.current.getContext('2d') as CanvasRenderingContext2D
-    const indicatorContext = indicatorRef.current.getContext('2d') as CanvasRenderingContext2D
-      
-      drawHueIndicator(indicatorContext, hsvState)
-  
-      drawSVPanel(pickerContext, hsvState)
-  
-      drawSVIndicator(indicatorContext, hsvState)
-    }, [hsvState.hue, hsvState.saturation, hsvState.value])
 
   return (
     <div className='relative' style={{ width: `${size}px`, height: `${size}px` }}>
