@@ -2,7 +2,7 @@ import { useRef, useLayoutEffect } from 'react'
 
 import { initializeCanvas, scaleNumberToRange } from '../../utils'
 
-import * as glUtils from '../../glutils'
+import * as glUtils from '../../glUtils'
 
 import { toolPreviewSize } from '../../constants'
 
@@ -45,8 +45,6 @@ const initGL = (gl: WebGL2RenderingContext) => {
     1,  1,
   ]
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-
-  // const vao = glUtils.createVAO(gl)
 
   
   const vao = gl.createVertexArray()

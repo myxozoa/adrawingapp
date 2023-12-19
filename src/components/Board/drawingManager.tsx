@@ -13,9 +13,10 @@ import rtVertex from '../../shaders/TexToScreen/texToScreen.vert?raw'
 
 import { useMainStore } from '../../stores/MainStore'
 
-import * as glUtils from '../../glutils'
 
 import * as m4 from '../../m4.ts'
+
+import * as glUtils from '../../glUtils'
 
 import * as v3 from '../../v3.ts'
 
