@@ -28,6 +28,11 @@ body {
   height: 100%;
 }
 
+#root {
+  height: 100%;
+  width: 100%;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

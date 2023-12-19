@@ -15,10 +15,6 @@ function _Layers() {
 
   return (
     <Container className="w-38">
-      {/* <Panel className="layer_settings">
-        <span>blend mode</span>
-        <span>opacity</span>
-      </Panel> */}
       <Panel className="grow w-full overflow-y-auto">
         {layers.map((layer, idx) => {
           return <Layer
