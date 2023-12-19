@@ -12,19 +12,22 @@ import { throttle } from '../../utils'
 
 import { ColorArray } from '../../types'
 
+import { Slider } from '@/components/ui/slider'
+import { Separator } from '@/components/ui/separator'
+
 function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
   const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
 
   const [toolSize, setToolSize] = useState(currentTool.size)
   const [toolHardness, setToolHardness] = useState(currentTool.hardness)
-  const [toolOpacity, setToolOpacity] = useState(currentTool.opacity)
+  const [toolFlow, setToolFlow] = useState(currentTool.opacity)
   const [toolSpacing, setToolSpacing] = useState(currentTool.spacing)
 
   const toolStateFunctions: Record<keyof Tool, React.SetStateAction<any>> = {
     size: setToolSize,
     hardness: setToolHardness,
-    opacity: setToolOpacity,
+    opacity: setToolFlow,
     spacing: setToolSpacing,
     image: (_image: HTMLImageElement) => currentTool.image = _image
   }
@@ -43,7 +46,7 @@ function _ToolSettings() {
   useEffect(() => {
     setToolSize(currentTool.size)
     setToolHardness(currentTool.hardness)
-    setToolOpacity(currentTool.opacity)
+    setToolFlow(currentTool.opacity)
     setToolSpacing(currentTool.spacing)
   }, [currentTool])
 
@@ -53,59 +56,66 @@ function _ToolSettings() {
 
   const colorThrottled = useCallback(throttle(colorHandler, 16), [currentTool])
 
-  const toolSizeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    changeToolSetting({ size: Math.round(Number(event.target.value)) })
+  const toolSizeHandler = (value: number) => {
+    changeToolSetting({ size: Math.round(value) })
   }
 
   const toolSizeThrottled = useCallback(throttle(toolSizeHandler, 16), [currentTool])
 
-  const toolHardnessHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    changeToolSetting({ hardness: Math.round(Number(event.target.value)) })
+  const toolHardnessHandler = (value: number) => {
+    changeToolSetting({ hardness: Math.round(value) })
   }
 
   const toolHardnessThrottled = useCallback(throttle(toolHardnessHandler, 16), [currentTool])
 
-  const toolOpacityHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    changeToolSetting({ opacity: Math.round(Number(event.target.value)) })
+  const toolFlowHandler = (value: number) => {
+    changeToolSetting({ opacity: Math.round(value) })
   }
 
-  const toolOpacityThrottled = useCallback(throttle(toolOpacityHandler, 16), [currentTool])
+  const toolFlowThrottled = useCallback(throttle(toolFlowHandler, 16), [currentTool])
 
-  const toolSpacingHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    changeToolSetting({ spacing: event.target.value })
+  const toolSpacingHandler = (value: number) => {
+    changeToolSetting({ spacing: value })
   }
 
   const toolSpacingThrottled = useCallback(throttle(toolSpacingHandler, 16), [currentTool])
 
   // TODO: componentify
-  const toolColorElement = <div key="tool_color_setting" className='w-28 tool_color'>
+  const toolColorElement = <div key="tool_color_setting" className='w-28 h-full justify-center items-center tool_color'>
       <ColorPicker size={100} value={color} onChange={colorThrottled} />
     </div>
 
-  const toolSizeElement = <div key="tool_size_setting" className='w-30 flex flex-col tool_size'>
-      <input className='w-28' type="range" id="tool_size" name="tool_size" min="1" max="50" value={toolSize} onChange={toolSizeThrottled} />
-      <label htmlFor="tool_size">Size</label>
+  const toolSizeElement = <div key="tool_size_setting" className='w-28 h-full flex flex-col justify-center items-center tool_size'>
+      {/* <input className='w-28' type="range" id="tool_size" name="tool_size" min="1" max="50" value={toolSize} onChange={toolSizeThrottled} /> */}
+      <Slider name="tool_size" min={1} max={50} value={[toolSize]} onValueChange={toolSizeThrottled} />
+      <label htmlFor="tool_size" className="text-sm text-muted-foreground">Size</label>
     </div>
 
-  const toolHardnessElement = <div key="tool_hardness_setting" className='w-28 flex flex-col tool_hardness'>
-      <input className='w-28' type="range" id="tool_hardness" name="tool_hardness" min="1" max="98" value={toolHardness} onChange={toolHardnessThrottled} />
-      <label htmlFor="tool_hardness">Hardness</label>
+  const toolHardnessElement = <div key="tool_hardness_setting" className='w-28 h-full flex flex-col justify-center items-center tool_hardness'>
+      {/* <input className='w-28' type="range" id="tool_hardness" name="tool_hardness" min="1" max="98" value={toolHardness} onChange={toolHardnessThrottled} /> */}
+      <Slider name="tool_hardness" min={1} max={98} value={[toolHardness]} onValueChange={toolHardnessThrottled} />
+
+      <label htmlFor="tool_hardness" className="text-sm text-muted-foreground">Hardness</label>
     </div>
 
-  const toolOpacityElement = <div key="tool_opacity_setting" className='w-28 flex flex-col tool_opacity'>
-      <input className='w-28' type="range" id="tool_opacity" name="tool_opacity" min="1" max="100" value={toolOpacity} onChange={toolOpacityThrottled} />
-      <label htmlFor="tool_opacity">Opacity</label>
+  const toolFlowElement = <div key="tool_flow_setting" className='w-28 h-full flex flex-col justify-center items-center tool_flow'>
+      {/* <input className='w-28' type="range" id="tool_opacity" name="tool_opacity" min="1" max="100" value={toolFlow} onChange={toolFlowThrottled} /> */}
+      <Slider name="tool_flow" min={1} max={100} value={[toolFlow]} onValueChange={toolFlowThrottled} />
+      
+      <label htmlFor="tool_flow" className="text-sm text-muted-foreground">Flow</label>
     </div>
 
-  const toolSpacingElement = <div key="tool_spacing_setting" className='w-28 flex flex-col tool_spacing'>
-    <input className='w-28' type="range" id="tool_spacing" name="tool_spacing" min="1" max="50" value={toolSpacing} onChange={toolSpacingThrottled} />
-    <label htmlFor="tool_spacing">Spacing</label>
+  const toolSpacingElement = <div key="tool_spacing_setting" className='w-28 h-full flex flex-col justify-center items-center tool_spacing'>
+    {/* <input className='w-28' type="range" id="tool_spacing" name="tool_spacing" min="1" max="50" value={toolSpacing} onChange={toolSpacingThrottled} /> */}
+    <Slider name="tool_spacing" min={1} max={50} value={[toolSpacing]} onValueChange={toolSpacingThrottled} />
+
+    <label htmlFor="tool_spacing" className="text-sm text-muted-foreground">Spacing</label>
     </div>
 
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
     size: toolSizeElement,
     hardness: toolHardnessElement,
-    opacity: toolOpacityElement,
+    opacity: toolFlowElement,
     spacing: toolSpacingElement,
     color: toolColorElement
   }
@@ -116,7 +126,12 @@ function _ToolSettings() {
         <div className='flex flex-row'>
           <ToolPreview />
           {currentTool.availableSettings.map((setting) => {
-            return elements[setting]
+            return (
+              <div key={"tool_settings" + setting} className="pr-4 flex flex-row">
+                {elements[setting]}
+                <Separator orientation='vertical'/>
+              </div>
+            )
           })}
         </div>
       </Panel>

@@ -154,13 +154,6 @@ const drawHueRing = (context: CanvasRenderingContext2D, hsvState: HSV) => {
   context.closePath()
   context.fill()
 
-
-  // Outside Hue Ring Stroke Drawing
-  context.strokeStyle = '#333333'
-  context.lineWidth = 2
-  context.beginPath()
-  context.arc(radius, radius, radius + 1, 0, Math.PI * 2, true)
-  context.stroke()
   context.restore()
 }
 
