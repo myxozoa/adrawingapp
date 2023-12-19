@@ -38,7 +38,7 @@ export const key_modifers: Record<string, Modifier> = {
   shift: 'shift'
 }
 
-export const toolPreviewSize = 100
+export const toolPreviewSize = 25
 
 export const enum COLOR_PICKER_ACTIONS {
   SET_HUE = "set_hue",

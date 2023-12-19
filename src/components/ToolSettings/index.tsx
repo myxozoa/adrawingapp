@@ -81,35 +81,28 @@ function _ToolSettings() {
   const toolSpacingThrottled = useCallback(throttle(toolSpacingHandler, 16), [currentTool])
 
   // TODO: componentify
-  const toolColorElement = <div key="tool_color_setting" className='w-28 h-full justify-center items-center tool_color'>
+  const toolColorElement = <div key="tool_color_setting" className='h-full justify-center items-center tool_color'>
       <ColorPicker size={100} value={color} onChange={colorThrottled} />
     </div>
 
-  const toolSizeElement = <div key="tool_size_setting" className='w-28 h-full flex flex-col justify-center items-center tool_size'>
-      {/* <input className='w-28' type="range" id="tool_size" name="tool_size" min="1" max="50" value={toolSize} onChange={toolSizeThrottled} /> */}
-      <Slider name="tool_size" min={1} max={50} value={[toolSize]} onValueChange={toolSizeThrottled} />
-      <label htmlFor="tool_size" className="text-sm text-muted-foreground">Size</label>
+  const toolSizeElement = <div key="tool_size_setting" className='h-full flex flex-row justify-center items-center tool_size'>
+      <label htmlFor="tool_size" className="pr-2 text-sm text-muted-foreground">Size</label>
+      <Slider name="tool_size" className='w-28 mr-2' min={1} max={50} value={[toolSize]} onValueChange={toolSizeThrottled} />
     </div>
 
-  const toolHardnessElement = <div key="tool_hardness_setting" className='w-28 h-full flex flex-col justify-center items-center tool_hardness'>
-      {/* <input className='w-28' type="range" id="tool_hardness" name="tool_hardness" min="1" max="98" value={toolHardness} onChange={toolHardnessThrottled} /> */}
-      <Slider name="tool_hardness" min={1} max={98} value={[toolHardness]} onValueChange={toolHardnessThrottled} />
-
-      <label htmlFor="tool_hardness" className="text-sm text-muted-foreground">Hardness</label>
+  const toolHardnessElement = <div key="tool_hardness_setting" className='h-full flex flex-row justify-center items-center tool_hardness'>
+      <label htmlFor="tool_hardness" className="pr-2 text-sm text-muted-foreground">Hardness</label>
+      <Slider name="tool_hardness" className='w-28 mr-2' min={1} max={98} value={[toolHardness]} onValueChange={toolHardnessThrottled} />
     </div>
 
-  const toolFlowElement = <div key="tool_flow_setting" className='w-28 h-full flex flex-col justify-center items-center tool_flow'>
-      {/* <input className='w-28' type="range" id="tool_opacity" name="tool_opacity" min="1" max="100" value={toolFlow} onChange={toolFlowThrottled} /> */}
-      <Slider name="tool_flow" min={1} max={100} value={[toolFlow]} onValueChange={toolFlowThrottled} />
-      
-      <label htmlFor="tool_flow" className="text-sm text-muted-foreground">Flow</label>
+  const toolFlowElement = <div key="tool_flow_setting" className='h-full flex flex-row justify-center items-center tool_flow'>
+      <label htmlFor="tool_flow" className="pr-2 text-sm text-muted-foreground">Flow</label>
+      <Slider name="tool_flow" className='w-28 mr-2' min={1} max={100} value={[toolFlow]} onValueChange={toolFlowThrottled} />
     </div>
 
-  const toolSpacingElement = <div key="tool_spacing_setting" className='w-28 h-full flex flex-col justify-center items-center tool_spacing'>
-    {/* <input className='w-28' type="range" id="tool_spacing" name="tool_spacing" min="1" max="50" value={toolSpacing} onChange={toolSpacingThrottled} /> */}
-    <Slider name="tool_spacing" min={1} max={50} value={[toolSpacing]} onValueChange={toolSpacingThrottled} />
-
-    <label htmlFor="tool_spacing" className="text-sm text-muted-foreground">Spacing</label>
+  const toolSpacingElement = <div key="tool_spacing_setting" className='h-full flex flex-row justify-center items-center tool_spacing'>
+    <label htmlFor="tool_spacing" className="pr-2 text-sm text-muted-foreground">Spacing</label>
+    <Slider name="tool_spacing" className='w-28 mr-2' min={1} max={50} value={[toolSpacing]} onValueChange={toolSpacingThrottled} />
     </div>
 
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
@@ -117,11 +110,11 @@ function _ToolSettings() {
     hardness: toolHardnessElement,
     opacity: toolFlowElement,
     spacing: toolSpacingElement,
-    color: toolColorElement
+    // color: toolColorElement
   }
 
   return (
-    <Container className="h-25">
+    <Container className="h-15">
       <Panel className='w-full'>
         <div className='flex flex-row'>
           <ToolPreview />

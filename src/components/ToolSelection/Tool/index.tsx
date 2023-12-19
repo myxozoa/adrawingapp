@@ -5,10 +5,10 @@ import { tool_list } from '@/constants'
 import { Brush, Eraser, PaintBucket, PenLine } from 'lucide-react'
 
 const tools = {
-  [tool_list.BRUSH]: <Brush />,
-  [tool_list.ERASER]: <Eraser />,
-  [tool_list.FILL]: <PaintBucket />,
-  [tool_list.PEN]: <PenLine />
+  [tool_list.BRUSH]: <Brush strokeWidth={1.5} />,
+  [tool_list.ERASER]: <Eraser strokeWidth={1.5} />,
+  [tool_list.FILL]: <PaintBucket strokeWidth={1.5} />,
+  [tool_list.PEN]: <PenLine strokeWidth={1.5} />
 }
 
 function Tool({ name, select, selected }: { name: ToolName, select: (name: ToolName) => void, selected: boolean }) {

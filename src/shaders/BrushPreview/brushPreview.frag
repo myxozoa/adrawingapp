@@ -18,9 +18,9 @@ float random(vec2 st)
 
 void main()
 {
-    float d = (distance(u_resolution.xy * 0.5, gl_FragCoord.xy) / u_resolution.y) * u_size;
+    float d = (distance(u_resolution.xy * 0.5, gl_FragCoord.xy) / u_resolution.y) * 2.;
     
-    vec4 main_color = vec4(u_brush_color.rgb, u_opacity);
+    vec4 main_color = vec4(u_brush_color.rgb, 1.0);
     vec4 transparent = vec4(u_brush_color.rgb, 0.0);
    	
     float start = 0.;

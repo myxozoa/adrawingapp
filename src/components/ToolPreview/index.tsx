@@ -28,7 +28,8 @@ const initGL = (gl: WebGL2RenderingContext) => {
 
   const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-  const uniformNames = ["u_resolution", "u_brush_color", "u_softness", "u_size", "u_opacity"]
+  // const uniformNames = ["u_resolution", "u_brush_color", "u_softness", "u_size", "u_opacity"]
+  const uniformNames = ["u_resolution", "u_brush_color", "u_softness"]
 
   const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -90,8 +91,8 @@ function _ToolPreview() {
       gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
       gl.uniform3fv(uniforms.u_brush_color, color.map(c => c / 255))
       gl.uniform1f(uniforms.u_softness, currentTool.hardness / 100)
-      gl.uniform1f(uniforms.u_size, 40 - scaleNumberToRange(currentTool.size, 1, 50, 10, 38))
-      gl.uniform1f(uniforms.u_opacity, currentTool.opacity / 100)
+      // gl.uniform1f(uniforms.u_size, 40 - scaleNumberToRange(currentTool.size, 1, 50, 10, 38))
+      // gl.uniform1f(uniforms.u_opacity, currentTool.opacity / 100)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
     }
