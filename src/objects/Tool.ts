@@ -1,19 +1,27 @@
-import { ITool, ToolName, ToolSetting, ToolType } from "../types"
+import { AvailableTools, IBrush, IFill, IPen, ITool, ToolName, ToolSetting, ToolType } from "../types"
 
 import { tool_list, tool_types } from "../constants"
 
-const toolDefaults: Record<ToolName, ITool> = {
+type ToolMap = {
+  PEN: IPen,
+  BRUSH: IBrush,
+  ERASER: IBrush,
+  FILL: IFill
+}
+
+type ToolDefaults = {
+  [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never;
+}
+
+export const toolDefaults: ToolDefaults = {
   PEN: {
     name: tool_list.PEN,
     size: 10,
     opacity: 100,
-    flow: 100,
-    hardness: 98,
-    spacing: 10,
     availableSettings: [ "color", "size" ],
     type: tool_types.STROKE,
     continuous: true
-  } as Tool,
+  },
   BRUSH: {
     name: tool_list.BRUSH,
     size: 10,
@@ -23,9 +31,8 @@ const toolDefaults: Record<ToolName, ITool> = {
     spacing: 5,
     availableSettings: [ "color", "size", "hardness", "flow", "spacing" ],
     type: tool_types.STROKE,
-    continuous: true,
-    image: null
-  } as Tool,
+    continuous: true
+  },
   ERASER: {
     name: tool_list.ERASER,
     size: 20,
@@ -36,25 +43,20 @@ const toolDefaults: Record<ToolName, ITool> = {
     availableSettings: [ "size", "flow", "spacing" ],
     type: tool_types.STROKE,
     continuous: true,
-    image: null
-  } as Tool,
+  },
   FILL: {
     name: tool_list.FILL,
-    size: 100,
-    opacity: 100,
-    flow: 100,
-    hardness: 98,
-    spacing: 0,
+    flood: true,
     availableSettings: [ "color" ],
     type: tool_types.POINT,
     continuous: false
   }
-  // CURVE: {name: tool_list.CURVE}
 }
 
-function setWithDefaults(newSettings, defaultSettings) {
-  for (const setting of Object.keys(defaultSettings[newSettings.name])) {
-    this[setting] = defaultSettings[newSettings.name][setting]
+export function setWithDefaults<T extends AvailableTools>(newSettings: Partial<T>, defaultSettings: T) {
+  console.log(newSettings, defaultSettings)
+  for (const setting of Object.keys(defaultSettings)) {
+    this[setting] = defaultSettings[setting]
   }
 
   for (const setting of Object.keys(newSettings)) {
@@ -64,22 +66,7 @@ function setWithDefaults(newSettings, defaultSettings) {
 
 export class Tool implements ITool {
   name: ToolName
-  size: number
-  opacity: number
-  hardness: number
-  spacing: number
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
-
-  constructor(settings: Partial<ITool>) {
-    setWithDefaults.call(this, settings, toolDefaults)
-  }
-}
-
-export const tools = {
-  PEN: new Tool({ name: tool_list.PEN }),
-  BRUSH: new Tool({ name: tool_list.BRUSH }),
-  ERASER: new Tool({ name: tool_list.ERASER }),
-  FILL: new Tool({ name: tool_list.FILL }),
 }

@@ -6,8 +6,7 @@ import Tool from '../Tool'
 
 import { useToolStore } from '../../../stores/ToolStore'
 
-import { tools } from '../../../objects/Tool'
-
+import { tools } from '../../../stores/ToolStore'
 import { DarkModeToggle } from '@/components/DarkModeToggle'
 
 function _Tools() {

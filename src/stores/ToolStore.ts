@@ -5,7 +5,16 @@ import { createSelectors } from './selectors'
 
 import { tool_list } from '../constants'
 
-import { tools } from '../objects/Tool'
+import { Brush } from "@/objects/Brush"
+import { Fill } from "@/objects/Fill"
+import { Pen } from "@/objects/Pen"
+
+export const tools = {
+  PEN: new Pen({ name: tool_list.PEN }),
+  BRUSH: new Brush({ name: tool_list.BRUSH }),
+  ERASER: new Brush({ name: tool_list.ERASER }),
+  FILL: new Fill({ name: tool_list.FILL }),
+}
 
 type State = {
   currentTool: Tool
