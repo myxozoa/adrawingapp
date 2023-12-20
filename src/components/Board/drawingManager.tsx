@@ -134,7 +134,7 @@ class _DrawingManager {
     gl.uniform3fv(this.uniforms.u_brush_color, color.map(c => c / 255))
     gl.uniform1f(this.uniforms.u_softness, calculateHardness(this.currentTool.hardness, this.currentTool.size) / 100)
     gl.uniform1f(this.uniforms.u_size, size)
-    gl.uniform1f(this.uniforms.u_flow, this.currentTool.opacity / 100)
+    gl.uniform1f(this.uniforms.u_flow, this.currentTool.flow / 100)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
