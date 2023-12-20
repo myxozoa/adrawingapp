@@ -38,6 +38,38 @@ function _ToolSettings() {
   }, [currentTool])
 
   useEffect(() => {
+    // TODO: Fix this its horrible
+    const raiseSize = () => {
+      let hackyVariable = null
+      setToolState(prev => {
+        hackyVariable = Math.min(prev.size + 5, 50)
+        return { ...prev, size: hackyVariable }
+      })
+
+      changeCurrentToolSetting({ size: hackyVariable })
+    }
+    const lowerSize = () => {
+      let hackyVariable = null
+      setToolState(prev => {
+        hackyVariable = Math.max(prev.size - 5, 4)
+        return { ...prev, size: hackyVariable }
+      })
+
+      changeCurrentToolSetting({ size: hackyVariable })
+    }
+    const handleToolSize = (event: KeyboardEvent) => {
+      if (event.key === "[") lowerSize()
+      if (event.key === "]") raiseSize()
+    }
+    window.addEventListener('keypress', handleToolSize)
+
+    return () => {
+    window.removeEventListener('keypress', handleToolSize)
+
+    }
+  }, [])
+
+  useEffect(() => {
     setToolState({ size: currentTool.size, hardness: currentTool.hardness, flow: currentTool.flow, spacing: currentTool.spacing })
   }, [currentTool])
 
