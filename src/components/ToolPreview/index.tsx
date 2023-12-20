@@ -1,6 +1,6 @@
 import { useRef, useLayoutEffect } from 'react'
 
-import { initializeCanvas, scaleNumberToRange } from '../../utils'
+import { initializeCanvas } from '../../utils'
 
 import * as glUtils from '../../glUtils'
 

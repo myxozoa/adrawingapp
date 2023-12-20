@@ -19,6 +19,8 @@ import * as glUtils from '../../glUtils'
 
 import * as v3 from '../../v3.ts'
 
+import { calculateHardness } from '../../utils'
+
 class _DrawingManager {
   gl: WebGL2RenderingContext
   currentLayer: ILayer
@@ -130,7 +132,7 @@ class _DrawingManager {
     gl.uniform2f(this.uniforms.u_resolution, 100, 100)
     gl.uniform2f(this.uniforms.u_point, point.x, gl.canvas.height - point.y)
     gl.uniform3fv(this.uniforms.u_brush_color, color.map(c => c / 255))
-    gl.uniform1f(this.uniforms.u_softness, this.currentTool.hardness / 100)
+    gl.uniform1f(this.uniforms.u_softness, calculateHardness(this.currentTool.hardness, this.currentTool.size) / 100)
     gl.uniform1f(this.uniforms.u_size, size)
     gl.uniform1f(this.uniforms.u_flow, this.currentTool.opacity / 100)
 

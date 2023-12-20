@@ -2,18 +2,40 @@ import { useEffect, useState, useCallback } from 'react'
 
 import Panel from '../Panel'
 import Container from '../Container'
-import ColorPicker from '../ColorPicker'
+// import ColorPicker from '../ColorPicker'
 import { ToolPreview } from '../ToolPreview'
 
 import { useToolStore } from '../../stores/ToolStore'
-import { useMainStore } from '../../stores/MainStore'
+// import { useMainStore } from '../../stores/MainStore'
 
 import { throttle } from '../../utils'
 
-import { ColorArray } from '../../types'
+// import { ColorArray } from '../../types'
 
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
+
+// const ToolColorSetting = () => {
+//   const colorHandler = (value: ColorArray) => {
+//     setColor(value)
+//   }
+
+//   const colorThrottled = useCallback(throttle(colorHandler, 16), [currentTool])
+
+//   return (<div key="tool_color_setting" className='h-full justify-center items-center tool_color'>
+//     <ColorPicker size={100} value={color} onChange={colorThrottled} />
+//   </div>)
+// }
+
+const SliderSetting = (name: string, value: number, onValueChange: (value: any) => void, dependency: any, props: any) => {
+  const handler = useCallback(throttle(onValueChange, 16), [dependency])
+
+  return (<div key={`${name}_setting`} className='h-full flex flex-row justify-center items-center'>
+    <label htmlFor={name} className="pr-2 text-sm text-muted-foreground">{name}</label>
+    <Slider name={name} className='w-28 mr-4' {...props} value={[value]} onValueChange={handler} />
+    <p className="text-sm text-muted-foreground mr-2 w-[3ch]">{value}</p>
+  </div>)
+}
 
 function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
@@ -40,8 +62,8 @@ function _ToolSettings() {
     changeCurrentToolSetting(newSettings)
   }, [currentTool])
 
-  const color = useMainStore.use.color()
-  const setColor = useMainStore.use.setColor()
+  // const color = useMainStore.use.color()
+  // const setColor = useMainStore.use.setColor()
 
   useEffect(() => {
     setToolSize(currentTool.size)
@@ -50,67 +72,12 @@ function _ToolSettings() {
     setToolSpacing(currentTool.spacing)
   }, [currentTool])
 
-  const colorHandler = (value: ColorArray) => {
-    setColor(value)
-  }
-
-  const colorThrottled = useCallback(throttle(colorHandler, 16), [currentTool])
-
-  const toolSizeHandler = (value: number) => {
-    changeToolSetting({ size: Math.round(value) })
-  }
-
-  const toolSizeThrottled = useCallback(throttle(toolSizeHandler, 16), [currentTool])
-
-  const toolHardnessHandler = (value: number) => {
-    changeToolSetting({ hardness: Math.round(value) })
-  }
-
-  const toolHardnessThrottled = useCallback(throttle(toolHardnessHandler, 16), [currentTool])
-
-  const toolFlowHandler = (value: number) => {
-    changeToolSetting({ opacity: Math.round(value) })
-  }
-
-  const toolFlowThrottled = useCallback(throttle(toolFlowHandler, 16), [currentTool])
-
-  const toolSpacingHandler = (value: number) => {
-    changeToolSetting({ spacing: value })
-  }
-
-  const toolSpacingThrottled = useCallback(throttle(toolSpacingHandler, 16), [currentTool])
-
-  // TODO: componentify
-  const toolColorElement = <div key="tool_color_setting" className='h-full justify-center items-center tool_color'>
-      <ColorPicker size={100} value={color} onChange={colorThrottled} />
-    </div>
-
-  const toolSizeElement = <div key="tool_size_setting" className='h-full flex flex-row justify-center items-center tool_size'>
-      <label htmlFor="tool_size" className="pr-2 text-sm text-muted-foreground">Size</label>
-      <Slider name="tool_size" className='w-28 mr-2' min={1} max={50} value={[toolSize]} onValueChange={toolSizeThrottled} />
-    </div>
-
-  const toolHardnessElement = <div key="tool_hardness_setting" className='h-full flex flex-row justify-center items-center tool_hardness'>
-      <label htmlFor="tool_hardness" className="pr-2 text-sm text-muted-foreground">Hardness</label>
-      <Slider name="tool_hardness" className='w-28 mr-2' min={1} max={98} value={[toolHardness]} onValueChange={toolHardnessThrottled} />
-    </div>
-
-  const toolFlowElement = <div key="tool_flow_setting" className='h-full flex flex-row justify-center items-center tool_flow'>
-      <label htmlFor="tool_flow" className="pr-2 text-sm text-muted-foreground">Flow</label>
-      <Slider name="tool_flow" className='w-28 mr-2' min={1} max={100} value={[toolFlow]} onValueChange={toolFlowThrottled} />
-    </div>
-
-  const toolSpacingElement = <div key="tool_spacing_setting" className='h-full flex flex-row justify-center items-center tool_spacing'>
-    <label htmlFor="tool_spacing" className="pr-2 text-sm text-muted-foreground">Spacing</label>
-    <Slider name="tool_spacing" className='w-28 mr-2' min={1} max={50} value={[toolSpacing]} onValueChange={toolSpacingThrottled} />
-    </div>
-
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
-    size: toolSizeElement,
-    hardness: toolHardnessElement,
-    opacity: toolFlowElement,
-    spacing: toolSpacingElement,
-    // color: toolColorElement
+    size: SliderSetting("Size", toolSize, (size) => changeToolSetting({ size }), currentTool, { min: 4, max: 50 }),
+    hardness: SliderSetting("Hardness", toolHardness, (hardness) => changeToolSetting({ hardness }), currentTool, { min: 1, max: 100 }),
+    opacity: SliderSetting("Flow", toolFlow, (opacity) => changeToolSetting({ opacity }), currentTool, { min: 1, max: 100 }),
+    spacing: SliderSetting("Spacing", toolSpacing, (spacing) => changeToolSetting({ spacing }), currentTool, { min: 1, max: 50 }),
+    // color: <ToolColorSetting />
   }
 
   return (

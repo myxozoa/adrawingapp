@@ -285,3 +285,16 @@ export const getCanvasColor = function(color: ColorArray, opacity?: number) {
   const useOpacity = opacity !== undefined ? (opacity / 100).toFixed(2) : 1
   return `rgba(${color[0]},${color[1]},${color[2]}, ${useOpacity})`
 }
+
+export const calculateMaxHardness = (size: number) => {
+  // Log based curve fitted from eyeballing settings to get the least amount of over-hard edges
+  // TODO: See if this works on all display DPIs
+  const max = 23.943 * Math.log(0.905444 * size)
+
+  return Math.min(Math.max(max, 1), 98)
+}
+
+export const calculateHardness = (hardness: number, size: number) => {
+
+  return Math.min(hardness, calculateMaxHardness(size))
+}
