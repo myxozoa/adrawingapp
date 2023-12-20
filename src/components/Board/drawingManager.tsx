@@ -135,6 +135,7 @@ class _DrawingManager {
     gl.uniform1f(this.uniforms.u_softness, calculateHardness(this.currentTool.hardness, this.currentTool.size) / 100)
     gl.uniform1f(this.uniforms.u_size, size)
     gl.uniform1f(this.uniforms.u_flow, this.currentTool.flow / 100)
+    gl.uniform1f(this.uniforms.u_random, Math.random())
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -299,7 +300,7 @@ class _DrawingManager {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
   
-    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_size", "u_flow"]
+    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_size", "u_flow", "u_random"]
   
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 

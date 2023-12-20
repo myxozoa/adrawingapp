@@ -10,6 +10,7 @@ uniform vec3 u_brush_color;
 uniform float u_softness;
 uniform float u_size;
 uniform float u_flow;
+uniform float u_random;
 
 // book of shaders
 float random(vec2 st)
@@ -31,27 +32,19 @@ void main()
     vec4 color = mix(main_color, transparent, smoothstep(start, mid, d));
     color = mix(main_color, transparent, smoothstep(mid, end, d));
 
-    // vec2 st = gl_FragCoord.xy / u_resolution.xy;
-
-    // float randomNumber = random(st);
-
-    // float amount = 0.01;
-
-    // float alpha = (randomNumber * (amount)) - (amount - 0.01);
-
-    // color.a = clamp(color.a + alpha, 0., 1.);
-
-    // uvec4 temp = uvec4(0, 0, 0, 0);
-
-    // temp.r = floatBitsToUint(color.r);
-    // temp.g = floatBitsToUint(color.g);
-    // temp.b = floatBitsToUint(color.b);
-    // temp.a = floatBitsToUint(color.a);
-
-    // fragColor = temp;
-
     if (color.a == 0.0)
         discard;
+
+    // Add a small amount of noise to the alpha channel
+    vec2 st = (gl_FragCoord.xy / u_resolution.xy) + u_random;
+
+    float randomNumber = random(st);
+
+    float amount = 0.001;
+
+    float alpha = (randomNumber * (amount)) - (amount - 0.01);
+
+    color.a = clamp(color.a - alpha, 0., 1.);
     
     fragColor = color;
 }

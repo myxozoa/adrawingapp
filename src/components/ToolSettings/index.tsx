@@ -11,8 +11,10 @@ import { throttle } from '../../utils'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 
-const SliderSetting = (name: string, value: number, onValueChange: (value: any) => void, dependency: any, props: any) => {
+const SliderSetting = (name: string, value: number, _onValueChange: (value: any) => void, dependency: any, props: any) => {
+  const onValueChange = (value) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
   const handler = useCallback(throttle(onValueChange, 16), [dependency])
+
 
   return (
     <div key={`${name}_setting`} className='h-full flex flex-row justify-center items-center'>

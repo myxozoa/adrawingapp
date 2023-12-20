@@ -12,7 +12,7 @@ type Action = {
 }
 
 const useMainStoreBase = create<State & Action>((set) => ({
-  color: [255, 0, 0],
+  color: [0, 0, 0],
   setColor: (color: ColorArray) => set(() => ({
     color
   }))
