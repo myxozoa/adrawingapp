@@ -186,8 +186,6 @@ export class Brush extends Tool implements IBrush {
 
     const baseSize = 100
 
-    let size = 40 - scaleNumberToRange(operation.tool.size, 1, 50, 10, 38)
-
     if (point.pointerType === "pen") {
       const pressure = point.pressure
       size = size / pressure
@@ -206,7 +204,7 @@ export class Brush extends Tool implements IBrush {
       color.map((c) => c / 255),
     )
     gl.uniform1f(this.uniforms.u_softness, calculateHardness(operation.tool.hardness, operation.tool.size) / 100)
-    gl.uniform1f(this.uniforms.u_size, size)
+    gl.uniform1f(this.uniforms.u_size, operation.tool.size)
     gl.uniform1f(this.uniforms.u_flow, operation.tool.flow / 100)
     gl.uniform1f(this.uniforms.u_random, Math.random())
 

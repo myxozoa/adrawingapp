@@ -96,8 +96,8 @@ function _ToolSettings() {
 
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
     size: SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), currentTool, {
-      min: 4,
-      max: 50,
+      min: 1,
+      max: 100,
     }),
     hardness: SliderSetting(
       "Hardness",

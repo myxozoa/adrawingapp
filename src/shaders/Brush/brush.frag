@@ -20,7 +20,8 @@ float random(vec2 st)
 
 void main()
 {
-    float d = (distance(u_point.xy, gl_FragCoord.xy) / (u_resolution.x * 2.)) * u_size;
+    // Brush quads are 100x100 and brush size goes from 1..100
+    float d = (distance(u_point.xy, gl_FragCoord.xy) / u_size);
     
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);
     vec4 transparent = vec4(u_brush_color.rgb, 0.0);
