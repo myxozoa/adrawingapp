@@ -122,7 +122,7 @@ class _DrawingManager {
     this.needRedraw = true
 
     if (save) {
-      this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
+      // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
       this.currentOperation = new Operation(this.currentTool)
     }
   }
@@ -444,12 +444,12 @@ class _DrawingManager {
     requestAnimationFrame(() => this.loop(currentUIInteraction))
   }
 
-  undo = () => {
-    if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentOperation.points.length === 0) {
-      this.currentLayer.redoSnapshotQueue.push(this.currentLayer.undoSnapshotQueue.pop())
-    }
-    this.endInteraction(false)
-  }
+  // undo = () => {
+  //   if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentOperation.points.length === 0) {
+  //     this.currentLayer.redoSnapshotQueue.push(this.currentLayer.undoSnapshotQueue.pop())
+  //   }
+  //   this.endInteraction(false)
+  // }
 }
 
 export const DrawingManager = new _DrawingManager()

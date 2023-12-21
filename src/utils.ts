@@ -115,8 +115,12 @@ export function initializeCanvas(canvas: HTMLCanvasElement, width: number, heigh
     desynchronized: true,
     resize: false,
     contextType: "webgl2",
-    performance: "high-performance",
+    powerPreference: "high-performance",
     alpha: true,
+    premultipliedAlpha: false,
+    colorSpace: "srgb",
+    preserveDrawingBuffer: false,
+    antialias: false,
   }
   const options: Options = Object.fromEntries(
     Object.entries(defaultOptions).map(([option]) => {
@@ -137,16 +141,7 @@ export function initializeCanvas(canvas: HTMLCanvasElement, width: number, heigh
     canvas.style.height = `${height.toString()}px`
   }
 
-  const context = canvas.getContext(options.contextType, {
-    alpha: options.alpha,
-    desynchronized: options.desynchronized,
-    powerPreference: options.performance,
-    premultipliedAlpha: false,
-    colorSpace: "srgb",
-    preserveDrawingBuffer: false,
-    antialias: false,
-    ...options,
-  })
+  const context = canvas.getContext(options.contextType, options)
 
   if (options.contextType === "2d") context.scale(targetDpi, targetDpi)
   context.imageSmoothingEnabled = false
@@ -226,21 +221,27 @@ export function HSVtoRGB(h: number, s: number, v: number) {
   const t = v * (1 - (1 - f) * s)
   switch (i % 6) {
     case 0:
+      // eslint-disable-next-line no-extra-semi
       ;(r = v), (g = t), (b = p)
       break
     case 1:
+      // eslint-disable-next-line no-extra-semi
       ;(r = q), (g = v), (b = p)
       break
     case 2:
+      // eslint-disable-next-line no-extra-semi
       ;(r = p), (g = v), (b = t)
       break
     case 3:
+      // eslint-disable-next-line no-extra-semi
       ;(r = p), (g = q), (b = v)
       break
     case 4:
+      // eslint-disable-next-line no-extra-semi
       ;(r = t), (g = p), (b = v)
       break
     case 5:
+      // eslint-disable-next-line no-extra-semi
       ;(r = v), (g = p), (b = q)
       break
   }

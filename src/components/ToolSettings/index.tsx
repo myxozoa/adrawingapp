@@ -117,8 +117,8 @@ function _ToolSettings() {
   }
 
   return (
-    <Container className="h-15">
-      <Panel className="w-full">
+    <Container className="h-10">
+      <Panel className="w-full h-full flex items-center">
         <div className="flex flex-row">
           {/* <ToolPreview /> */}
           {currentTool.availableSettings.map((setting) => {

@@ -27,38 +27,38 @@ export class Layer implements ILayer {
     this.boundingBox = { x: 0, y: 0, ...size }
   }
 
-  addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {
-    const image = this.getImageData(gl)
+  // addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {
+  //   const image = this.getImageData(gl)
 
-    this.addElementToUndoSnapshotQueue(image)
-  }
+  //   this.addElementToUndoSnapshotQueue(image)
+  // }
 
-  addElementToUndoSnapshotQueue = (image: Uint32Array) => {
-    this.undoSnapshotQueue.push(image)
+  // addElementToUndoSnapshotQueue = (image: Uint32Array) => {
+  //   this.undoSnapshotQueue.push(image)
 
-    if (this.undoSnapshotQueue.length > 5) {
-      this.drawingData = this.undoSnapshotQueue.shift()
-    }
-  }
+  //   if (this.undoSnapshotQueue.length > 5) {
+  //     this.drawingData = this.undoSnapshotQueue.shift()
+  //   }
+  // }
 
-  replaceDrawingData = (image: Uint32Array) => {
-    this.drawingData = image
-  }
+  // replaceDrawingData = (image: Uint32Array) => {
+  //   this.drawingData = image
+  // }
 
-  getImageData = (gl: WebGL2RenderingContext): Uint32Array => {
-    this.noDraw = true
+  // getImageData = (gl: WebGL2RenderingContext): Uint32Array => {
+  //   this.noDraw = true
 
-    // gl.readPixels(0, 0, this.size.width, this.size.height, gl.RGBA_INTEGER, gl.UNSIGNED_INT, this.drawingData)
+  // gl.readPixels(0, 0, this.size.width, this.size.height, gl.RGBA_INTEGER, gl.UNSIGNED_INT, this.drawingData)
 
-    this.noDraw = false
+  //   this.noDraw = false
 
-    return this.drawingData
-  }
+  //   return this.drawingData
+  // }
 
-  fill = (gl: WebGL2RenderingContext, color = "white") => {
-    // context.save()
-    // context.fillStyle = color
-    // context.fillRect(0, 0, context.canvas.width, context.canvas.height)
-    // context.restore()
-  }
+  // fill = (gl: WebGL2RenderingContext, color = "white") => {
+  // context.save()
+  // context.fillStyle = color
+  // context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+  // context.restore()
+  // }
 }
