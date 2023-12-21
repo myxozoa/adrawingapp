@@ -5,8 +5,9 @@ import Container from "@/components/Container"
 // import { ToolPreview } from '@/components/ToolPreview'
 
 import { useToolStore } from "@/stores/ToolStore"
+import { useMainStore } from "@/stores/MainStore"
 
-import { throttle } from "@/utils"
+import { throttle, hexToRgb, rgbToHex } from "@/utils"
 
 import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
@@ -33,6 +34,8 @@ const SliderSetting = (
 function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
   const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
+  const color = useMainStore.use.color()
+  const setColor = useMainStore.use.setColor()
 
   const [toolState, setToolState] = useState({
     size: currentTool.size,
@@ -92,7 +95,10 @@ function _ToolSettings() {
     })
   }, [currentTool])
 
+  const changeColor = (event: React.ChangeEvent<HTMLInputElement>) => setColor(hexToRgb(event.target!.value)!)!
+
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
+    color: <input type="color" value={rgbToHex(color)} onChange={useCallback(throttle(changeColor, 60), [])} />,
     size: SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), currentTool, {
       min: 1,
       max: 100,

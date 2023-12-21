@@ -39,7 +39,7 @@ export const toolDefaults: ToolDefaults = {
     flow: 100,
     hardness: 98,
     spacing: 5,
-    availableSettings: ["size", "hardness", "flow", "spacing"],
+    availableSettings: ["color", "size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
   },
