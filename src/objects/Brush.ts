@@ -6,7 +6,7 @@ import { useMainStore } from "@/stores/MainStore"
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { calculateHardness, getDistance, lerp, scaleNumberToRange } from "@/utils"
+import { calculateHardness, getDistance, lerp } from "@/utils"
 
 import * as v3 from "@/v3.ts"
 import * as m4 from "@/m4.ts"
@@ -163,15 +163,20 @@ export class Brush extends Tool implements IBrush {
     const distance = getDistance(point0, point1)
     const step = operation.tool.size * (operation.tool.spacing / 100)
 
-    // Stamp at space interval between the two points
+    let progress = 0
+    const steps = distance / step
+
+    // Stamp at evenly spaced intervals between the two points
     for (let i = 0; i < distance; i += step) {
       const t = Math.max(0, Math.min(1, i / distance))
       const x = point0.x + (point1.x - point0.x) * t
       const y = point0.y + (point1.y - point0.y) * t
 
-      const pressure = lerp(point0.pressure, point1.pressure, 0.5)
+      const pressure = lerp(point0.pressure, point1.pressure, progress / steps)
 
       this.stamp(gl, operation, { x, y, pointerType: point0.pointerType, pressure })
+
+      progress++
     }
   }
 
@@ -186,9 +191,11 @@ export class Brush extends Tool implements IBrush {
 
     const baseSize = 100
 
+    let size = operation.tool.size
+
     if (point.pointerType === "pen") {
       const pressure = point.pressure
-      size = size / pressure
+      size = size * pressure
     }
 
     const scaleVector = v3.create(baseSize, baseSize, 1)
@@ -203,8 +210,8 @@ export class Brush extends Tool implements IBrush {
       this.uniforms.u_brush_color,
       color.map((c) => c / 255),
     )
-    gl.uniform1f(this.uniforms.u_softness, calculateHardness(operation.tool.hardness, operation.tool.size) / 100)
-    gl.uniform1f(this.uniforms.u_size, operation.tool.size)
+    gl.uniform1f(this.uniforms.u_softness, calculateHardness(operation.tool.hardness, size) / 100)
+    gl.uniform1f(this.uniforms.u_size, size)
     gl.uniform1f(this.uniforms.u_flow, operation.tool.flow / 100)
     gl.uniform1f(this.uniforms.u_random, Math.random())
 
@@ -213,7 +220,7 @@ export class Brush extends Tool implements IBrush {
     point.drawn = true
   }
 
-  use = (gl: WebGL2RenderingContext) => {
+  switchTo = (gl: WebGL2RenderingContext) => {
     gl.useProgram(this.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
     gl.bindVertexArray(this.VAO)
