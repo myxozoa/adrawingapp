@@ -8,11 +8,10 @@ import brushVertex from '@/shaders/Brush/brush.vert?raw'
 
 import { calculateHardness, getDistance, lerp, scaleNumberToRange } from '@/utils'
 
-
 import * as v3 from '@/v3.ts'
 import * as m4 from '@/m4.ts'
 import * as glUtils from '@/glUtils'
-
+import { tool_list } from "@/constants"
 
 export class Brush extends Tool implements IBrush {
   size: number
@@ -31,6 +30,7 @@ export class Brush extends Tool implements IBrush {
 
   constructor(settings: Partial<IBrush>) {
     super()
+    this.name = tool_list.BRUSH
     setWithDefaults.call(this, settings, toolDefaults.BRUSH)
   }
 
@@ -195,5 +195,11 @@ export class Brush extends Tool implements IBrush {
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     point.drawn = true
+  }
+
+  use = (gl: WebGL2RenderingContext) => {
+    gl.useProgram(this.program)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
+    gl.bindVertexArray(this.VAO)
   }
 }

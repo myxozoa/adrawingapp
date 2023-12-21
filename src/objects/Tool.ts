@@ -18,7 +18,7 @@ export const toolDefaults: ToolDefaults = {
     name: tool_list.PEN,
     size: 10,
     opacity: 100,
-    availableSettings: [ "color", "size" ],
+    availableSettings: [ "size" ],
     type: tool_types.STROKE,
     continuous: true
   },
@@ -29,7 +29,7 @@ export const toolDefaults: ToolDefaults = {
     flow: 100,
     hardness: 98,
     spacing: 5,
-    availableSettings: [ "color", "size", "hardness", "flow", "spacing" ],
+    availableSettings: [ "size", "hardness", "flow", "spacing" ],
     type: tool_types.STROKE,
     continuous: true
   },
@@ -39,8 +39,8 @@ export const toolDefaults: ToolDefaults = {
     opacity: 100,
     flow: 100,
     hardness: 98,
-    spacing: 25,
-    availableSettings: [ "size", "flow", "spacing" ],
+    spacing: 5,
+    availableSettings: [ "size", "hardness", "flow", "spacing" ],
     type: tool_types.STROKE,
     continuous: true,
   },
@@ -58,6 +58,8 @@ export function setWithDefaults<T extends AvailableTools>(newSettings: Partial<T
     this[setting] = defaultSettings[setting]
   }
 
+  if (!newSettings) return
+
   for (const setting of Object.keys(newSettings)) {
     this[setting] = newSettings[setting]
   }
@@ -68,10 +70,4 @@ export class Tool implements ITool {
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
-
-  use = (gl: WebGL2RenderingContext) => {
-    gl.useProgram(this.program)
-    if (this.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
-    if (this.VAO) gl.bindVertexArray(this.VAO)
-  }
 }

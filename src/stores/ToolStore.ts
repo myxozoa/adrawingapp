@@ -6,14 +6,15 @@ import { createSelectors } from '@/stores/selectors'
 import { tool_list } from '@/constants'
 
 import { Brush } from "@/objects/Brush"
+import { Eraser } from "@/objects/Eraser"
 import { Fill } from "@/objects/Fill"
 import { Pen } from "@/objects/Pen"
 
 export const tools: Record<ToolName, AvailableTools> = {
-  PEN: new Pen({ name: tool_list.PEN }),
-  BRUSH: new Brush({ name: tool_list.BRUSH }),
-  ERASER: new Brush({ name: tool_list.ERASER }),
-  FILL: new Fill({ name: tool_list.FILL }),
+  PEN: new Pen(),
+  BRUSH: new Brush(),
+  ERASER: new Eraser(),
+  FILL: new Fill(),
 }
 
 type State = {

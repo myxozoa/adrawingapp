@@ -33,13 +33,6 @@ class _DrawingManager {
     this.currentOperation = new Operation({} as ITool)
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
-
-    // this.toolBelt = {
-    //   [tool_list.PEN]: this.penDraw,
-    //   [tool_list.BRUSH]: this.brushDraw,
-    //   [tool_list.ERASER]: this.erase,
-    //   [tool_list.FILL]: this.fill
-    // }
   }
 
   basePen = (operation: IOperation) => {
@@ -110,21 +103,9 @@ class _DrawingManager {
     gl.clearBufferfv(gl.COLOR, 0, new Float32Array([1, 1, 1, 1]))
   }
 
-  erase = (operation: IOperation) => {
-    const gl = this.gl
-
-    gl.blendFunc(gl.CONSTANT_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
-
-    gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
-  
-    this.baseBrush(operation)
-  }
-
   draw = (operation: IOperation) => {
     if (operation.points.length === 0 || operation.points.at(-1).drawn) return
 
-    // this.toolBelt[operation.tool.name](operation)
     operation.tool.draw(this.gl, operation)
   }
   
