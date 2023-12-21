@@ -7,6 +7,7 @@ import {
   getCanvasColor,
   lerp,
   resizeCanvasToDisplaySize,
+  performanceSafeguard,
 } from "@/utils.ts"
 
 import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType, AvailableTools } from "@/types.ts"
@@ -22,6 +23,8 @@ import * as glUtils from "@/glUtils.ts"
 // import * as v3 from '@/v3.ts'
 
 import { tools } from "@/stores/ToolStore.ts"
+
+const checkfps = performanceSafeguard()
 
 class _DrawingManager {
   gl: WebGL2RenderingContext
@@ -413,7 +416,7 @@ class _DrawingManager {
     gl.bindVertexArray(null)
   }
 
-  loop = (currentUIInteraction: React.MutableRefObject<UIInteraction>) => {
+  loop = (currentUIInteraction: React.MutableRefObject<UIInteraction>, time: number) => {
     const gl = this.gl
 
     resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
@@ -450,7 +453,9 @@ class _DrawingManager {
       console.error("WebGL error: " + error)
     }
 
-    requestAnimationFrame(() => this.loop(currentUIInteraction))
+    checkfps(time)
+
+    requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
   }
 
   // undo = () => {

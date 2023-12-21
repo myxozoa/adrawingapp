@@ -327,3 +327,46 @@ export const calculateMaxHardness = (size: number) => {
 export const calculateHardness = (hardness: number, size: number) => {
   return Math.min(hardness, calculateMaxHardness(size))
 }
+
+export const performanceSafeguard = () => {
+  const frameAverageWindow = 30
+  let frameTimes = []
+  let index = 0
+  let totalFPS = 0
+
+  let previousTime = 0
+
+  return (time: number) => {
+    const seconds = time * 0.001
+    const delta = seconds - previousTime
+
+    if (delta) {
+      previousTime = seconds
+      const fps = 1 / delta
+
+      totalFPS += fps - (frameTimes[index] || 0)
+
+      frameTimes[index] = fps
+
+      index++
+
+      index = index % frameAverageWindow
+
+      const averageFPS = totalFPS / frameTimes.length
+
+      if (
+        (frameTimes.length === frameAverageWindow && averageFPS < 40) ||
+        (frameTimes.length > 10 && averageFPS < 10)
+      ) {
+        alert(
+          "You may have hardware acceleration disabled or your device is not fast enough to run this application...",
+        )
+
+        frameTimes = []
+        frameCursor = 0
+        numFrames = 0
+        totalFPS = 0
+      }
+    }
+  }
+}
