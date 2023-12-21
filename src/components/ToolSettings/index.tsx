@@ -59,7 +59,7 @@ function _ToolSettings() {
     const raiseSize = () => {
       let hackyVariable = null
       setToolState((prev) => {
-        hackyVariable = Math.min(prev.size + 5, 50)
+        hackyVariable = Math.min(prev.size + 5, 100)
         return { ...prev, size: hackyVariable }
       })
 
@@ -68,7 +68,7 @@ function _ToolSettings() {
     const lowerSize = () => {
       let hackyVariable = null
       setToolState((prev) => {
-        hackyVariable = Math.max(prev.size - 5, 4)
+        hackyVariable = Math.max(prev.size - 5, 1)
         return { ...prev, size: hackyVariable }
       })
 
