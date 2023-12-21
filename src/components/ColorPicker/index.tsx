@@ -1,9 +1,9 @@
 import { useReducer, useRef, useEffect, MutableRefObject } from 'react'
 
-import { getRelativeMousePos, initializeCanvas, degreesToRadians, radiansToDegrees, scaleNumberToRange, HSVtoRGB, RGBtoHSV, getDistance } from '../../utils'
+import { getRelativeMousePos, initializeCanvas, degreesToRadians, radiansToDegrees, scaleNumberToRange, HSVtoRGB, RGBtoHSV, getDistance } from '@/utils'
 
-import { COLOR_PICKER_ACTIONS } from '../../constants'
-import { ColorArray } from '../../types'
+import { COLOR_PICKER_ACTIONS } from '@/constants'
+import { ColorArray } from '@/types'
 
 
 // TODO: Maybe an SVG Version would be better than canvas?

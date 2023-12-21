@@ -1,7 +1,7 @@
 import { create } from 'zustand'
-import { ColorArray } from '../types'
+import { ColorArray } from '@/types'
 
-import { createSelectors } from './selectors'
+import { createSelectors } from '@/stores/selectors'
 
 type State = {
   color: ColorArray

@@ -2,18 +2,18 @@ import './styles.css'
 
 import { useEffect, useRef } from 'react'
 
-import Panel from '../Panel'
-import Container from '../Container'
-import { DrawCanvas } from '../DrawCanvas'
+import Panel from '@/components/Panel'
+import Container from '@/components/Container'
+import { DrawCanvas } from '@/components/DrawCanvas'
 
-import useUIState from '../../hooks/useUIState'
+import useUIState from '@/hooks/useUIState'
 
-import { useToolStore } from '../../stores/ToolStore'
-import { useLayerStore } from '../../stores/LayerStore'
+import { useToolStore } from '@/stores/ToolStore'
+import { useLayerStore } from '@/stores/LayerStore'
 
-import { DrawingManager } from '../../managers/drawingManager'
+import { DrawingManager } from '@/managers/drawingManager'
 
-import { throttle, initializeCanvas } from '../../utils'
+import { throttle, initializeCanvas } from '@/utils'
 
 function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>

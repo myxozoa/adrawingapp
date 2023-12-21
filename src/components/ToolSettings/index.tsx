@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 
-import Panel from '../Panel'
-import Container from '../Container'
-// import { ToolPreview } from '../ToolPreview'
+import Panel from '@/components/Panel'
+import Container from '@/components/Container'
+// import { ToolPreview } from '@/components/ToolPreview'
 
-import { useToolStore } from '../../stores/ToolStore'
+import { useToolStore } from '@/stores/ToolStore'
 
-import { throttle } from '../../utils'
+import { throttle } from '@/utils'
 
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'

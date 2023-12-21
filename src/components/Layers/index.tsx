@@ -1,8 +1,8 @@
-import Panel from '../Panel'
-import Container from '../Container'
-import Layer from '../Layer'
+import Panel from '@/components/Panel'
+import Container from '@/components/Container'
+import Layer from '@/components/Layer'
 
-import { useLayerStore } from "../../stores/LayerStore"
+import { useLayerStore } from "@/stores/LayerStore"
 
 function _Layers() {
   const layers = useLayerStore.use.layers()

@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react'
 
-import PanelElement from '../PanelElement'
+import PanelElement from '@/components/PanelElement'
 
-import { useLayerStore } from '../../stores/LayerStore'
+import { useLayerStore } from '@/stores/LayerStore'
 
-import { LayerName, LayerID } from '../../types'
+import { LayerName, LayerID } from '@/types'
 
 function Layer({ name, select, selected, id, editing, saveNewName }: { name: LayerName, select: (id: number) => void, selected: boolean, id: LayerID, editing: boolean, saveNewName: (id: number, name: string) => void }) {
   const setEditingLayer = useLayerStore.use.setEditingLayer()

@@ -20,7 +20,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-import * as v3 from './v3.ts';
+import * as v3 from '@/v3.ts';
 
 /**
  * 4x4 Matrix math math functions.

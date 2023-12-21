@@ -1,4 +1,4 @@
-import { BlendModes, Modifier, ToolName, ToolType } from "./types"
+import { BlendModes, Modifier, ToolName, ToolType } from "@/types"
 
 export const tool_list: Record<ToolName, ToolName> = {
   PEN: "PEN",

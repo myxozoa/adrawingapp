@@ -1,9 +1,9 @@
 import { create } from 'zustand'
-import { AvailableTools, Tool, ToolName } from '../types'
+import { AvailableTools, Tool, ToolName } from '@/types'
 
-import { createSelectors } from './selectors'
+import { createSelectors } from '@/stores/selectors'
 
-import { tool_list } from '../constants'
+import { tool_list } from '@/constants'
 
 import { Brush } from "@/objects/Brush"
 import { Fill } from "@/objects/Fill"

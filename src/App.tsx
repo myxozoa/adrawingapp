@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { Board } from './components/Board/'
-import { Layers } from './components/Layers/'
-import { Tools } from './components/ToolSelection/Tools'
-import { ToolSettings } from './components/ToolSettings'
+import { Board } from '@/components/Board/'
+import { Layers } from '@/components/Layers/'
+import { Tools } from '@/components/ToolSelection/Tools'
+import { ToolSettings } from '@/components/ToolSettings'
 
 import { ThemeProvider } from '@/components/ThemeProvider'
 

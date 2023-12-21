@@ -1,12 +1,12 @@
 import { memo } from 'react'
 
-import Panel from '../../Panel'
-import Container from '../../Container'
-import Tool from '../Tool'
+import Panel from '@/components/Panel'
+import Container from '@/components/Container'
+import Tool from '@/components/ToolSelection/Tool'
 
-import { useToolStore } from '../../../stores/ToolStore'
+import { useToolStore } from '@/stores/ToolStore'
 
-import { tools } from '../../../stores/ToolStore'
+import { tools } from '@/stores/ToolStore'
 import { DarkModeToggle } from '@/components/DarkModeToggle'
 
 function _Tools() {

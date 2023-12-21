@@ -7,7 +7,7 @@ import {
   Operations,
   Point,
   MouseState
-} from "./types";
+} from "@/types";
 
 // TODO: Type this function better
 export function getRelativeMousePos(canvas: HTMLCanvasElement, mouseState: MouseState | { x: number, y: number }): MouseState {

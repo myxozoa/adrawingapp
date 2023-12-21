@@ -1,5 +1,5 @@
-import PanelElement from '../../PanelElement'
-import { ToolName } from '../../../types'
+import PanelElement from '@/components/PanelElement'
+import { ToolName } from '@/types'
 import { tool_list } from '@/constants'
 
 import { Brush, Eraser, PaintBucket, PenLine } from 'lucide-react'

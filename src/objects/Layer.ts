@@ -1,7 +1,7 @@
 import { blend_modes } from "../constants"
 
-import { ILayer, LayerID, LayerName, Operation, BlendModes, Size, Box } from "../types"
-import { Operation, Operation } from "./Operation"
+import { ILayer, LayerID, LayerName, Operation, BlendModes, Size, Box } from "@/types"
+import { Operation, Operation } from "@/objects/Operation"
 
 export class Layer implements ILayer {
   blendMode: BlendModes

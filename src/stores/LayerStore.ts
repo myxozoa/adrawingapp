@@ -1,9 +1,9 @@
 import { create } from 'zustand'
-import { Layer as LayerType, LayerID, LayerName } from '../types'
+import { Layer as LayerType, LayerID, LayerName } from '@/types'
 
-import { Layer } from '../objects/Layer'
+import { Layer } from '@/objects/Layer'
 
-import { createSelectors } from './selectors'
+import { createSelectors } from '@/stores/selectors'
 
 type State = {
   layers: LayerType[]

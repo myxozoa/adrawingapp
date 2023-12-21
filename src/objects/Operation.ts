@@ -1,4 +1,4 @@
-import { Operation as IOperation, ITool } from "../types"
+import { Operation as IOperation, ITool } from "@/types"
 
 export class Operation implements IOperation {
   points: Points

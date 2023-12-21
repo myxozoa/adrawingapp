@@ -1,6 +1,6 @@
-import { AvailableTools, IBrush, IFill, IPen, ITool, ToolName, ToolSetting, ToolType } from "../types"
+import { AvailableTools, IBrush, IFill, IPen, ITool, ToolName, ToolSetting, ToolType } from "@/types"
 
-import { tool_list, tool_types } from "../constants"
+import { tool_list, tool_types } from "@/constants"
 
 type ToolMap = {
   PEN: IPen,
