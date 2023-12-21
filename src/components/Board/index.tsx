@@ -62,10 +62,9 @@ function _Board() {
     <>
     <Container className="grow">
       <Panel className="flex relative w-full h-full">
-        <div key={`draw_canvas`} className="absolute w-full h-full" style={{ zIndex: 5 }}>
+        <div className="relative w-full h-full canvas_separator">
           <DrawCanvas ref={boardRef} />
         </div>
-        <div className='absolute w-full h-full canvas_separator'/>
       </Panel>
     </Container>
     {/* <button onClick={() => saveImage()}>SAVE</button> */}

@@ -13,13 +13,15 @@ import {
 export function getRelativeMousePos(canvas: HTMLCanvasElement, mouseState: MouseState | { x: number, y: number }): MouseState {
   const rect = canvas.getBoundingClientRect()
 
-  const relativePosition = {
-    x: (mouseState.x) - rect.left,
-    y: (mouseState.y) - rect.top
-  }
+  const style = window.getComputedStyle(canvas, null)
 
-  relativePosition.x = relativePosition.x * window.devicePixelRatio
-  relativePosition.y = relativePosition.y * window.devicePixelRatio
+  const paddingLeft = parseFloat(style.getPropertyValue('padding-left'))
+  const paddingTop = parseFloat(style.getPropertyValue('padding-top'))
+
+  const relativePosition = {
+    x: ((mouseState.x) - (rect.left + paddingLeft))  * window.devicePixelRatio,
+    y: ((mouseState.y) - (rect.top + paddingTop)) * window.devicePixelRatio
+  }
 
   return {
     inbounds: relativePosition.x >= 0 && relativePosition.y >= 0 && relativePosition.x <= (rect.width * window.devicePixelRatio) && relativePosition.y <= (rect.height * window.devicePixelRatio),
@@ -161,7 +163,7 @@ export function initializeCanvas(
 
 // https://webgl2fundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
 
-function onResize(entries) {
+function onResize(entries: ResizeObserverEntry[]) {
   for (const entry of entries) {
     let width
     let height
@@ -193,7 +195,7 @@ function onResize(entries) {
   }
 }
 
-export function resizeCanvasToDisplaySize(canvas, callback) {
+export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback) {
   // Get the size the browser is displaying the canvas in device pixels.
   const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)
 
