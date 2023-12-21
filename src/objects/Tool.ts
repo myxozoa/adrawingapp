@@ -3,14 +3,14 @@ import { AvailableTools, IBrush, IFill, IPen, ITool, ToolName, ToolSetting, Tool
 import { tool_list, tool_types } from "@/constants"
 
 type ToolMap = {
-  PEN: IPen,
-  BRUSH: IBrush,
-  ERASER: IBrush,
+  PEN: IPen
+  BRUSH: IBrush
+  ERASER: IBrush
   FILL: IFill
 }
 
 type ToolDefaults = {
-  [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never;
+  [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never
 }
 
 export const toolDefaults: ToolDefaults = {
@@ -18,9 +18,9 @@ export const toolDefaults: ToolDefaults = {
     name: tool_list.PEN,
     size: 10,
     opacity: 100,
-    availableSettings: [ "size" ],
+    availableSettings: ["size"],
     type: tool_types.STROKE,
-    continuous: true
+    continuous: true,
   },
   BRUSH: {
     name: tool_list.BRUSH,
@@ -29,9 +29,9 @@ export const toolDefaults: ToolDefaults = {
     flow: 100,
     hardness: 98,
     spacing: 5,
-    availableSettings: [ "size", "hardness", "flow", "spacing" ],
+    availableSettings: ["size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
-    continuous: true
+    continuous: true,
   },
   ERASER: {
     name: tool_list.ERASER,
@@ -40,17 +40,17 @@ export const toolDefaults: ToolDefaults = {
     flow: 100,
     hardness: 98,
     spacing: 5,
-    availableSettings: [ "size", "hardness", "flow", "spacing" ],
+    availableSettings: ["size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
   },
   FILL: {
     name: tool_list.FILL,
     flood: true,
-    availableSettings: [ "color" ],
+    availableSettings: ["color"],
     type: tool_types.POINT,
-    continuous: false
-  }
+    continuous: false,
+  },
 }
 
 export function setWithDefaults<T extends AvailableTools>(newSettings: Partial<T>, defaultSettings: T) {

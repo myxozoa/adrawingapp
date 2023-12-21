@@ -15,20 +15,23 @@ export function DarkModeToggle() {
   const set = () => {
     let currentTheme = theme
 
-    if (theme === 'system') {
-      currentTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-      }
+    if (theme === "system") {
+      currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    }
 
-    setTheme(currentTheme === 'dark' ? 'light' : 'dark')
+    setTheme(currentTheme === "dark" ? "light" : "dark")
   }
 
   return (
     <Button variant="outline" size="icon" onClick={set}>
-      <Sun strokeWidth={1.5} className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon strokeWidth={1.5} className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Sun
+        strokeWidth={1.5}
+        className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+      />
+      <Moon
+        strokeWidth={1.5}
+        className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+      />
       <span className="sr-only">Toggle theme</span>
     </Button>
   )

@@ -44,7 +44,7 @@
  * @module twgl/v3
  */
 
-let VecType = Float32Array;
+let VecType = Float32Array
 
 /**
  * A JavaScript array with 3 values or a Float32Array with 3 values.
@@ -61,9 +61,9 @@ let VecType = Float32Array;
  * @memberOf module:twgl/v3
  */
 function setDefaultType(ctor) {
-  const oldType = VecType;
-  VecType = ctor;
-  return oldType;
+  const oldType = VecType
+  VecType = ctor
+  return oldType
 }
 
 /**
@@ -75,17 +75,17 @@ function setDefaultType(ctor) {
  * @memberOf module:twgl/v3
  */
 function create(x, y, z) {
-  const dst = new VecType(3);
+  const dst = new VecType(3)
   if (x) {
-    dst[0] = x;
+    dst[0] = x
   }
   if (y) {
-    dst[1] = y;
+    dst[1] = y
   }
   if (z) {
-    dst[2] = z;
+    dst[2] = z
   }
-  return dst;
+  return dst
 }
 
 /**
@@ -97,13 +97,13 @@ function create(x, y, z) {
  * @memberOf module:twgl/v3
  */
 function add(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = a[0] + b[0];
-  dst[1] = a[1] + b[1];
-  dst[2] = a[2] + b[2];
+  dst[0] = a[0] + b[0]
+  dst[1] = a[1] + b[1]
+  dst[2] = a[2] + b[2]
 
-  return dst;
+  return dst
 }
 
 /**
@@ -115,13 +115,13 @@ function add(a, b, dst) {
  * @memberOf module:twgl/v3
  */
 function subtract(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = a[0] - b[0];
-  dst[1] = a[1] - b[1];
-  dst[2] = a[2] - b[2];
+  dst[0] = a[0] - b[0]
+  dst[1] = a[1] - b[1]
+  dst[2] = a[2] - b[2]
 
-  return dst;
+  return dst
 }
 
 /**
@@ -136,13 +136,13 @@ function subtract(a, b, dst) {
  * @memberOf module:twgl/v3
  */
 function lerp(a, b, t, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = a[0] + t * (b[0] - a[0]);
-  dst[1] = a[1] + t * (b[1] - a[1]);
-  dst[2] = a[2] + t * (b[2] - a[2]);
+  dst[0] = a[0] + t * (b[0] - a[0])
+  dst[1] = a[1] + t * (b[1] - a[1])
+  dst[2] = a[2] + t * (b[2] - a[2])
 
-  return dst;
+  return dst
 }
 
 /**
@@ -157,13 +157,13 @@ function lerp(a, b, t, dst) {
  * @memberOf module:twgl/v3
  */
 function lerpV(a, b, t, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = a[0] + t[0] * (b[0] - a[0]);
-  dst[1] = a[1] + t[1] * (b[1] - a[1]);
-  dst[2] = a[2] + t[2] * (b[2] - a[2]);
+  dst[0] = a[0] + t[0] * (b[0] - a[0])
+  dst[1] = a[1] + t[1] * (b[1] - a[1])
+  dst[2] = a[2] + t[2] * (b[2] - a[2])
 
-  return dst;
+  return dst
 }
 
 /**
@@ -177,13 +177,13 @@ function lerpV(a, b, t, dst) {
  * @memberOf module:twgl/v3
  */
 function max(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = Math.max(a[0], b[0]);
-  dst[1] = Math.max(a[1], b[1]);
-  dst[2] = Math.max(a[2], b[2]);
+  dst[0] = Math.max(a[0], b[0])
+  dst[1] = Math.max(a[1], b[1])
+  dst[2] = Math.max(a[2], b[2])
 
-  return dst;
+  return dst
 }
 
 /**
@@ -197,13 +197,13 @@ function max(a, b, dst) {
  * @memberOf module:twgl/v3
  */
 function min(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = Math.min(a[0], b[0]);
-  dst[1] = Math.min(a[1], b[1]);
-  dst[2] = Math.min(a[2], b[2]);
+  dst[0] = Math.min(a[0], b[0])
+  dst[1] = Math.min(a[1], b[1])
+  dst[2] = Math.min(a[2], b[2])
 
-  return dst;
+  return dst
 }
 
 /**
@@ -215,13 +215,13 @@ function min(a, b, dst) {
  * @memberOf module:twgl/v3
  */
 function mulScalar(v, k, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = v[0] * k;
-  dst[1] = v[1] * k;
-  dst[2] = v[2] * k;
+  dst[0] = v[0] * k
+  dst[1] = v[1] * k
+  dst[2] = v[2] * k
 
-  return dst;
+  return dst
 }
 
 /**
@@ -233,13 +233,13 @@ function mulScalar(v, k, dst) {
  * @memberOf module:twgl/v3
  */
 function divScalar(v, k, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = v[0] / k;
-  dst[1] = v[1] / k;
-  dst[2] = v[2] / k;
+  dst[0] = v[0] / k
+  dst[1] = v[1] / k
+  dst[2] = v[2] / k
 
-  return dst;
+  return dst
 }
 
 /**
@@ -252,15 +252,15 @@ function divScalar(v, k, dst) {
  * @memberOf module:twgl/v3
  */
 function cross(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  const t1 = a[2] * b[0] - a[0] * b[2];
-  const t2 = a[0] * b[1] - a[1] * b[0];
-  dst[0] = a[1] * b[2] - a[2] * b[1];
-  dst[1] = t1;
-  dst[2] = t2;
+  const t1 = a[2] * b[0] - a[0] * b[2]
+  const t2 = a[0] * b[1] - a[1] * b[0]
+  dst[0] = a[1] * b[2] - a[2] * b[1]
+  dst[1] = t1
+  dst[2] = t2
 
-  return dst;
+  return dst
 }
 
 /**
@@ -272,7 +272,7 @@ function cross(a, b, dst) {
  * @memberOf module:twgl/v3
  */
 function dot(a, b) {
-  return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
 /**
@@ -282,7 +282,7 @@ function dot(a, b) {
  * @memberOf module:twgl/v3
  */
 function length(v) {
-  return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
 }
 
 /**
@@ -292,7 +292,7 @@ function length(v) {
  * @memberOf module:twgl/v3
  */
 function lengthSq(v) {
-  return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+  return v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
 }
 
 /**
@@ -303,10 +303,10 @@ function lengthSq(v) {
  * @memberOf module:twgl/v3
  */
 function distance(a, b) {
-  const dx = a[0] - b[0];
-  const dy = a[1] - b[1];
-  const dz = a[2] - b[2];
-  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  const dx = a[0] - b[0]
+  const dy = a[1] - b[1]
+  const dz = a[2] - b[2]
+  return Math.sqrt(dx * dx + dy * dy + dz * dz)
 }
 
 /**
@@ -317,10 +317,10 @@ function distance(a, b) {
  * @memberOf module:twgl/v3
  */
 function distanceSq(a, b) {
-  const dx = a[0] - b[0];
-  const dy = a[1] - b[1];
-  const dz = a[2] - b[2];
-  return dx * dx + dy * dy + dz * dz;
+  const dx = a[0] - b[0]
+  const dy = a[1] - b[1]
+  const dz = a[2] - b[2]
+  return dx * dx + dy * dy + dz * dz
 }
 
 /**
@@ -331,21 +331,21 @@ function distanceSq(a, b) {
  * @memberOf module:twgl/v3
  */
 function normalize(a, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  const lenSq = a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
-  const len = Math.sqrt(lenSq);
+  const lenSq = a[0] * a[0] + a[1] * a[1] + a[2] * a[2]
+  const len = Math.sqrt(lenSq)
   if (len > 0.00001) {
-    dst[0] = a[0] / len;
-    dst[1] = a[1] / len;
-    dst[2] = a[2] / len;
+    dst[0] = a[0] / len
+    dst[1] = a[1] / len
+    dst[2] = a[2] / len
   } else {
-    dst[0] = 0;
-    dst[1] = 0;
-    dst[2] = 0;
+    dst[0] = 0
+    dst[1] = 0
+    dst[2] = 0
   }
 
-  return dst;
+  return dst
 }
 
 /**
@@ -356,13 +356,13 @@ function normalize(a, dst) {
  * @memberOf module:twgl/v3
  */
 function negate(v, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = -v[0];
-  dst[1] = -v[1];
-  dst[2] = -v[2];
+  dst[0] = -v[0]
+  dst[1] = -v[1]
+  dst[2] = -v[2]
 
-  return dst;
+  return dst
 }
 
 /**
@@ -373,13 +373,13 @@ function negate(v, dst) {
  * @memberOf module:twgl/v3
  */
 function copy(v, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = v[0];
-  dst[1] = v[1];
-  dst[2] = v[2];
+  dst[0] = v[0]
+  dst[1] = v[1]
+  dst[2] = v[2]
 
-  return dst;
+  return dst
 }
 
 /**
@@ -393,13 +393,13 @@ function copy(v, dst) {
  * @memberOf module:twgl/v3
  */
 function multiply(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = a[0] * b[0];
-  dst[1] = a[1] * b[1];
-  dst[2] = a[2] * b[2];
+  dst[0] = a[0] * b[0]
+  dst[1] = a[1] * b[1]
+  dst[2] = a[2] * b[2]
 
-  return dst;
+  return dst
 }
 
 /**
@@ -413,13 +413,13 @@ function multiply(a, b, dst) {
  * @memberOf module:twgl/v3
  */
 function divide(a, b, dst) {
-  dst = dst || new VecType(3);
+  dst = dst || new VecType(3)
 
-  dst[0] = a[0] / b[0];
-  dst[1] = a[1] / b[1];
-  dst[2] = a[2] / b[2];
+  dst[0] = a[0] / b[0]
+  dst[1] = a[1] / b[1]
+  dst[2] = a[2] / b[2]
 
-  return dst;
+  return dst
 }
 
 export {
@@ -444,5 +444,4 @@ export {
   normalize,
   setDefaultType,
   subtract,
-};
-
+}

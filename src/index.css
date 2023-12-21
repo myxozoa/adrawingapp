@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -28,7 +25,7 @@
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
   }
- 
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -51,7 +48,6 @@
     --ring: 240 4.9% 83.9%;
   }
 }
-
 
 @layer base {
   * {
@@ -100,4 +96,3 @@ body {
   place-items: center;
   min-width: 320px;
 }
-

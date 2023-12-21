@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
-import { Board } from '@/components/Board/'
-import { Layers } from '@/components/LayerSelection/Layers'
-import { Tools } from '@/components/ToolSelection/Tools'
-import { ToolSettings } from '@/components/ToolSettings'
+import { useEffect } from "react"
+import { Board } from "@/components/Board/"
+import { Layers } from "@/components/LayerSelection/Layers"
+import { Tools } from "@/components/ToolSelection/Tools"
+import { ToolSettings } from "@/components/ToolSettings"
 
-import { ThemeProvider } from '@/components/ThemeProvider'
+import { ThemeProvider } from "@/components/ThemeProvider"
 
 function App() {
   useEffect(() => {
@@ -12,14 +12,14 @@ function App() {
   }, [])
   return (
     <ThemeProvider storageKey="draw-ui-theme">
-    <div className="flex flex-col h-full">
-      <ToolSettings/>
-      <div className='flex flex-row flex-grow'>
-        <Tools />
-        <Board />
-        <Layers />
+      <div className="flex flex-col h-full">
+        <ToolSettings />
+        <div className="flex flex-row flex-grow">
+          <Tools />
+          <Board />
+          <Layers />
+        </div>
       </div>
-    </div>
     </ThemeProvider>
   )
 }

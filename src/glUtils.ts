@@ -1,6 +1,6 @@
 export function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
   const shader = gl.createShader(type)
-  
+
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
 
@@ -9,7 +9,7 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
   if (success) {
     return shader
   }
- 
+
   throw new Error(gl.getShaderInfoLog(shader))
   gl.deleteShader(shader)
 }
@@ -21,7 +21,7 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
   gl.attachShader(program, fragmentShader)
   gl.linkProgram(program)
   gl.validateProgram(program)
-  
+
   const successLink = gl.getProgramParameter(program, gl.LINK_STATUS)
   const successValidation = gl.getProgramParameter(program, gl.VALIDATE_STATUS)
 
@@ -29,13 +29,12 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
     return program
   }
 
- 
   throw new Error(gl.getProgramInfoLog(program))
   gl.deleteProgram(program)
 }
 
 // export function initializeGL(gl: WebGL2RenderingContext) {
-  
+
 // }
 
 export function getUniformLocations(gl, program, list: string[]) {
@@ -60,10 +59,8 @@ export function getAttributeLocations(gl: WebGL2RenderingContext, program: WebGL
 
 // export function createVAO(gl) {
 
-
 //   return vao
 // }
-
 
 // grab pixel
 // const format1 = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT)
@@ -77,5 +74,5 @@ export default {
   createShader,
   createProgram,
   getUniformLocations,
-  getAttributeLocations
+  getAttributeLocations,
 }

@@ -5,7 +5,7 @@ export class Operation implements IOperation {
   tool: Tool
   readyToDraw: boolean
 
-  constructor (tool: ITool) {
+  constructor(tool: ITool) {
     this.points = []
     this.tool = tool
     this.readyToDraw = false

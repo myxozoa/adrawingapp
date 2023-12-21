@@ -1,16 +1,16 @@
 import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
 import { IBrush, IOperation, Point } from "@/types"
 
-import { useMainStore } from '@/stores/MainStore'
+import { useMainStore } from "@/stores/MainStore"
 
-import brushFragment from '@/shaders/Brush/brush.frag?raw'
-import brushVertex from '@/shaders/Brush/brush.vert?raw'
+import brushFragment from "@/shaders/Brush/brush.frag?raw"
+import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { calculateHardness, getDistance, lerp, scaleNumberToRange } from '@/utils'
+import { calculateHardness, getDistance, lerp, scaleNumberToRange } from "@/utils"
 
-import * as v3 from '@/v3.ts'
-import * as m4 from '@/m4.ts'
-import * as glUtils from '@/glUtils'
+import * as v3 from "@/v3.ts"
+import * as m4 from "@/m4.ts"
+import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
 export class Brush extends Tool implements IBrush {
@@ -37,15 +37,24 @@ export class Brush extends Tool implements IBrush {
   setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
     const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
     const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
-  
+
     const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
-  
+
     const attributeNames = ["a_position"]
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
-  
-    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_size", "u_flow", "u_random"]
-  
+
+    const uniformNames = [
+      "u_matrix",
+      "u_point",
+      "u_resolution",
+      "u_brush_color",
+      "u_softness",
+      "u_size",
+      "u_flow",
+      "u_random",
+    ]
+
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
     return { program, attributes, uniforms }
@@ -53,20 +62,26 @@ export class Brush extends Tool implements IBrush {
 
   setupVBO = (gl: WebGL2RenderingContext) => {
     const vbo = gl.createBuffer()
-  
+
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-  
+
     const positions = [
       // Triangle 1
-      -1.0,  1.0, // Top left
-      -1.0, -1.0, // Bottom left
-       1.0,  1.0, // Top right
-  
+      -1.0,
+      1.0, // Top left
+      -1.0,
+      -1.0, // Bottom left
+      1.0,
+      1.0, // Top right
+
       // Triangle 2
-      -1.0, -1.0, // Bottom left
-       1.0, -1.0, // Bottom right
-       1.0,  1.0,  // Top right
-  ]
+      -1.0,
+      -1.0, // Bottom left
+      1.0,
+      -1.0, // Bottom right
+      1.0,
+      1.0, // Top right
+    ]
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
 
@@ -80,9 +95,9 @@ export class Brush extends Tool implements IBrush {
     const vao = gl.createVertexArray()
 
     gl.bindVertexArray(vao)
-  
+
     gl.enableVertexAttribArray(attribute)
-  
+
     gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0)
 
     // Unbind
@@ -95,13 +110,13 @@ export class Brush extends Tool implements IBrush {
     const { program, attributes, uniforms } = this.setupProgramAndAttributeUniforms(gl)
     this.program = program
     this.uniforms = uniforms
-  
+
     this.VBO = this.setupVBO(gl)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
 
     this.VAO = this.setupVAO(gl, attributes.a_position)
     gl.bindVertexArray(this.VAO)
-  
+
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindVertexArray(null)
@@ -112,7 +127,7 @@ export class Brush extends Tool implements IBrush {
     gl.enable(gl.BLEND)
 
     gl.blendEquation(gl.FUNC_ADD)
-  
+
     this.base(gl, operation)
   }
 
@@ -155,8 +170,8 @@ export class Brush extends Tool implements IBrush {
       const y = point0.y + (point1.y - point0.y) * t
 
       const pressure = lerp(point0.pressure, point1.pressure, 0.5)
-      
-      this.stamp(gl, operation, {x, y, pointerType: point0.pointerType, pressure })
+
+      this.stamp(gl, operation, { x, y, pointerType: point0.pointerType, pressure })
     }
   }
 
@@ -166,9 +181,9 @@ export class Brush extends Tool implements IBrush {
     let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
 
     const locationVector = v3.create(point.x, point.y, 0)
-  
+
     matrix = m4.translate(matrix, locationVector)
-  
+
     const baseSize = 100
 
     let size = 40 - scaleNumberToRange(operation.tool.size, 1, 50, 10, 38)
@@ -179,14 +194,17 @@ export class Brush extends Tool implements IBrush {
     }
 
     const scaleVector = v3.create(baseSize, baseSize, 1)
-  
+
     matrix = m4.scale(matrix, scaleVector)
-  
+
     gl.uniformMatrix4fv(this.uniforms.u_matrix, true, matrix)
 
     gl.uniform2f(this.uniforms.u_resolution, 100, 100)
     gl.uniform2f(this.uniforms.u_point, point.x, gl.canvas.height - point.y)
-    gl.uniform3fv(this.uniforms.u_brush_color, color.map(c => c / 255))
+    gl.uniform3fv(
+      this.uniforms.u_brush_color,
+      color.map((c) => c / 255),
+    )
     gl.uniform1f(this.uniforms.u_softness, calculateHardness(operation.tool.hardness, operation.tool.size) / 100)
     gl.uniform1f(this.uniforms.u_size, size)
     gl.uniform1f(this.uniforms.u_flow, operation.tool.flow / 100)

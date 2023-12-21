@@ -1,16 +1,16 @@
-import { useRef, useLayoutEffect } from 'react'
+import { useRef, useLayoutEffect } from "react"
 
-import { initializeCanvas } from '@/utils'
+import { initializeCanvas } from "@/utils"
 
-import * as glUtils from '@/glUtils'
+import * as glUtils from "@/glUtils"
 
-import { toolPreviewSize } from '@/constants'
+import { toolPreviewSize } from "@/constants"
 
-import { useToolStore } from '@/stores/ToolStore'
-import { useMainStore } from '@/stores/MainStore'
+import { useToolStore } from "@/stores/ToolStore"
+import { useMainStore } from "@/stores/MainStore"
 
-import fragment from '@/shaders/BrushPreview/brushPreview.frag?raw'
-import vertex from '@/shaders/BrushPreview/brushPreview.vert?raw'
+import fragment from "@/shaders/BrushPreview/brushPreview.frag?raw"
+import vertex from "@/shaders/BrushPreview/brushPreview.vert?raw"
 
 let cache = null
 
@@ -38,16 +38,21 @@ const initGL = (gl: WebGL2RenderingContext) => {
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
 
   const positions = [
-    -1, -1,  // first triangle
-    1, -1,
-    -1,  1,
-    -1,  1,  // second triangle
-    1, -1,
-    1,  1,
+    -1,
+    -1, // first triangle
+    1,
+    -1,
+    -1,
+    1,
+    -1,
+    1, // second triangle
+    1,
+    -1,
+    1,
+    1,
   ]
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
 
-  
   const vao = gl.createVertexArray()
 
   gl.bindVertexArray(vao)
@@ -69,16 +74,20 @@ function _ToolPreview() {
   const color = useMainStore.use.color()
 
   useLayoutEffect(() => {
-    initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize, { desynchronized: true, resize: false, performance: 'low-power' })
+    initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize, {
+      desynchronized: true,
+      resize: false,
+      performance: "low-power",
+    })
   }, [previewCanvasRef.current])
 
   useLayoutEffect(() => {
     if (previewCanvasRef.current) {
-      const gl = previewCanvasRef.current.getContext('webgl2', {
+      const gl = previewCanvasRef.current.getContext("webgl2", {
         alpha: true,
         desynchronized: true,
-        powerPreference: 'low-power',
-        premultipliedAlpha: false
+        powerPreference: "low-power",
+        premultipliedAlpha: false,
       }) as WebGL2RenderingContext
 
       const { uniforms } = initGL(gl)
@@ -89,7 +98,10 @@ function _ToolPreview() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
       gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
-      gl.uniform3fv(uniforms.u_brush_color, color.map(c => c / 255))
+      gl.uniform3fv(
+        uniforms.u_brush_color,
+        color.map((c) => c / 255),
+      )
       gl.uniform1f(uniforms.u_softness, currentTool.hardness / 100)
       // gl.uniform1f(uniforms.u_size, 40 - scaleNumberToRange(currentTool.size, 1, 50, 10, 38))
       // gl.uniform1f(uniforms.u_opacity, currentTool.opacity / 100)
@@ -98,9 +110,7 @@ function _ToolPreview() {
     }
   }, [currentTool.size, currentTool.hardness, currentTool.opacity, color])
 
-  return (
-    <canvas className='bg-black' ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
-  )
+  return <canvas className="bg-black" ref={previewCanvasRef} width={toolPreviewSize} height={toolPreviewSize} />
 }
 
 export const ToolPreview = _ToolPreview

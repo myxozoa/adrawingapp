@@ -1,23 +1,23 @@
-import './styles.css'
+import "./styles.css"
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef } from "react"
 
-import Panel from '@/components/Panel'
-import Container from '@/components/Container'
-import { DrawCanvas } from '@/components/DrawCanvas'
+import Panel from "@/components/Panel"
+import Container from "@/components/Container"
+import { DrawCanvas } from "@/components/DrawCanvas"
 
-import useUIState from '@/hooks/useUIState'
+import useUIState from "@/hooks/useUIState"
 
-import { useToolStore } from '@/stores/ToolStore'
-import { useLayerStore } from '@/stores/LayerStore'
+import { useToolStore } from "@/stores/ToolStore"
+import { useLayerStore } from "@/stores/LayerStore"
 
-import { DrawingManager } from '@/managers/drawingManager'
+import { DrawingManager } from "@/managers/drawingManager"
 
-import { throttle, initializeCanvas } from '@/utils'
+import { throttle, initializeCanvas } from "@/utils"
 
 function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
-  const {  currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
+  const { currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
   const currentLayer = useLayerStore.use.currentLayer()
   const currentTool = useToolStore.use.currentTool()
 
@@ -60,14 +60,14 @@ function _Board() {
 
   return (
     <>
-    <Container className="grow">
-      <Panel className="flex relative w-full h-full">
-        <div className="relative w-full h-full canvas_background">
-          <DrawCanvas ref={boardRef} />
-        </div>
-      </Panel>
-    </Container>
-    {/* <button onClick={() => saveImage()}>SAVE</button> */}
+      <Container className="grow">
+        <Panel className="flex relative w-full h-full">
+          <div className="relative w-full h-full canvas_background">
+            <DrawCanvas ref={boardRef} />
+          </div>
+        </Panel>
+      </Container>
+      {/* <button onClick={() => saveImage()}>SAVE</button> */}
     </>
   )
 }

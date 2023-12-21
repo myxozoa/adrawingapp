@@ -15,7 +15,7 @@ export class Layer implements ILayer {
   size: Size
   boundingBox: Box
 
-  constructor(name: LayerName, size: Size ) {
+  constructor(name: LayerName, size: Size) {
     this.blendMode = blend_modes.normal
     this.name = name
     this.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random() * Math.random()).toString()
@@ -47,7 +47,7 @@ export class Layer implements ILayer {
 
   getImageData = (gl: WebGL2RenderingContext): Uint32Array => {
     this.noDraw = true
-  
+
     // gl.readPixels(0, 0, this.size.width, this.size.height, gl.RGBA_INTEGER, gl.UNSIGNED_INT, this.drawingData)
 
     this.noDraw = false
@@ -55,11 +55,10 @@ export class Layer implements ILayer {
     return this.drawingData
   }
 
-  fill = (gl:WebGL2RenderingContext, color = 'white') => {
+  fill = (gl: WebGL2RenderingContext, color = "white") => {
     // context.save()
     // context.fillStyle = color
     // context.fillRect(0, 0, context.canvas.width, context.canvas.height)
-
     // context.restore()
   }
 }

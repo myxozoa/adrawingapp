@@ -1,17 +1,25 @@
-import { useReducer, useRef, useEffect, MutableRefObject } from 'react'
+import { useReducer, useRef, useEffect, MutableRefObject } from "react"
 
-import { getRelativeMousePos, initializeCanvas, degreesToRadians, radiansToDegrees, scaleNumberToRange, HSVtoRGB, RGBtoHSV, getDistance } from '@/utils'
+import {
+  getRelativeMousePos,
+  initializeCanvas,
+  degreesToRadians,
+  radiansToDegrees,
+  scaleNumberToRange,
+  HSVtoRGB,
+  RGBtoHSV,
+  getDistance,
+} from "@/utils"
 
-import { COLOR_PICKER_ACTIONS } from '@/constants'
-import { ColorArray } from '@/types'
-
+import { COLOR_PICKER_ACTIONS } from "@/constants"
+import { ColorArray } from "@/types"
 
 // TODO: Maybe an SVG Version would be better than canvas?
 
-function getHSV(value: ColorArray) {  
+function getHSV(value: ColorArray) {
   const { h, s, v } = RGBtoHSV(value[0], value[1], value[2])
 
-  return { hue: h * 360, saturation: s * 100, value: 100 - (v * 100) }
+  return { hue: h * 360, saturation: s * 100, value: 100 - v * 100 }
 }
 
 function getDimensions(context: CanvasRenderingContext2D, hsvState: HSV) {
@@ -19,24 +27,26 @@ function getDimensions(context: CanvasRenderingContext2D, hsvState: HSV) {
 
   const canvasWidth = rect.width
   const canvasHeight = rect.height
-  
-  const radius = (canvasWidth / 2)
-  
+
+  const radius = canvasWidth / 2
+
   const circleTrackSelectorInnerWidth = radius * 0.8
-  
+
   const circleTrackSelectorWidth = radius - circleTrackSelectorInnerWidth
-  const hueIndicatorTrack = radius - (circleTrackSelectorWidth / 2)
-  
-  const hueIndicatorX = hueIndicatorTrack + hueIndicatorTrack * Math.cos(degreesToRadians(hsvState.hue)) + (circleTrackSelectorWidth / 2)
-  const hueIndicatorY = hueIndicatorTrack + hueIndicatorTrack * Math.sin(degreesToRadians(hsvState.hue))+ (circleTrackSelectorWidth / 2)
+  const hueIndicatorTrack = radius - circleTrackSelectorWidth / 2
+
+  const hueIndicatorX =
+    hueIndicatorTrack + hueIndicatorTrack * Math.cos(degreesToRadians(hsvState.hue)) + circleTrackSelectorWidth / 2
+  const hueIndicatorY =
+    hueIndicatorTrack + hueIndicatorTrack * Math.sin(degreesToRadians(hsvState.hue)) + circleTrackSelectorWidth / 2
 
   const indicatorSize = (circleTrackSelectorWidth * 0.8) / 2
   const indicatorLineWidth = 2
-    
+
   const svBoxWidth = circleTrackSelectorInnerWidth * 1.2
-  
-  const svBoxX = (canvasWidth / 2) - (svBoxWidth / 2)
-  const svBoxY = (canvasHeight / 2) - (svBoxWidth / 2)
+
+  const svBoxX = canvasWidth / 2 - svBoxWidth / 2
+  const svBoxY = canvasHeight / 2 - svBoxWidth / 2
 
   const saturation = scaleNumberToRange(hsvState.saturation, 0, 100, 0, svBoxWidth)
   const value = scaleNumberToRange(hsvState.value, 0, 100, 0, svBoxWidth)
@@ -59,17 +69,12 @@ function getDimensions(context: CanvasRenderingContext2D, hsvState: HSV) {
     svBoxX,
     svBoxY,
     svIndicatorX,
-    svIndicatorY
+    svIndicatorY,
   }
 }
 
-
 const drawSVPanel = (context: CanvasRenderingContext2D, hsvState: HSV) => {
-  const {
-    svBoxX,
-    svBoxY,
-    svBoxWidth,
-  } = getDimensions(context, hsvState)
+  const { svBoxX, svBoxY, svBoxWidth } = getDimensions(context, hsvState)
 
   context.save()
   // Saturation and Value Panel Drawing
@@ -93,11 +98,7 @@ const drawSVPanel = (context: CanvasRenderingContext2D, hsvState: HSV) => {
 }
 
 const drawSVIndicator = (context: CanvasRenderingContext2D, hsvState: HSV) => {
-  const {
-    svIndicatorY,
-    svIndicatorX,
-    indicatorSize
-  } = getDimensions(context, hsvState)
+  const { svIndicatorY, svIndicatorX, indicatorSize } = getDimensions(context, hsvState)
 
   // Saturation and Value Indicator Drawing
   context.beginPath()
@@ -107,21 +108,17 @@ const drawSVIndicator = (context: CanvasRenderingContext2D, hsvState: HSV) => {
 }
 
 const drawHueIndicator = (context: CanvasRenderingContext2D, hsvState: HSV) => {
-  const {
-    canvasHeight,
-    canvasWidth,
-    indicatorLineWidth,
-    hueIndicatorX,
-    hueIndicatorY,
-    indicatorSize
-  } = getDimensions(context, hsvState)
+  const { canvasHeight, canvasWidth, indicatorLineWidth, hueIndicatorX, hueIndicatorY, indicatorSize } = getDimensions(
+    context,
+    hsvState,
+  )
 
   context.save()
   // Hue Ring Indicator Drawing
   context.clearRect(0, 0, canvasWidth, canvasHeight)
 
-  context.fillStyle = 'black'
-  context.strokeStyle = 'rgb(255, 255, 255)'
+  context.fillStyle = "black"
+  context.strokeStyle = "rgb(255, 255, 255)"
   context.lineWidth = indicatorLineWidth
   context.beginPath()
   context.arc(hueIndicatorX, hueIndicatorY, indicatorSize, 0, Math.PI * 2, true)
@@ -133,12 +130,12 @@ const drawHueIndicator = (context: CanvasRenderingContext2D, hsvState: HSV) => {
 const drawHueRing = (context: CanvasRenderingContext2D, hsvState: HSV) => {
   const { radius, circleTrackSelectorInnerWidth, canvasWidth, canvasHeight } = getDimensions(context, hsvState)
   const step = 1 / radius
-  
+
   context.save()
   context.clearRect(0, 0, canvasWidth, canvasHeight)
-  
+
   // Drawing One Line Per Hue from Center Outward for Hue Ring
-  for(let i = 0; i < 360; i += step) {
+  for (let i = 0; i < 360; i += step) {
     const angle = degreesToRadians(i)
     context.strokeStyle = `hsl(${i}, 100%, 50%)`
     context.beginPath()
@@ -148,7 +145,7 @@ const drawHueRing = (context: CanvasRenderingContext2D, hsvState: HSV) => {
   }
 
   // Drawing Inside Circle
-  context.fillStyle = '#333333'
+  context.fillStyle = "#333333"
   context.beginPath()
   context.arc(radius, radius, circleTrackSelectorInnerWidth, 0, Math.PI * 2, true)
   context.closePath()
@@ -158,16 +155,29 @@ const drawHueRing = (context: CanvasRenderingContext2D, hsvState: HSV) => {
 }
 
 // TODO: make these types actually work
-interface HSV { hue: number; saturation: number; value: number }
+interface HSV {
+  hue: number
+  saturation: number
+  value: number
+}
 
-interface hue { type: COLOR_PICKER_ACTIONS.SET_HUE; data: Partial<HSV> }
-interface sat { type: COLOR_PICKER_ACTIONS.SET_SAT_VAL; data: Partial<HSV> }
-interface val { type: COLOR_PICKER_ACTIONS.SET_HUE_SAT_VAL; data: Partial<HSV> }
+interface hue {
+  type: COLOR_PICKER_ACTIONS.SET_HUE
+  data: Partial<HSV>
+}
+interface sat {
+  type: COLOR_PICKER_ACTIONS.SET_SAT_VAL
+  data: Partial<HSV>
+}
+interface val {
+  type: COLOR_PICKER_ACTIONS.SET_HUE_SAT_VAL
+  data: Partial<HSV>
+}
 
 type HSVAction = hue | sat | val
 
 function hsvReducer(state: HSV, action: HSVAction): HSV {
-  switch(action.type) {
+  switch (action.type) {
     case COLOR_PICKER_ACTIONS.SET_HUE:
       return { ...state, hue: action.data.hue! }
     case COLOR_PICKER_ACTIONS.SET_SAT_VAL:
@@ -179,7 +189,15 @@ function hsvReducer(state: HSV, action: HSVAction): HSV {
   throw new Error("Unknown HSV Reducer Action")
 }
 
-function ColorPicker({ size, value, onChange }: { size: number, value: ColorArray, onChange: (event: ColorArray) => void }) {
+function ColorPicker({
+  size,
+  value,
+  onChange,
+}: {
+  size: number
+  value: ColorArray
+  onChange: (event: ColorArray) => void
+}) {
   const pickerRef = useRef() as MutableRefObject<HTMLCanvasElement>
   const indicatorRef = useRef() as MutableRefObject<HTMLCanvasElement>
 
@@ -187,10 +205,20 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   const selectingSV = useRef(false)
 
   const [hsvState, hsvDispatch] = useReducer(hsvReducer, getHSV(value))
-  
+
   useEffect(() => {
-    const pickerContext = initializeCanvas(pickerRef.current, size, size, { desynchronized: true, resize: false, contextType: '2d', performance: 'low-power' })
-    initializeCanvas(indicatorRef.current, size, size, { desynchronized: true, resize: false, contextType: '2d', performance: 'low-power' })
+    const pickerContext = initializeCanvas(pickerRef.current, size, size, {
+      desynchronized: true,
+      resize: false,
+      contextType: "2d",
+      performance: "low-power",
+    })
+    initializeCanvas(indicatorRef.current, size, size, {
+      desynchronized: true,
+      resize: false,
+      contextType: "2d",
+      performance: "low-power",
+    })
 
     window.addEventListener("pointermove", mouseMove)
     window.addEventListener("pointerup", mouseUp)
@@ -211,14 +239,14 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   useEffect(() => {
     const saturationPercentage = hsvState.saturation / 100
     const valuePercentage = hsvState.value / 100
-  
+
     const { r, g, b } = HSVtoRGB(hsvState.hue / 360, saturationPercentage, 1 - valuePercentage)
 
     onChange([r, g, b])
 
-    const pickerContext = pickerRef.current.getContext('2d') as CanvasRenderingContext2D
-    const indicatorContext = indicatorRef.current.getContext('2d') as CanvasRenderingContext2D
-      
+    const pickerContext = pickerRef.current.getContext("2d") as CanvasRenderingContext2D
+    const indicatorContext = indicatorRef.current.getContext("2d") as CanvasRenderingContext2D
+
     drawHueIndicator(indicatorContext, hsvState)
 
     drawSVPanel(pickerContext, hsvState)
@@ -227,11 +255,14 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   }, [hsvState])
 
   const selectHue = (event: PointerEvent | React.PointerEvent<HTMLCanvasElement>) => {
-    const {x: relativeX, y: relativeY} = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
+    const { x: relativeX, y: relativeY } = getRelativeMousePos(indicatorRef.current, {
+      x: event.clientX,
+      y: event.clientY,
+    })
 
     const centerX = (indicatorRef.current.width / 2) * window.devicePixelRatio
     const centerY = (indicatorRef.current.height / 2) * window.devicePixelRatio
-    const angle = Math.atan2(relativeY - centerY, relativeX - centerX);
+    const angle = Math.atan2(relativeY - centerY, relativeX - centerX)
 
     let angleDegrees = radiansToDegrees(angle)
 
@@ -242,39 +273,34 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   }
 
   const selectSaturationValue = (event: PointerEvent | React.PointerEvent<HTMLCanvasElement>) => {
-    const {x: relativeX, y: relativeY} = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
-    
-    const indicatorContext = indicatorRef.current.getContext('2d') as CanvasRenderingContext2D
+    const { x: relativeX, y: relativeY } = getRelativeMousePos(indicatorRef.current, {
+      x: event.clientX,
+      y: event.clientY,
+    })
 
-    const {
-      svBoxWidth,
-      svBoxX,
-      svBoxY
-    } = getDimensions(indicatorContext, hsvState)
+    const indicatorContext = indicatorRef.current.getContext("2d") as CanvasRenderingContext2D
+
+    const { svBoxWidth, svBoxX, svBoxY } = getDimensions(indicatorContext, hsvState)
 
     const relativePosition = {
-      x: (relativeX * window.devicePixelRatio) - svBoxX * window.devicePixelRatio,
-      y: (relativeY * window.devicePixelRatio) - svBoxY * window.devicePixelRatio
+      x: relativeX * window.devicePixelRatio - svBoxX * window.devicePixelRatio,
+      y: relativeY * window.devicePixelRatio - svBoxY * window.devicePixelRatio,
     }
 
     const saturation = scaleNumberToRange(relativePosition.x, 0, svBoxWidth, 0, 100)
     const value = scaleNumberToRange(relativePosition.y, 0, svBoxWidth, 0, 100)
 
-    hsvDispatch({ type: COLOR_PICKER_ACTIONS.SET_SAT_VAL, data: { saturation, value }})
-
+    hsvDispatch({ type: COLOR_PICKER_ACTIONS.SET_SAT_VAL, data: { saturation, value } })
   }
 
   const mouseDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    if(selectingHue.current || selectingSV.current) return
-  
-    const indicatorContext = indicatorRef.current.getContext('2d') as CanvasRenderingContext2D
+    if (selectingHue.current || selectingSV.current) return
 
-    const {
-      circleTrackSelectorInnerWidth,
-      radius
-    } = getDimensions(indicatorContext, hsvState)
+    const indicatorContext = indicatorRef.current.getContext("2d") as CanvasRenderingContext2D
 
-    const {x, y} = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
+    const { circleTrackSelectorInnerWidth, radius } = getDimensions(indicatorContext, hsvState)
+
+    const { x, y } = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
 
     // Setting Saturation/Value if click landed on inside circle for more forgiving target
     if (getDistance({ x, y }, { x: radius, y: radius }) <= circleTrackSelectorInnerWidth) {
@@ -287,8 +313,8 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   }
 
   const mouseMove = (event: PointerEvent) => {
-    if(selectingHue.current) selectHue(event)
-    else if(selectingSV.current) selectSaturationValue(event)
+    if (selectingHue.current) selectHue(event)
+    else if (selectingSV.current) selectSaturationValue(event)
   }
 
   const mouseUp = () => {
@@ -297,9 +323,15 @@ function ColorPicker({ size, value, onChange }: { size: number, value: ColorArra
   }
 
   return (
-    <div className='relative' style={{ width: `${size}px`, height: `${size}px` }}>
-      <canvas width={size} height={size} className="absolute top-0 left-0 z-10" ref={indicatorRef} onPointerDown={(e) => mouseDown(e)} />
-      <canvas width={size} height={size} className='absolute top-0 left-0 z-0' ref={pickerRef} />
+    <div className="relative" style={{ width: `${size}px`, height: `${size}px` }}>
+      <canvas
+        width={size}
+        height={size}
+        className="absolute top-0 left-0 z-10"
+        ref={indicatorRef}
+        onPointerDown={(e) => mouseDown(e)}
+      />
+      <canvas width={size} height={size} className="absolute top-0 left-0 z-0" ref={pickerRef} />
     </div>
   )
 }

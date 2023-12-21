@@ -1,6 +1,6 @@
-import Panel from '@/components/Panel'
-import Container from '@/components/Container'
-import Layer from '@/components/LayerSelection/Layer'
+import Panel from "@/components/Panel"
+import Container from "@/components/Container"
+import Layer from "@/components/LayerSelection/Layer"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
@@ -17,16 +17,18 @@ function _Layers() {
     <Container className="w-38">
       <Panel className="grow w-full overflow-y-auto">
         {layers.map((layer, idx) => {
-          return <Layer
-            saveNewName={saveNewName}
-            editing={!!editingLayer && editingLayer === layer.id}
-            key={layer.name + idx}
-            name={layer.name}
-            id={layer.id}
-            select={setCurrentLayer}
-            selected={currentLayer.id === layer.id}
-          />})}
-
+          return (
+            <Layer
+              saveNewName={saveNewName}
+              editing={!!editingLayer && editingLayer === layer.id}
+              key={layer.name + idx}
+              name={layer.name}
+              id={layer.id}
+              select={setCurrentLayer}
+              selected={currentLayer.id === layer.id}
+            />
+          )
+        })}
       </Panel>
       <Panel className="mt-0">
         <button onClick={() => newLayer()}>ADD</button>

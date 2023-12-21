@@ -16,13 +16,17 @@ export interface Location {
   y: number
 }
 
-export type Box = Size & Location 
+export type Box = Size & Location
 
-export interface Point extends Location { pressure: number, pointerType: PointerType, drawn?: boolean }
+export interface Point extends Location {
+  pressure: number
+  pointerType: PointerType
+  drawn?: boolean
+}
 export type Points = Point[]
 export interface IOperation {
-  points: Points,
-  tool: AvailableTools,
+  points: Points
+  tool: AvailableTools
   readyToDraw: boolean
 }
 export type Operations = IOperation[]
@@ -40,14 +44,18 @@ export interface MouseState extends Location {
 export type Modifier = "ctrl" | "alt" | "shift"
 export type ModifierState = Set<Modifier>
 
-export interface UIInteraction { mouseState: MouseState, modifierState: ModifierState, wheelDeltaY: number }
+export interface UIInteraction {
+  mouseState: MouseState
+  modifierState: ModifierState
+  wheelDeltaY: number
+}
 
 export type ToolType = "STROKE" | "POINT"
 export type ToolName = "PEN" | "BRUSH" | "ERASER" | "FILL" /*| "CURVE" */
 export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
 
 export interface ITool {
-  [index: string] : any
+  [index: string]: any
   name: ToolName
   availableSettings: ToolSetting[]
   type: ToolType
@@ -63,8 +71,6 @@ export interface IBrush extends ITool {
   opacity: number
   hardness: number
   spacing: number
-
-
 }
 
 export interface IPen extends ITool {
@@ -78,7 +84,23 @@ export interface IFill extends ITool {
 
 export type AvailableTools = IBrush | IPen | IFill
 
-export type BlendModes = "normal" | "multiply" | "screen" | "overlay" | "darken" | "lighten" | "color-dodge" | "color-burn" | "hard-light" | "soft-light" | "difference" | "exclusion" | "hue" | "saturation" | "color" | "luminosity"
+export type BlendModes =
+  | "normal"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "hard-light"
+  | "soft-light"
+  | "difference"
+  | "exclusion"
+  | "hue"
+  | "saturation"
+  | "color"
+  | "luminosity"
 
 export type LayerName = string
 export type LayerID = string

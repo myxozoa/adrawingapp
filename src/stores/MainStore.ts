@@ -1,7 +1,7 @@
-import { create } from 'zustand'
-import { ColorArray } from '@/types'
+import { create } from "zustand"
+import { ColorArray } from "@/types"
 
-import { createSelectors } from '@/stores/selectors'
+import { createSelectors } from "@/stores/selectors"
 
 type State = {
   color: ColorArray
@@ -13,9 +13,10 @@ type Action = {
 
 const useMainStoreBase = create<State & Action>((set) => ({
   color: [0, 0, 0],
-  setColor: (color: ColorArray) => set(() => ({
-    color
-  }))
+  setColor: (color: ColorArray) =>
+    set(() => ({
+      color,
+    })),
 }))
 
 export const useMainStore = createSelectors(useMainStoreBase)

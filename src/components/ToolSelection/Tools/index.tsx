@@ -1,13 +1,13 @@
-import { memo } from 'react'
+import { memo } from "react"
 
-import Panel from '@/components/Panel'
-import Container from '@/components/Container'
-import Tool from '@/components/ToolSelection/Tool'
+import Panel from "@/components/Panel"
+import Container from "@/components/Container"
+import Tool from "@/components/ToolSelection/Tool"
 
-import { useToolStore } from '@/stores/ToolStore'
+import { useToolStore } from "@/stores/ToolStore"
 
-import { tools } from '@/stores/ToolStore'
-import { DarkModeToggle } from '@/components/DarkModeToggle'
+import { tools } from "@/stores/ToolStore"
+import { DarkModeToggle } from "@/components/DarkModeToggle"
 
 function _Tools() {
   const currentTool = useToolStore.use.currentTool()
@@ -15,11 +15,18 @@ function _Tools() {
 
   return (
     <Container className="w-10">
-      <Panel className='flex flex-col grow w-full justify-between'>
+      <Panel className="flex flex-col grow w-full justify-between">
         <div>
-
-        {Object.values(tools).map((tool) => {
-          return <Tool key={tool.name} name={tool.name} select={setCurrentTool} selected={currentTool.name === tool.name} />})}
+          {Object.values(tools).map((tool) => {
+            return (
+              <Tool
+                key={tool.name}
+                name={tool.name}
+                select={setCurrentTool}
+                selected={currentTool.name === tool.name}
+              />
+            )
+          })}
         </div>
 
         <DarkModeToggle />

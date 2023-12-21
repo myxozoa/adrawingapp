@@ -4,13 +4,13 @@ export const tool_list: Record<ToolName, ToolName> = {
   PEN: "PEN",
   BRUSH: "BRUSH",
   ERASER: "ERASER",
-  FILL: "FILL"
+  FILL: "FILL",
   // CURVE: "CURVE"
 }
 
 export const tool_types: Record<ToolType, ToolType> = {
   STROKE: "STROKE",
-  POINT: "POINT"
+  POINT: "POINT",
 }
 
 export const blend_modes: Record<string, BlendModes> = {
@@ -33,9 +33,9 @@ export const blend_modes: Record<string, BlendModes> = {
 }
 
 export const key_modifers: Record<string, Modifier> = {
-  ctrl: 'ctrl',
-  alt: 'alt',
-  shift: 'shift'
+  ctrl: "ctrl",
+  alt: "alt",
+  shift: "shift",
 }
 
 export const toolPreviewSize = 25
@@ -43,5 +43,5 @@ export const toolPreviewSize = 25
 export const enum COLOR_PICKER_ACTIONS {
   SET_HUE = "set_hue",
   SET_SAT_VAL = "set_saturation_and_value",
-  SET_HUE_SAT_VAL = "set_hue_saturation_and_value"
+  SET_HUE_SAT_VAL = "set_hue_saturation_and_value",
 }

@@ -11,7 +11,7 @@ export class Eraser extends Tool {
   constructor(settings: Partial<IBrush>) {
     super()
     this.name = tool_list.ERASER
-    this.brush = new Brush({ ...toolDefaults.ERASER, ...settings, })
+    this.brush = new Brush({ ...toolDefaults.ERASER, ...settings })
 
     setWithDefaults.call(this, settings, toolDefaults.ERASER)
   }
