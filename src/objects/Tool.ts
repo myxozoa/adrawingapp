@@ -54,7 +54,6 @@ export const toolDefaults: ToolDefaults = {
 }
 
 export function setWithDefaults<T extends AvailableTools>(newSettings: Partial<T>, defaultSettings: T) {
-  console.log(newSettings, defaultSettings)
   for (const setting of Object.keys(defaultSettings)) {
     this[setting] = defaultSettings[setting]
   }
@@ -69,4 +68,10 @@ export class Tool implements ITool {
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
+
+  use = (gl: WebGL2RenderingContext) => {
+    gl.useProgram(this.program)
+    if (this.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
+    if (this.VAO) gl.bindVertexArray(this.VAO)
+  }
 }

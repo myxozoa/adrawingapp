@@ -52,6 +52,9 @@ export interface ITool {
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
+
+  use: (gl: WebGL2RenderingContext) => void
+  init: (gl: WebGL2RenderingContext) => void
 }
 
 export interface IBrush extends ITool {
@@ -60,6 +63,8 @@ export interface IBrush extends ITool {
   opacity: number
   hardness: number
   spacing: number
+
+
 }
 
 export interface IPen extends ITool {

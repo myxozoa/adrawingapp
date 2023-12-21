@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Tool, ToolName } from '../types'
+import { AvailableTools, Tool, ToolName } from '../types'
 
 import { createSelectors } from './selectors'
 
@@ -9,7 +9,7 @@ import { Brush } from "@/objects/Brush"
 import { Fill } from "@/objects/Fill"
 import { Pen } from "@/objects/Pen"
 
-export const tools = {
+export const tools: Record<ToolName, AvailableTools> = {
   PEN: new Pen({ name: tool_list.PEN }),
   BRUSH: new Brush({ name: tool_list.BRUSH }),
   ERASER: new Brush({ name: tool_list.ERASER }),

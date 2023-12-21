@@ -1,17 +1,15 @@
-import { tool_list, tool_types } from '../../constants'
+import { tool_types } from '../../constants'
 
 import { getRelativeMousePos, getDistance, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize, scaleNumberToRange } from '../../utils'
 
-import { ILayer, ITool, Point, UIInteraction, MouseState, IOperation, MainStateType } from '../../types'
+import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType } from '../../types'
 import { Operation } from '../../objects/Operation'
 
-import brushFragment from '../../shaders/Brush/brush.frag?raw'
-import brushVertex from '../../shaders/Brush/brush.vert?raw'
+
 
 import rtFragment from '../../shaders/TexToScreen/texToScreen.frag?raw'
 import rtVertex from '../../shaders/TexToScreen/texToScreen.vert?raw'
 
-import { useMainStore } from '../../stores/MainStore'
 
 import * as m4 from '../../m4.ts'
 
@@ -19,7 +17,8 @@ import * as glUtils from '../../glUtils'
 
 import * as v3 from '../../v3.ts'
 
-import { calculateHardness } from '../../utils'
+
+import { tools } from '@/stores/ToolStore.ts'
 
 class _DrawingManager {
   gl: WebGL2RenderingContext
@@ -39,12 +38,12 @@ class _DrawingManager {
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
-    this.toolBelt = {
-      [tool_list.PEN]: this.penDraw,
-      [tool_list.BRUSH]: this.brushDraw,
-      [tool_list.ERASER]: this.erase,
-      [tool_list.FILL]: this.fill
-    }
+    // this.toolBelt = {
+    //   [tool_list.PEN]: this.penDraw,
+    //   [tool_list.BRUSH]: this.brushDraw,
+    //   [tool_list.ERASER]: this.erase,
+    //   [tool_list.FILL]: this.fill
+    // }
   }
 
   basePen = (operation: IOperation) => {
@@ -103,89 +102,6 @@ class _DrawingManager {
     }
   }
 
-  stamp = (point: Point) => {
-    const gl = this.gl
-
-    const color = useMainStore.getState().color
-
-    let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
-
-    const locationVector = v3.create(point.x, point.y, 0)
-  
-    matrix = m4.translate(matrix, locationVector)
-  
-    const baseSize = 100
-
-    let size = 40 - scaleNumberToRange(this.currentTool.size, 1, 50, 10, 38)
-
-    if (point.pointerType === "pen") {
-      const pressure = point.pressure
-      size = size / pressure
-    }
-
-    const scaleVector = v3.create(baseSize, baseSize, 1)
-  
-    matrix = m4.scale(matrix, scaleVector)
-  
-    gl.uniformMatrix4fv(this.uniforms.u_matrix, true, matrix)
-
-    gl.uniform2f(this.uniforms.u_resolution, 100, 100)
-    gl.uniform2f(this.uniforms.u_point, point.x, gl.canvas.height - point.y)
-    gl.uniform3fv(this.uniforms.u_brush_color, color.map(c => c / 255))
-    gl.uniform1f(this.uniforms.u_softness, calculateHardness(this.currentTool.hardness, this.currentTool.size) / 100)
-    gl.uniform1f(this.uniforms.u_size, size)
-    gl.uniform1f(this.uniforms.u_flow, this.currentTool.flow / 100)
-    gl.uniform1f(this.uniforms.u_random, Math.random())
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    point.drawn = true
-  }
-
-  brushLine = (operation: IOperation, point0: Point, point1: Point) => {
-    const distance = getDistance(point0, point1)
-    const step = operation.tool.size * (operation.tool.spacing / 100)
-
-    // Stamp at space interval between the two points
-    for (let i = 0; i < distance; i += step) {
-      const t = Math.max(0, Math.min(1, i / distance))
-      const x = point0.x + (point1.x - point0.x) * t
-      const y = point0.y + (point1.y - point0.y) * t
-
-      const pressure = lerp(point0.pressure, point1.pressure, 0.5)
-      
-      this.stamp({x, y, pointerType: point0.pointerType, pressure })
-    }
-  }
-
-  baseBrush = (operation: IOperation) => {
-    const lastIndex = operation.points.length - 1
-    const prevPoint = operation.points.at(-2)
-    const currentPoint = operation.points.at(-1)
-
-    const distance = getDistance(prevPoint, currentPoint)
-
-    if (lastIndex === 0) {
-      this.stamp(operation.points[0])
-      return
-    }
-
-    let spacing = operation.tool.size * (operation.tool.spacing / 100)
-
-    if (currentPoint.pointerType === "pen") {
-      const pressure = currentPoint.pressure
-      spacing = spacing * pressure
-    }
-
-    if (distance > spacing * 2) {
-      this.brushLine(operation, prevPoint, currentPoint)
-      prevPoint.drawn = true
-      currentPoint.drawn = true
-    } else {
-      this.stamp(currentPoint)
-    }
-  }
-
   fill = () => {
     // this.gl.globalCompositeOperation ="source-over"
 
@@ -209,29 +125,11 @@ class _DrawingManager {
     this.baseBrush(operation)
   }
 
-  brushDraw = (operation: IOperation) => {
-    const gl = this.gl
-
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
-
-    gl.blendEquation(gl.FUNC_ADD)
-  
-    this.baseBrush(operation)
-  }
-  
-  penDraw = (operation: IOperation) => {
-    // if (this.currentOperation.points.length <= 1) return
-
-    // this.gl.globalCompositeOperation ="source-over";
-  
-    // this.basePen(operation)
-  }
-
   draw = (operation: IOperation) => {
     if (operation.points.length === 0 || operation.points.at(-1).drawn) return
 
-    this.toolBelt[operation.tool.name](operation)
+    // this.toolBelt[operation.tool.name](operation)
+    operation.tool.draw(this.gl, operation)
   }
   
   endInteraction = (save = true) => {
@@ -290,80 +188,7 @@ class _DrawingManager {
     }
   }
 
-  setupBrushProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
-    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
-    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
-  
-    const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
-  
-    const attributeNames = ["a_position"]
 
-    const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
-  
-    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_size", "u_flow", "u_random"]
-  
-    const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
-
-    return { program, attributes, uniforms }
-  }
-
-  setupBrushVBO = (gl: WebGL2RenderingContext) => {
-    const vbo = gl.createBuffer()
-  
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-  
-    const positions = [
-      // Triangle 1
-      -1.0,  1.0, // Top left
-      -1.0, -1.0, // Bottom left
-       1.0,  1.0, // Top right
-  
-      // Triangle 2
-      -1.0, -1.0, // Bottom left
-       1.0, -1.0, // Bottom right
-       1.0,  1.0,  // Top right
-  ]
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-
-    // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-
-    return vbo
-  }
-
-  setupBrushVAO = (gl: WebGL2RenderingContext, attribute: number) => {
-    const vao = gl.createVertexArray()
-
-    gl.bindVertexArray(vao)
-  
-    gl.enableVertexAttribArray(attribute)
-  
-    gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0)
-
-    // Unbind
-    gl.bindVertexArray(null)
-
-    return vao
-  }
-
-  initBrush = () => {
-    const gl = this.gl
-
-    const { program, attributes, uniforms } = this.setupBrushProgramAndAttributeUniforms(gl)
-    this.brushProgram = program
-    this.uniforms = uniforms
-  
-    this.brushVBO = this.setupBrushVBO(gl)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushVBO)
-
-    this.brushVAO = this.setupBrushVAO(gl, attributes.a_position)
-    gl.bindVertexArray(this.brushVAO)
-  
-    // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
-  }
 
   createRenderTexture = (gl: WebGL2RenderingContext, width: number, height: number) => {
     const texture = gl.createTexture()
@@ -535,11 +360,15 @@ class _DrawingManager {
     const floatTextureExt = gl.getExtension("OES_texture_float_linear")
 
     if (!floatBufferExt || !floatTextureExt) {
-      throw new Error("Does not support floating point textures/buffers. The dev should implement 8bit fallback.")
+      throw new Error("Your device does not support floating point textures/buffers. The dev should implement 8bit fallback.")
     }
 
     this.initRenderTexture()
-    this.initBrush()
+
+    Object.values(tools).forEach((tool) => {
+      if (tool.init) tool.init(gl)
+    })
+
   }
 
   drawCurrentOperation = () => {
@@ -547,11 +376,10 @@ class _DrawingManager {
   
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     
-    gl.useProgram(this.brushProgram)
     gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.brushVBO)
-    gl.bindVertexArray(this.brushVAO)
+
+    if (this.currentOperation.tool.use) this.currentOperation.tool.use(gl)
     
     this.draw(this.currentOperation)
 
@@ -562,7 +390,7 @@ class _DrawingManager {
     gl.bindVertexArray(null)
   }
 
-  render = () => {
+  renderToScreen = () => {
     const gl = this.gl
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
@@ -615,7 +443,7 @@ class _DrawingManager {
 
     this.drawCurrentOperation()
     
-    this.render()
+    this.renderToScreen()
 
     const error = gl.getError()
 
