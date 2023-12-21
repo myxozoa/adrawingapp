@@ -8,11 +8,11 @@ import { Operation } from '@/objects/Operation.ts'
 import rtFragment from '@/shaders/TexToScreen/texToScreen.frag?raw'
 import rtVertex from '@/shaders/TexToScreen/texToScreen.vert?raw'
 
-import * as m4 from '@/m4.ts'
+// import * as m4 from '@/m4.ts'
 
 import * as glUtils from '@/glUtils.ts'
 
-import * as v3 from '@/v3.ts'
+// import * as v3 from '@/v3.ts'
 
 import { tools } from '@/stores/ToolStore.ts'
 
@@ -164,8 +164,6 @@ class _DrawingManager {
         break
     }
   }
-
-
 
   createRenderTexture = (gl: WebGL2RenderingContext, width: number, height: number) => {
     const texture = gl.createTexture()

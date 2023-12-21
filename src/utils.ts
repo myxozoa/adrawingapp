@@ -146,7 +146,8 @@ export function initializeCanvas(
     premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
-    antialias: false
+    antialias: false,
+    ...options
   })
 
   if (options.contextType === "2d") context.scale(targetDpi, targetDpi)

@@ -1,6 +1,6 @@
 import Panel from '@/components/Panel'
 import Container from '@/components/Container'
-import Layer from '@/components/Layer'
+import Layer from '@/components/LayerSelection/Layer'
 
 import { useLayerStore } from "@/stores/LayerStore"
 
