@@ -1,12 +1,13 @@
-import { AvailableTools, IBrush, IFill, IPen, ITool, ToolName, ToolSetting, ToolType } from "@/types"
+import { AvailableTools, IBrush, IEyedropper, IFill, IPen, ITool, ToolName, ToolSetting, ToolType } from "@/types"
 
-import { tool_list, tool_types } from "@/constants"
+import { tool_types } from "@/constants"
 
 type ToolMap = {
   PEN: IPen
   BRUSH: IBrush
   ERASER: IBrush
   FILL: IFill
+  EYEDROPPER: IEyedropper
 }
 
 type ToolDefaults = {
@@ -15,7 +16,6 @@ type ToolDefaults = {
 
 export const toolDefaults: ToolDefaults = {
   PEN: {
-    name: tool_list.PEN,
     size: 10,
     opacity: 100,
     availableSettings: ["size"],
@@ -23,7 +23,6 @@ export const toolDefaults: ToolDefaults = {
     continuous: true,
   },
   BRUSH: {
-    name: tool_list.BRUSH,
     size: 10,
     opacity: 100,
     flow: 100,
@@ -34,7 +33,6 @@ export const toolDefaults: ToolDefaults = {
     continuous: true,
   },
   ERASER: {
-    name: tool_list.ERASER,
     size: 20,
     opacity: 100,
     flow: 100,
@@ -45,9 +43,13 @@ export const toolDefaults: ToolDefaults = {
     continuous: true,
   },
   FILL: {
-    name: tool_list.FILL,
     flood: true,
     availableSettings: ["color"],
+    type: tool_types.POINT,
+    continuous: false,
+  },
+  EYEDROPPER: {
+    availableSettings: [],
     type: tool_types.POINT,
     continuous: false,
   },

@@ -109,10 +109,12 @@ class _DrawingManager {
     gl.clearBufferfv(gl.COLOR, 0, new Float32Array([1, 1, 1, 1]))
   }
 
-  draw = (operation: IOperation) => {
+  // TODO: This framework isnt generic enough to describe many non-drawing tools
+  execute = (operation: IOperation) => {
     if (operation.points.length === 0 || operation.points.at(-1).drawn) return
 
-    operation.tool.draw(this.gl, operation)
+    if (operation.tool.use) operation.tool.use(this.gl, operation)
+    if (operation.tool.draw) operation.tool.draw(this.gl, operation)
   }
 
   endInteraction = (save = true) => {
@@ -143,7 +145,7 @@ class _DrawingManager {
 
     const prevPoint = operation.points.at(-1)
 
-    const smoothing = 0.4
+    const smoothing = 0.2
     const interpolatedPoint = { ...relativeMouseState }
 
     switch (operation.tool.type) {
@@ -166,6 +168,8 @@ class _DrawingManager {
 
       case tool_types.POINT:
         this.waitUntilInteractionEnd = true
+
+        operation.points.push({ ...interpolatedPoint, drawn: false })
         break
     }
   }
@@ -361,7 +365,7 @@ class _DrawingManager {
     })
   }
 
-  drawCurrentOperation = () => {
+  executeCurrentOperation = () => {
     const gl = this.gl
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
@@ -369,9 +373,9 @@ class _DrawingManager {
     gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
 
-    if (this.currentOperation.tool.use) this.currentOperation.tool.use(gl)
+    if (this.currentOperation.tool.switchTo) this.currentOperation.tool.switchTo(gl)
 
-    this.draw(this.currentOperation)
+    this.execute(this.currentOperation)
 
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
@@ -431,7 +435,7 @@ class _DrawingManager {
       this.use(relativeMouseState, this.currentOperation)
     }
 
-    this.drawCurrentOperation()
+    this.executeCurrentOperation()
 
     this.renderToScreen()
 

@@ -9,12 +9,14 @@ import { Brush } from "@/objects/Brush"
 import { Eraser } from "@/objects/Eraser"
 import { Fill } from "@/objects/Fill"
 import { Pen } from "@/objects/Pen"
+import { Eyedropper } from "@/objects/Eyedropper"
 
 export const tools: Record<ToolName, AvailableTools> = {
   PEN: new Pen(),
   BRUSH: new Brush(),
   ERASER: new Eraser(),
   FILL: new Fill(),
+  EYEDROPPER: new Eyedropper(),
 }
 
 type State = {

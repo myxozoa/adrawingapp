@@ -23,10 +23,8 @@ const SliderSetting = (
 
   return (
     <div key={`${name}_setting`} className="h-full flex flex-row justify-center items-center">
-      <label htmlFor={name} className="pr-2 text-sm text-muted-foreground">
-        {name}
-      </label>
-      <Slider name={name} className="w-28 mr-4" {...props} value={[value]} onValueChange={handler} />
+      <p className="pr-2 text-sm text-muted-foreground">{name}</p>
+      <Slider className="w-28 mr-4" {...props} value={[value]} onValueChange={handler} />
       <p className="text-sm text-muted-foreground mr-2 w-[3ch]">{value}</p>
     </div>
   )

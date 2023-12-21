@@ -5,7 +5,7 @@ export const tool_list: Record<ToolName, ToolName> = {
   BRUSH: "BRUSH",
   ERASER: "ERASER",
   FILL: "FILL",
-  // CURVE: "CURVE"
+  EYEDROPPER: "EYEDROPPER",
 }
 
 export const tool_types: Record<ToolType, ToolType> = {

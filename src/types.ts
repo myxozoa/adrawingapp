@@ -51,7 +51,7 @@ export interface UIInteraction {
 }
 
 export type ToolType = "STROKE" | "POINT"
-export type ToolName = "PEN" | "BRUSH" | "ERASER" | "FILL" /*| "CURVE" */
+export type ToolName = "PEN" | "BRUSH" | "ERASER" | "FILL" | "EYEDROPPER"
 export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
 
 export interface ITool {
@@ -80,6 +80,12 @@ export interface IPen extends ITool {
 
 export interface IFill extends ITool {
   flood: boolean
+}
+
+export type EyeDropperSampleSizes = "1x1" | "2x2" | "3x3"
+
+export interface IEyedropper extends ITool {
+  sampleSize: EyeDropperSampleSizes
 }
 
 export type AvailableTools = IBrush | IPen | IFill

@@ -20,8 +20,8 @@ export class Eraser extends Tool {
     this.brush.init(gl)
   }
 
-  use = (gl: WebGL2RenderingContext) => {
-    this.brush.use(gl)
+  switchTo = (gl: WebGL2RenderingContext) => {
+    this.brush.switchTo(gl)
   }
 
   draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
