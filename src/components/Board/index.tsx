@@ -11,7 +11,7 @@ import useUIState from '../../hooks/useUIState'
 import { useToolStore } from '../../stores/ToolStore'
 import { useLayerStore } from '../../stores/LayerStore'
 
-import { DrawingManager } from './drawingManager'
+import { DrawingManager } from '../../managers/drawingManager'
 
 import { throttle, initializeCanvas } from '../../utils'
 

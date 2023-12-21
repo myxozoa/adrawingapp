@@ -1,22 +1,18 @@
-import { tool_types } from '../../constants'
+import { tool_types } from '../constants.tsx'
 
-import { getRelativeMousePos, getDistance, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize, scaleNumberToRange } from '../../utils'
+import { getRelativeMousePos, getDistance, findQuadtraticBezierControlPoint, getCanvasColor, lerp, resizeCanvasToDisplaySize } from '../utils.ts'
 
-import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType } from '../../types'
-import { Operation } from '../../objects/Operation'
-
-
+import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType } from '../types.ts'
+import { Operation } from '../objects/Operation.ts'
 
 import rtFragment from '../../shaders/TexToScreen/texToScreen.frag?raw'
 import rtVertex from '../../shaders/TexToScreen/texToScreen.vert?raw'
 
+import * as m4 from '../m4.ts'
 
-import * as m4 from '../../m4.ts'
+import * as glUtils from '../glUtils.ts'
 
-import * as glUtils from '../../glUtils'
-
-import * as v3 from '../../v3.ts'
-
+import * as v3 from '../v3.ts'
 
 import { tools } from '@/stores/ToolStore.ts'
 
