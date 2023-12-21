@@ -1,7 +1,9 @@
 import { tool_list } from "@/constants"
 import { Brush } from "@/objects/Brush"
 import { Tool, toolDefaults } from "@/objects/Tool"
-import { IBrush, IOperation } from "@/types"
+import { IBrush, IOperation, IEraser } from "@/types"
+
+import { setWithDefaults } from "@/objects/Tool"
 
 // The Eraser behaves almost exactly like the brush aside from the differing blend states
 // so this passthrough thing is what im going with for the time being
@@ -13,9 +15,9 @@ export class Eraser extends Tool {
     this.name = tool_list.ERASER
     this.brush = new Brush({ ...toolDefaults.ERASER, ...settings })
 
-    // const set = setWithDefaults<IEraser>
+    const set = setWithDefaults<IEraser>
 
-    // set.call(this, {}, toolDefaults.ERASER)
+    set.call(this, {}, toolDefaults.ERASER)
   }
 
   init = (gl: WebGL2RenderingContext) => {
