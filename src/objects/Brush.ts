@@ -15,23 +15,26 @@ import { tool_list } from "@/constants"
 
 export class Brush extends Tool implements IBrush {
   size: number
+  flow: number
   opacity: number
   hardness: number
   spacing: number
 
   // TODO: Type this
   programInfo: {
-    program: any
-    uniforms: any
-    attributes: any
-    VBO: any
-    VAO: any
+    program: WebGLProgram
+    uniforms: Record<string, WebGLUniformLocation>
+    attributes: Record<string, GLint>
+    VBO: WebGLBuffer
+    VAO: WebGLBuffer
   }
 
-  constructor(settings: Partial<IBrush>) {
+  constructor(settings: Partial<IBrush> = {}) {
     super()
     this.name = tool_list.BRUSH
     setWithDefaults.call(this, settings, toolDefaults.BRUSH)
+
+    this.programInfo = {} as unknown as typeof this.programInfo
   }
 
   setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -62,6 +65,8 @@ export class Brush extends Tool implements IBrush {
 
   setupVBO = (gl: WebGL2RenderingContext) => {
     const vbo = gl.createBuffer()
+
+    if (!vbo) throw new Error("Unable to create WebGL Vertex Buffer")
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
 
@@ -94,6 +99,8 @@ export class Brush extends Tool implements IBrush {
   setupVAO = (gl: WebGL2RenderingContext, attribute: number) => {
     const vao = gl.createVertexArray()
 
+    if (!vao) throw new Error("Unable to create WebGL Vertex Array")
+
     gl.bindVertexArray(vao)
 
     gl.enableVertexAttribArray(attribute)
@@ -108,14 +115,14 @@ export class Brush extends Tool implements IBrush {
 
   init = (gl: WebGL2RenderingContext) => {
     const { program, attributes, uniforms } = this.setupProgramAndAttributeUniforms(gl)
-    this.program = program
-    this.uniforms = uniforms
+    this.programInfo.program = program
+    this.programInfo.uniforms = uniforms
 
-    this.VBO = this.setupVBO(gl)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
+    this.programInfo.VBO = this.setupVBO(gl)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
 
-    this.VAO = this.setupVAO(gl, attributes.a_position)
-    gl.bindVertexArray(this.VAO)
+    this.programInfo.VAO = this.setupVAO(gl, attributes.a_position)
+    gl.bindVertexArray(this.programInfo.VAO)
 
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
@@ -136,14 +143,16 @@ export class Brush extends Tool implements IBrush {
     const prevPoint = operation.points.at(-2)
     const currentPoint = operation.points.at(-1)
 
+    if (!prevPoint || !currentPoint) return
+
     const distance = getDistance(prevPoint, currentPoint)
 
     if (lastIndex === 0) {
-      this.stamp(gl, operation, operation.points[0])
+      this.stamp(gl, operation.points[0])
       return
     }
 
-    let spacing = operation.tool.size * (operation.tool.spacing / 100)
+    let spacing = this.size * (this.spacing / 100)
 
     if (currentPoint.pointerType === "pen") {
       const pressure = currentPoint.pressure
@@ -151,17 +160,17 @@ export class Brush extends Tool implements IBrush {
     }
 
     if (distance > spacing * 2) {
-      this.line(gl, operation, prevPoint, currentPoint)
+      this.line(gl, prevPoint, currentPoint)
       prevPoint.drawn = true
       currentPoint.drawn = true
     } else {
-      this.stamp(gl, operation, currentPoint)
+      this.stamp(gl, currentPoint)
     }
   }
 
-  line = (gl: WebGL2RenderingContext, operation: IOperation, point0: Point, point1: Point) => {
+  line = (gl: WebGL2RenderingContext, point0: Point, point1: Point) => {
     const distance = getDistance(point0, point1)
-    const step = operation.tool.size * (operation.tool.spacing / 100)
+    const step = this.size * (this.spacing / 100)
 
     let progress = 0
     const steps = distance / step
@@ -174,24 +183,24 @@ export class Brush extends Tool implements IBrush {
 
       const pressure = lerp(point0.pressure, point1.pressure, progress / steps)
 
-      this.stamp(gl, operation, { x, y, pointerType: point0.pointerType, pressure })
+      this.stamp(gl, { x, y, pointerType: point0.pointerType, pressure })
 
       progress++
     }
   }
 
-  stamp = (gl: WebGL2RenderingContext, operation: IOperation, point: Point) => {
+  stamp = (gl: WebGL2RenderingContext, point: Point) => {
     const color = useMainStore.getState().color
 
-    let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
+    let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1, null)
 
     const locationVector = v3.create(point.x, point.y, 0)
 
-    matrix = m4.translate(matrix, locationVector)
+    matrix = m4.translate(matrix, locationVector, null)
 
     const baseSize = 100
 
-    let size = operation.tool.size
+    let size = this.size
 
     if (point.pointerType === "pen") {
       const pressure = point.pressure
@@ -200,20 +209,20 @@ export class Brush extends Tool implements IBrush {
 
     const scaleVector = v3.create(baseSize, baseSize, 1)
 
-    matrix = m4.scale(matrix, scaleVector)
+    matrix = m4.scale(matrix, scaleVector, null)
 
-    gl.uniformMatrix4fv(this.uniforms.u_matrix, true, matrix)
+    gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, matrix)
 
-    gl.uniform2f(this.uniforms.u_resolution, 100, 100)
-    gl.uniform2f(this.uniforms.u_point, point.x, gl.canvas.height - point.y)
+    gl.uniform2f(this.programInfo.uniforms.u_resolution, 100, 100)
+    gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
     gl.uniform3fv(
-      this.uniforms.u_brush_color,
+      this.programInfo.uniforms.u_brush_color,
       color.map((c) => c / 255),
     )
-    gl.uniform1f(this.uniforms.u_softness, calculateHardness(operation.tool.hardness, size) / 100)
-    gl.uniform1f(this.uniforms.u_size, size)
-    gl.uniform1f(this.uniforms.u_flow, operation.tool.flow / 100)
-    gl.uniform1f(this.uniforms.u_random, Math.random())
+    gl.uniform1f(this.programInfo.uniforms.u_softness, calculateHardness(this.hardness, size) / 100)
+    gl.uniform1f(this.programInfo.uniforms.u_size, size)
+    gl.uniform1f(this.programInfo.uniforms.u_flow, this.flow / 100)
+    gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -221,8 +230,8 @@ export class Brush extends Tool implements IBrush {
   }
 
   switchTo = (gl: WebGL2RenderingContext) => {
-    gl.useProgram(this.program)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.VBO)
-    gl.bindVertexArray(this.VAO)
+    gl.useProgram(this.programInfo.program)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
+    gl.bindVertexArray(this.programInfo.VAO)
   }
 }

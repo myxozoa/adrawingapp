@@ -1,16 +1,14 @@
 import { blend_modes } from "../constants"
 
-import { ILayer, LayerID, LayerName, Operation, BlendModes, Size, Box } from "@/types"
-import { Operation, Operation } from "@/objects/Operation"
+import { ILayer, LayerID, LayerName, BlendModes, Size, Box } from "@/types"
 
 export class Layer implements ILayer {
   blendMode: BlendModes
   name: LayerName
   id: LayerID
-  currentOperation: Operation
-  undoSnapshotQueue: Uint32Array[]
-  redoSnapshotQueue: Uint32Array[]
-  drawingData: ImageData
+  undoSnapshotQueue: Float32Array[]
+  redoSnapshotQueue: Float32Array[]
+  drawingData: Float32Array
   noDraw: boolean
   size: Size
   boundingBox: Box
@@ -21,7 +19,7 @@ export class Layer implements ILayer {
     this.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random() * Math.random()).toString()
     this.undoSnapshotQueue = []
     this.redoSnapshotQueue = []
-    this.drawingData = new Uint32Array(4 * size.width * size.height)
+    this.drawingData = new Float32Array(4 * size.width * size.height)
     this.noDraw = false
     this.size = size
     this.boundingBox = { x: 0, y: 0, ...size }

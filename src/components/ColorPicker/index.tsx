@@ -211,13 +211,13 @@ function ColorPicker({
       desynchronized: true,
       resize: false,
       contextType: "2d",
-      performance: "low-power",
-    })
+      powerPreference: "low-power",
+    }) as CanvasRenderingContext2D
     initializeCanvas(indicatorRef.current, size, size, {
       desynchronized: true,
       resize: false,
       contextType: "2d",
-      performance: "low-power",
+      powerPreference: "low-power",
     })
 
     window.addEventListener("pointermove", mouseMove)

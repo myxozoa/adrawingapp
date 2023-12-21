@@ -1,4 +1,14 @@
-import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, Operations, Point, MouseState } from "@/types"
+import {
+  Maybe,
+  HexColor,
+  ColorArray,
+  ColorValue,
+  ColorValueString,
+  Operations,
+  Point,
+  MouseState,
+  ValueOf,
+} from "@/types"
 
 // TODO: Type this function better
 export function getRelativeMousePos(
@@ -99,18 +109,27 @@ export function findQuadtraticBezierControlPoint(
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
 
-let canvasToDisplaySizeMap
-let resizeObserver
+let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
+let resizeObserver: ResizeObserver
 
 type Options = {
   desynchronized: boolean
   resize: boolean
   contextType: "2d" | "webgl" | "webgl2"
-  performance: "default" | "low-power" | "high-performance"
+  powerPreference: "default" | "low-power" | "high-performance"
   alpha: boolean
+  premultipliedAlpha: boolean
+  colorSpace: "srgb" | "display-p3"
+  preserveDrawingBuffer: boolean
+  antialias: boolean
 }
 
-export function initializeCanvas(canvas: HTMLCanvasElement, width: number, height: number, _options: Options = {}) {
+export function initializeCanvas(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+  _options: Partial<Options> = {},
+) {
   const defaultOptions: Options = {
     desynchronized: true,
     resize: false,
@@ -122,15 +141,16 @@ export function initializeCanvas(canvas: HTMLCanvasElement, width: number, heigh
     preserveDrawingBuffer: false,
     antialias: false,
   }
+  type entries = [keyof Options, ValueOf<Options>]
   const options: Options = Object.fromEntries(
-    Object.entries(defaultOptions).map(([option]) => {
+    (Object.entries(defaultOptions) as entries[]).map(([option]) => {
       if (_options[option] !== undefined) {
         return [option, _options[option]]
       } else {
         return [option, defaultOptions[option]]
       }
     }),
-  )
+  ) as Options
 
   const targetDpi = window.devicePixelRatio * 2
 
@@ -143,8 +163,14 @@ export function initializeCanvas(canvas: HTMLCanvasElement, width: number, heigh
 
   const context = canvas.getContext(options.contextType, options)
 
-  if (options.contextType === "2d") context.scale(targetDpi, targetDpi)
-  context.imageSmoothingEnabled = false
+  if (!context) throw new Error("Unable to create canvas context")
+
+  const typeguard = (
+    contextType: Options["contextType"],
+    context: RenderingContext,
+  ): context is CanvasRenderingContext2D => context && contextType === "2d"
+
+  if (typeguard(options.contextType, context)) context.scale(targetDpi, targetDpi)
 
   if (options.resize) {
     canvasToDisplaySizeMap = new Map([[canvas, [width, height]]])
@@ -159,8 +185,8 @@ export function initializeCanvas(canvas: HTMLCanvasElement, width: number, heigh
 
 function onResize(entries: ResizeObserverEntry[]) {
   for (const entry of entries) {
-    let width
-    let height
+    let width: number
+    let height: number
     let dpr = window.devicePixelRatio
     if (entry.devicePixelContentBoxSize) {
       // NOTE: Only this path gives the correct answer
@@ -175,8 +201,10 @@ function onResize(entries: ResizeObserverEntry[]) {
         height = entry.contentBoxSize[0].blockSize
       } else {
         // legacy
-        width = entry.contentBoxSize.inlineSize
-        height = entry.contentBoxSize.blockSize
+        // width = entry.contentBoxSize.inlineSize
+        // height = entry.contentBoxSize.blockSize
+        width = 0
+        height = 0
       }
     } else {
       // legacy
@@ -185,13 +213,13 @@ function onResize(entries: ResizeObserverEntry[]) {
     }
     const displayWidth = Math.round(width * dpr)
     const displayHeight = Math.round(height * dpr)
-    canvasToDisplaySizeMap.set(entry.target, [displayWidth, displayHeight])
+    canvasToDisplaySizeMap.set(entry.target as HTMLCanvasElement, [displayWidth, displayHeight])
   }
 }
 
-export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback) {
+export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback: () => void) {
   // Get the size the browser is displaying the canvas in device pixels.
-  const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)
+  const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)!
 
   // Check if the canvas is not the same size.
   const needResize = canvas.width !== displayWidth || canvas.height !== displayHeight
@@ -330,7 +358,7 @@ export const calculateHardness = (hardness: number, size: number) => {
 
 export const performanceSafeguard = () => {
   const frameAverageWindow = 30
-  let frameTimes = []
+  let frameTimes: number[] = []
   let index = 0
   let totalFPS = 0
 
@@ -363,8 +391,7 @@ export const performanceSafeguard = () => {
         )
 
         frameTimes = []
-        frameCursor = 0
-        numFrames = 0
+        index = 0
         totalFPS = 0
       }
     }

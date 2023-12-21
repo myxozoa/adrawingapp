@@ -18,7 +18,7 @@ const SliderSetting = (
   dependency: any,
   props: any,
 ) => {
-  const onValueChange = (value) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
+  const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
   const handler = useCallback(throttle(onValueChange, 16), [dependency])
 
   return (

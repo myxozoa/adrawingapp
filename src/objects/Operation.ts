@@ -1,11 +1,11 @@
-import { Operation as IOperation, ITool } from "@/types"
+import { AvailableTools, IOperation, Points } from "@/types"
 
 export class Operation implements IOperation {
   points: Points
-  tool: Tool
+  tool: AvailableTools
   readyToDraw: boolean
 
-  constructor(tool: ITool) {
+  constructor(tool: AvailableTools) {
     this.points = []
     this.tool = tool
     this.readyToDraw = false

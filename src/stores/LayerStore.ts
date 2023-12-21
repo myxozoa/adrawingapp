@@ -1,24 +1,23 @@
 import { create } from "zustand"
-import { Layer as LayerType, LayerID, LayerName } from "@/types"
+import { ILayer, LayerID, LayerName } from "@/types"
 
 import { Layer } from "@/objects/Layer"
 
 import { createSelectors } from "@/stores/selectors"
 
 type State = {
-  layers: LayerType[]
-  currentLayer: LayerType
-  editingLayer: number
+  layers: ILayer[]
+  currentLayer: ILayer
+  editingLayer: LayerID | null
 }
 
 type Action = {
-  setLayers: (layers: layer[]) => void
-  _setCurrentLayer: (layer: LayerType) => void
-  setEditingLayer: (index: number) => void
+  setLayers: (layers: ILayer[]) => void
+  _setCurrentLayer: (layer: ILayer) => void
+  setEditingLayer: (id: LayerID) => void
   setCurrentLayer: (id: LayerID) => void
   newLayer: () => void
   removeLayer: () => void
-  setCurrentLayer: (id: LayerID) => void
   saveNewName: (id: LayerID, name: LayerName) => void
   keepCurrentLayerInSync: () => void
 }
@@ -30,7 +29,7 @@ let currentLayerIndex = 0
 const useLayerStoreBase = create<State & Action>((set) => ({
   layers: [baseLayer],
   currentLayer: baseLayer,
-  editingLayer: 0,
+  editingLayer: null,
   keepCurrentLayerInSync: () =>
     set((state) => {
       const currentLayerExists = state.layers.find((layer) => layer.id === state.currentLayer.id)
@@ -41,27 +40,29 @@ const useLayerStoreBase = create<State & Action>((set) => ({
         }
         state.setCurrentLayer(state.layers[currentLayerIndex].id)
       }
+
+      return state
     }),
-  setLayers: (layers: LayerType[]) =>
+  setLayers: (layers: ILayer[]) =>
     set(() => ({
       layers,
     })),
-  _setCurrentLayer: (layer: LayerType) =>
+  _setCurrentLayer: (layer: ILayer) =>
     set(() => ({
       currentLayer: layer,
     })),
-  setEditingLayer: (index: number) =>
+  setEditingLayer: (id: string) =>
     set(() => ({
-      editingLayer: index,
+      editingLayer: id,
     })),
   newLayer: () =>
     set((state) => {
-      if (state.layers.length > 9) return
+      if (state.layers.length > 9) return state
 
       const newLayer = new Layer(`New Layer (${state.layers.length})`, { width: 1000, height: 1000 })
       currentLayerIndex = 0
 
-      return { currentLayer: newLayer, layers: [newLayer, ...state.layers] }
+      return { ...state, currentLayer: newLayer, layers: [newLayer, ...state.layers] }
     }),
   removeLayer: () =>
     set((state) => {
@@ -74,7 +75,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
           currentLayerIndex = newLayers.length - 1
         }
 
-        return { layers: newLayers, currentLayer: newLayers[currentLayerIndex] }
+        return { ...state, layers: newLayers, currentLayer: newLayers[currentLayerIndex] }
       }
 
       return state
@@ -85,7 +86,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       currentLayerIndex = _currentLayerIndex
 
-      return { currentLayer: state.layers[_currentLayerIndex] }
+      return { ...state, currentLayer: state.layers[_currentLayerIndex] }
     }),
   saveNewName: (id: LayerID, name: LayerName) =>
     set((state) => {
@@ -96,7 +97,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
         return layer
       })
 
-      return { layers: newLayers, currentLayer: { ...state.currentLayer, name }, editingLayer: 0 }
+      return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, name }, editingLayer: null }
     }),
 }))
 

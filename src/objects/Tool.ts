@@ -1,13 +1,24 @@
-import { AvailableTools, IBrush, IEyedropper, IFill, IPen, ITool, ToolName, ToolSetting, ToolType } from "@/types"
+import {
+  AvailableTools,
+  IBrush,
+  IEyedropper,
+  IFill,
+  IPen,
+  ITool,
+  ToolName,
+  ToolSetting,
+  ToolType,
+  WithoutMethods,
+} from "@/types"
 
 import { tool_types } from "@/constants"
 
 type ToolMap = {
-  PEN: IPen
-  BRUSH: IBrush
-  ERASER: IBrush
-  FILL: IFill
-  EYEDROPPER: IEyedropper
+  PEN: WithoutMethods<IPen>
+  BRUSH: WithoutMethods<IBrush>
+  ERASER: Exclude<WithoutMethods<IBrush>, "brush">
+  FILL: WithoutMethods<IFill>
+  EYEDROPPER: WithoutMethods<IEyedropper>
 }
 
 type ToolDefaults = {
@@ -52,18 +63,21 @@ export const toolDefaults: ToolDefaults = {
     availableSettings: [],
     type: tool_types.POINT,
     continuous: false,
+    sampleSize: "1x1",
   },
 }
 
-export function setWithDefaults<T extends AvailableTools>(newSettings: Partial<T>, defaultSettings: T) {
-  for (const setting of Object.keys(defaultSettings)) {
+export function setWithDefaults<T extends AvailableTools>(
+  this: T,
+  newSettings: Partial<WithoutMethods<T>>,
+  defaultSettings: WithoutMethods<T>,
+) {
+  for (const setting of Object.keys(defaultSettings) as (keyof typeof defaultSettings)[]) {
     this[setting] = defaultSettings[setting]
   }
 
-  if (!newSettings) return
-
-  for (const setting of Object.keys(newSettings)) {
-    this[setting] = newSettings[setting]
+  for (const setting of Object.keys(newSettings) as (keyof typeof newSettings)[]) {
+    this[setting] = newSettings[setting]!
   }
 }
 
@@ -72,4 +86,9 @@ export class Tool implements ITool {
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
+
+  init = (gl: WebGL2RenderingContext) => {
+    console.log(gl)
+    return
+  }
 }

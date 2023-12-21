@@ -12,7 +12,11 @@ import { useMainStore } from "@/stores/MainStore"
 import fragment from "@/shaders/BrushPreview/brushPreview.frag?raw"
 import vertex from "@/shaders/BrushPreview/brushPreview.vert?raw"
 
-let cache = null
+let cache: {
+  program: WebGLProgram
+  vao: WebGLBuffer
+  uniforms: Record<string, WebGLUniformLocation>
+} | null = null
 
 const initGL = (gl: WebGL2RenderingContext) => {
   if (cache) {
@@ -55,6 +59,8 @@ const initGL = (gl: WebGL2RenderingContext) => {
 
   const vao = gl.createVertexArray()
 
+  if (!vao) throw new Error("Unable to create WebGL vertex buffer")
+
   gl.bindVertexArray(vao)
 
   gl.enableVertexAttribArray(attributes.a_position)
@@ -77,7 +83,7 @@ function _ToolPreview() {
     initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize, {
       desynchronized: true,
       resize: false,
-      performance: "low-power",
+      powerPreference: "low-power",
     })
   }, [previewCanvasRef.current])
 

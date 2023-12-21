@@ -1,16 +1,18 @@
+import { MutableRefObject } from "react"
+
 import { tool_types } from "@/constants.tsx"
 
 import {
   getRelativeMousePos,
   getDistance,
-  findQuadtraticBezierControlPoint,
-  getCanvasColor,
+  // findQuadtraticBezierControlPoint,
+  // getCanvasColor,
   lerp,
   resizeCanvasToDisplaySize,
   performanceSafeguard,
 } from "@/utils.ts"
 
-import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType, AvailableTools } from "@/types.ts"
+import { ILayer, UIInteraction, MouseState, IOperation, AvailableTools, IBrush } from "@/types.ts"
 import { Operation } from "@/objects/Operation.ts"
 
 import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
@@ -29,77 +31,93 @@ const checkfps = performanceSafeguard()
 class _DrawingManager {
   gl: WebGL2RenderingContext
   currentLayer: ILayer
-  currentTool: ITool
+  currentTool: AvailableTools
   currentOperation: IOperation
   toolBelt: Record<string, (operation: IOperation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
-  main: MainStateType
+  canvasRef: MutableRefObject<HTMLCanvasElement>
+
+  renderProgramInfo: {
+    program: WebGLProgram
+    uniforms: Record<string, WebGLUniformLocation>
+    attributes: Record<string, GLint>
+    VBO: WebGLBuffer
+    VAO: WebGLBuffer
+  }
+
+  renderBufferInfo: {
+    targetTexture: WebGLTexture
+    framebuffer: WebGLFramebuffer
+  }
 
   constructor() {
     this.gl = {} as WebGL2RenderingContext
     this.currentLayer = {} as ILayer
-    this.currentTool = {} as ITool
-    this.currentOperation = new Operation({} as ITool)
+    this.currentTool = {} as AvailableTools
+    this.currentOperation = new Operation({} as IBrush)
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
+
+    this.renderBufferInfo = {} as unknown as typeof this.renderBufferInfo
+    this.renderProgramInfo = {} as unknown as typeof this.renderProgramInfo
   }
 
-  basePen = (operation: IOperation) => {
-    const gl = this.gl
-    const points = operation.points
+  // basePen = (operation: IOperation) => {
+  //   const gl = this.gl
+  //   const points = operation.points
 
-    gl.lineCap = "round"
-    gl.lineJoin = "round"
-    gl.miterLimit = 10
-    gl.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
+  //   gl.lineCap = "round"
+  //   gl.lineJoin = "round"
+  //   gl.miterLimit = 10
+  //   gl.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
 
-    // TODO: make less lazy
-    if (points.length < 3) {
-      const point0 = points[0]
-      const point1 = points[1]
+  //   // TODO: make less lazy
+  //   if (points.length < 3) {
+  //     const point0 = points[0]
+  //     const point1 = points[1]
 
-      gl.beginPath()
+  //     gl.beginPath()
 
-      gl.moveTo(point0.x, point0.y)
-      gl.lineTo(point1.x, point1.y)
-      gl.stroke()
-    } else {
-      // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
-      for (let i = 2; i < points.length - 1; i += 1) {
-        const startPoint = points[i - 2]
-        const midPoint = points[i - 1]
-        const endPoint = points[i]
-        gl.beginPath()
+  //     gl.moveTo(point0.x, point0.y)
+  //     gl.lineTo(point1.x, point1.y)
+  //     gl.stroke()
+  //   } else {
+  //     // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
+  //     for (let i = 2; i < points.length - 1; i += 1) {
+  //       const startPoint = points[i - 2]
+  //       const midPoint = points[i - 1]
+  //       const endPoint = points[i]
+  //       gl.beginPath()
 
-        gl.moveTo(startPoint.x, startPoint.y)
+  //       gl.moveTo(startPoint.x, startPoint.y)
 
-        const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
+  //       const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
 
-        if (midPoint.pointerType === "pen") {
-          gl.lineWidth = operation.tool.size! * midPoint.pressure
-        } else {
-          gl.lineWidth = operation.tool.size!
-        }
+  //       if (midPoint.pointerType === "pen") {
+  //         gl.lineWidth = operation.tool.size! * midPoint.pressure
+  //       } else {
+  //         gl.lineWidth = operation.tool.size!
+  //       }
 
-        gl.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
+  //       gl.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
 
-        gl.stroke()
-      }
+  //       gl.stroke()
+  //     }
 
-      if (points.length % 3 < 3) {
-        for (let i = points.length - (points.length % 3); i < points.length; i++) {
-          const point0 = points[i - 1]
-          const point1 = points[i]
-          gl.beginPath()
+  //     if (points.length % 3 < 3) {
+  //       for (let i = points.length - (points.length % 3); i < points.length; i++) {
+  //         const point0 = points[i - 1]
+  //         const point1 = points[i]
+  //         gl.beginPath()
 
-          gl.moveTo(point0.x, point0.y)
-          gl.lineTo(point1.x, point1.y)
-          gl.stroke()
-        }
-      }
-    }
-  }
+  //         gl.moveTo(point0.x, point0.y)
+  //         gl.lineTo(point1.x, point1.y)
+  //         gl.stroke()
+  //       }
+  //     }
+  //   }
+  // }
 
   fill = () => {
     // this.gl.globalCompositeOperation ="source-over"
@@ -114,7 +132,7 @@ class _DrawingManager {
 
   // TODO: This framework isnt generic enough to describe many non-drawing tools
   execute = (operation: IOperation) => {
-    if (operation.points.length === 0 || operation.points.at(-1).drawn) return
+    if (operation.points.length === 0 || operation.points.at(-1)!.drawn) return
 
     if (operation.tool.use) operation.tool.use(this.gl, operation)
     if (operation.tool.draw) operation.tool.draw(this.gl, operation)
@@ -158,14 +176,14 @@ class _DrawingManager {
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (operation.points.length !== 0) {
+        if (prevPoint && operation.points.length !== 0) {
           interpolatedPoint.x = lerp(prevPoint.x, interpolatedPoint.x, smoothing)
           interpolatedPoint.y = lerp(prevPoint.y, interpolatedPoint.y, smoothing)
 
           interpolatedPoint.pressure = lerp(prevPoint.pressure, interpolatedPoint.pressure, 0.5)
         }
 
-        if (operation.points.length === 0 || getDistance(prevPoint, interpolatedPoint) >= spacing) {
+        if (operation.points.length === 0 || (prevPoint && getDistance(prevPoint, interpolatedPoint) >= spacing)) {
           operation.points.push({ ...interpolatedPoint, drawn: false })
 
           if (operation.points.length > 6) {
@@ -231,6 +249,8 @@ class _DrawingManager {
   setupRenderTextureVBO = (gl: WebGL2RenderingContext) => {
     const buffer = gl.createBuffer()
 
+    if (!buffer) throw new Error("Unable to create WebGL vertex buffer")
+
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
 
     const positions = [
@@ -292,6 +312,8 @@ class _DrawingManager {
   setupRenderTextureVAO = (gl: WebGL2RenderingContext, attribute: number) => {
     const vao = gl.createVertexArray()
 
+    if (!vao) throw new Error("Unable to create WebGL vertex array")
+
     gl.bindVertexArray(vao)
 
     gl.enableVertexAttribArray(attribute)
@@ -306,6 +328,9 @@ class _DrawingManager {
 
   setupRenderTextureFramebuffer = (gl: WebGL2RenderingContext, texture: WebGLTexture) => {
     const fb = gl.createFramebuffer()
+
+    if (!fb) throw new Error("Unable to create WebGL framebuffer")
+
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
 
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
@@ -322,20 +347,20 @@ class _DrawingManager {
     const targetTextureWidth = gl.canvas.width
     const targetTextureHeight = gl.canvas.height
 
-    this.targetTexture = this.createRenderTexture(gl, targetTextureWidth, targetTextureHeight)
-    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
+    this.renderBufferInfo.targetTexture = this.createRenderTexture(gl, targetTextureWidth, targetTextureHeight)
+    gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
 
-    this.textureFB = this.setupRenderTextureFramebuffer(gl, this.targetTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
+    this.renderBufferInfo.framebuffer = this.setupRenderTextureFramebuffer(gl, this.renderBufferInfo.targetTexture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderBufferInfo.framebuffer)
 
     const { program, attributes } = this.setupRenderTextureProgramAndAttributes(gl)
-    this.rtProgram = program
+    this.renderProgramInfo.program = program
 
-    this.rtVBO = this.setupRenderTextureVBO(gl)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtVBO)
+    this.renderProgramInfo.VBO = this.setupRenderTextureVBO(gl)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.renderProgramInfo.VBO)
 
-    this.rtVAO = this.setupRenderTextureVAO(gl, attributes.a_position)
-    gl.bindVertexArray(this.rtVAO)
+    this.renderProgramInfo.VAO = this.setupRenderTextureVAO(gl, attributes.a_position)
+    gl.bindVertexArray(this.renderProgramInfo.VAO)
 
     const uvBuffer = this.setupRenderTextureUVBuffer(gl)
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
@@ -378,8 +403,8 @@ class _DrawingManager {
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureFB)
+    gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderBufferInfo.framebuffer)
 
     if (this.currentOperation.tool.switchTo) this.currentOperation.tool.switchTo(gl)
 
@@ -397,11 +422,11 @@ class _DrawingManager {
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    gl.bindTexture(gl.TEXTURE_2D, this.targetTexture)
-    gl.useProgram(this.rtProgram)
+    gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
+    gl.useProgram(this.renderProgramInfo.program)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.rtVBO)
-    gl.bindVertexArray(this.rtVAO)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.renderProgramInfo.VBO)
+    gl.bindVertexArray(this.renderProgramInfo.VAO)
 
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.BLEND)
@@ -437,7 +462,10 @@ class _DrawingManager {
     //   }
     // }
 
-    const relativeMouseState = getRelativeMousePos(this.gl.canvas, currentUIInteraction.current.mouseState)
+    const relativeMouseState = getRelativeMousePos(
+      this.gl.canvas as HTMLCanvasElement,
+      currentUIInteraction.current.mouseState,
+    )
 
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
       this.use(relativeMouseState, this.currentOperation)
@@ -458,12 +486,12 @@ class _DrawingManager {
     requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
   }
 
-  // undo = () => {
-  //   if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentOperation.points.length === 0) {
-  //     this.currentLayer.redoSnapshotQueue.push(this.currentLayer.undoSnapshotQueue.pop())
-  //   }
-  //   this.endInteraction(false)
-  // }
+  undo = () => {
+    //   if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentOperation.points.length === 0) {
+    //     this.currentLayer.redoSnapshotQueue.push(this.currentLayer.undoSnapshotQueue.pop())
+    //   }
+    //   this.endInteraction(false)
+  }
 }
 
 export const DrawingManager = new _DrawingManager()

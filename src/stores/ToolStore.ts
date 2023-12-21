@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { AvailableTools, Tool, ToolName } from "@/types"
+import { AvailableTools, ToolName } from "@/types"
 
 import { createSelectors } from "@/stores/selectors"
 
@@ -11,7 +11,19 @@ import { Fill } from "@/objects/Fill"
 import { Pen } from "@/objects/Pen"
 import { Eyedropper } from "@/objects/Eyedropper"
 
-export const tools: Record<ToolName, AvailableTools> = {
+type ToolMap = {
+  PEN: Pen
+  BRUSH: Brush
+  ERASER: Eraser
+  FILL: Fill
+  EYEDROPPER: Eyedropper
+}
+
+type ToolDefaults = {
+  [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never
+}
+
+export const tools: ToolDefaults = {
   PEN: new Pen(),
   BRUSH: new Brush(),
   ERASER: new Eraser(),
@@ -20,7 +32,7 @@ export const tools: Record<ToolName, AvailableTools> = {
 }
 
 type State = {
-  currentTool: Tool
+  currentTool: AvailableTools
 }
 
 type Action = {

@@ -1,5 +1,11 @@
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
+export type ValueOf<T> = T[keyof T]
+export type NonMethodKeys<T> = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  [K in keyof T]: T[K] extends Function ? never : K
+}[keyof T]
+export type WithoutMethods<T> = Pick<T, NonMethodKeys<T>>
 
 export type HexColor = string
 export type ColorValue = number
@@ -61,7 +67,6 @@ export interface ITool {
   type: ToolType
   continuous: boolean
 
-  use: (gl: WebGL2RenderingContext) => void
   init: (gl: WebGL2RenderingContext) => void
 }
 
@@ -80,15 +85,23 @@ export interface IPen extends ITool {
 
 export interface IFill extends ITool {
   flood: boolean
+
+  use: (gl: WebGL2RenderingContext, operation: IOperation) => void
+}
+
+export interface IEraser extends ITool {
+  brush: IBrush
 }
 
 export type EyeDropperSampleSizes = "1x1" | "2x2" | "3x3"
 
 export interface IEyedropper extends ITool {
   sampleSize: EyeDropperSampleSizes
+
+  use: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
-export type AvailableTools = IBrush | IPen | IFill | IEyedropper
+export type AvailableTools = IBrush | IPen | IFill | IEyedropper | IEraser
 
 export type BlendModes =
   | "normal"
@@ -114,16 +127,15 @@ export interface ILayer {
   blendMode: BlendModes
   name: LayerName
   id: LayerID
-  canvasRef: React.MutableRefObject<HTMLCanvasElement>
-  currentOperation: IOperation
-  undoSnapshotQueue: ImageData[]
-  drawingData: ImageData
+  redoSnapshotQueue: Float32Array[]
+  undoSnapshotQueue: Float32Array[]
+  drawingData: Float32Array
   noDraw: boolean
   size: Size
   boundingBox: Box
-  saveAndStartNewOperation(): void
-  getImageData(): ImageData
-  addElementToUndoSnapshotQueue(image: ImageData): void
-  replaceDrawingData(image: ImageData): void
-  fill(color?: ColorValueString): void
+  // saveAndStartNewOperation(): void
+  // getImageData(): ImageData
+  // addElementToUndoSnapshotQueue(image: ImageData): void
+  // replaceDrawingData(image: ImageData): void
+  // fill(color?: ColorValueString): void
 }

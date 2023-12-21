@@ -6,9 +6,13 @@ export class Pen extends Tool implements IPen {
   size: number
   opacity: number
 
-  constructor(settings: Partial<IPen>) {
+  constructor(settings: Partial<IPen> = {}) {
     super()
     this.name = tool_list.PEN
     setWithDefaults.call(this, settings, toolDefaults.PEN)
+  }
+
+  init = () => {
+    return
   }
 }

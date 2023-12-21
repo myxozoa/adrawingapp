@@ -15,11 +15,11 @@ function Layer({
   saveNewName,
 }: {
   name: LayerName
-  select: (id: number) => void
+  select: (id: string) => void
   selected: boolean
   id: LayerID
   editing: boolean
-  saveNewName: (id: number, name: string) => void
+  saveNewName: (id: string, name: string) => void
 }) {
   const setEditingLayer = useLayerStore.use.setEditingLayer()
 

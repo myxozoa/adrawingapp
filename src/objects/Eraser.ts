@@ -1,19 +1,21 @@
 import { tool_list } from "@/constants"
 import { Brush } from "@/objects/Brush"
-import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
+import { Tool, toolDefaults } from "@/objects/Tool"
 import { IBrush, IOperation } from "@/types"
 
 // The Eraser behaves almost exactly like the brush aside from the differing blend states
 // so this passthrough thing is what im going with for the time being
 export class Eraser extends Tool {
-  brush: Brush
+  brush: IBrush
 
-  constructor(settings: Partial<IBrush>) {
+  constructor(settings: Partial<IBrush> = {}) {
     super()
     this.name = tool_list.ERASER
     this.brush = new Brush({ ...toolDefaults.ERASER, ...settings })
 
-    setWithDefaults.call(this, settings, toolDefaults.ERASER)
+    // const set = setWithDefaults<IEraser>
+
+    // set.call(this, {}, toolDefaults.ERASER)
   }
 
   init = (gl: WebGL2RenderingContext) => {

@@ -1,6 +1,8 @@
 export function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
   const shader = gl.createShader(type)
 
+  if (!shader) throw new Error("Unable to create WebGL shader")
+
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
 
@@ -10,12 +12,14 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
     return shader
   }
 
-  throw new Error(gl.getShaderInfoLog(shader))
+  throw new Error("Shader Compile error: " + gl.getShaderInfoLog(shader))
   gl.deleteShader(shader)
 }
 
 export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
   const program = gl.createProgram()
+
+  if (!program) throw new Error("Unable to create WebGL program")
 
   gl.attachShader(program, vertexShader)
   gl.attachShader(program, fragmentShader)
@@ -29,7 +33,7 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
     return program
   }
 
-  throw new Error(gl.getProgramInfoLog(program))
+  throw new Error("Program validation error: " + gl.getProgramInfoLog(program))
   gl.deleteProgram(program)
 }
 
@@ -37,18 +41,22 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
 
 // }
 
-export function getUniformLocations(gl, program, list: string[]) {
-  const uniforms = {}
+export function getUniformLocations(gl: WebGL2RenderingContext, program: WebGLProgram, list: string[]) {
+  const uniforms: Record<string, WebGLUniformLocation> = {}
 
   for (const uniform of list) {
-    uniforms[uniform] = gl.getUniformLocation(program, uniform)
+    const location = gl.getUniformLocation(program, uniform)
+
+    if (location) {
+      uniforms[uniform] = location
+    }
   }
 
   return uniforms
 }
 
 export function getAttributeLocations(gl: WebGL2RenderingContext, program: WebGLProgram, list: string[]) {
-  const attributes = {}
+  const attributes: Record<string, GLint> = {}
 
   for (const attribute of list) {
     attributes[attribute] = gl.getAttribLocation(program, attribute)

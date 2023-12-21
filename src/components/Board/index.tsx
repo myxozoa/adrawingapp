@@ -32,7 +32,10 @@ function _Board() {
   useEffect(() => {
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
-    const context = initializeCanvas(boardRef.current, rect.width, rect.height, { desynchronized: true, resize: true })
+    const context = initializeCanvas(boardRef.current, rect.width, rect.height, {
+      desynchronized: true,
+      resize: true,
+    }) as WebGL2RenderingContext
 
     if (!context) {
       throw new Error("WebGL2 is not supported")
@@ -42,7 +45,7 @@ function _Board() {
     DrawingManager.canvasRef = boardRef
 
     DrawingManager.init()
-    DrawingManager.loop(currentUIInteraction)
+    DrawingManager.loop(currentUIInteraction, 0)
   }, [])
 
   // const saveImage = () => {

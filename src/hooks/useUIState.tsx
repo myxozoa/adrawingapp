@@ -41,6 +41,18 @@ function parseMouseButtons(event: PointerEvent) {
   return { leftMouseDown, middleMouseDown, rightMouseDown }
 }
 
+function isKeyboardEvent(event: Event): event is KeyboardEvent {
+  return event instanceof KeyboardEvent
+}
+
+function isWheelEvent(event: Event): event is WheelEvent {
+  return event instanceof WheelEvent
+}
+
+function isPointerEvent(event: Event): event is PointerEvent {
+  return event instanceof PointerEvent
+}
+
 function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args: any[]) => void) {
   const mouseState = useRef({}) as React.MutableRefObject<MouseState>
   const modifierState = useRef(new Set()) as React.MutableRefObject<ModifierState>
@@ -51,7 +63,9 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
   // const prevInteraction = useRef({...defaultInteraction})
 
   useEffect(() => {
-    const updatePointer = (event: PointerEvent) => {
+    const updatePointer = (event: Event) => {
+      if (!isPointerEvent(event)) return
+
       const mouseButtons = parseMouseButtons(event)
 
       mouseState.current = {
@@ -65,18 +79,24 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
       currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
-    const onPointerUp = (event: PointerEvent) => {
+    const onPointerUp = (event: Event) => {
+      if (!isPointerEvent(event)) return
+
       updatePointer(event)
       callbackUp()
     }
 
-    const updateWheelDeltaY = (event: WheelEvent) => {
+    const updateWheelDeltaY = (event: Event) => {
+      if (!isWheelEvent(event)) return
+
       wheelDeltaY.current = event.deltaY
 
       currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
-    const updateKeyModifiers = (event: KeyboardEvent) => {
+    const updateKeyModifiers = (event: Event) => {
+      if (!isKeyboardEvent(event)) return
+
       handleModifier(modifierState, event.ctrlKey, key_modifers.ctrl)
       handleModifier(modifierState, event.altKey, key_modifers.alt)
       handleModifier(modifierState, event.shiftKey, key_modifers.shift)
@@ -84,7 +104,9 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
       currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
-    const updateKeys = (event: KeyboardEvent) => {
+    const updateKeys = (event: Event) => {
+      if (!isKeyboardEvent(event)) return
+
       updateKeyModifiers(event)
 
       if (event.keyCode == 90 && event.ctrlKey) callbackUndo()
