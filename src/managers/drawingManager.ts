@@ -9,7 +9,7 @@ import {
   resizeCanvasToDisplaySize,
 } from "@/utils.ts"
 
-import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType } from "@/types.ts"
+import { ILayer, ITool, UIInteraction, MouseState, IOperation, MainStateType, AvailableTools } from "@/types.ts"
 import { Operation } from "@/objects/Operation.ts"
 
 import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
@@ -117,6 +117,11 @@ class _DrawingManager {
     if (operation.tool.draw) operation.tool.draw(this.gl, operation)
   }
 
+  swapTool = (tool: AvailableTools) => {
+    this.currentTool = tool
+    this.currentOperation = new Operation(this.currentTool)
+  }
+
   endInteraction = (save = true) => {
     if (this.currentLayer.noDraw) return
 
@@ -125,12 +130,12 @@ class _DrawingManager {
 
     if (save) {
       // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
-      this.currentOperation = new Operation(this.currentTool)
     }
+    this.currentOperation = new Operation(this.currentTool)
   }
 
   use = (relativeMouseState: MouseState, operation: IOperation) => {
-    if (!operation.tool) {
+    if (!operation.tool || Object.keys(operation.tool).length === 0) {
       operation.tool = this.currentTool
       operation.readyToDraw = true
     }

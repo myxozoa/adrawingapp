@@ -88,7 +88,7 @@ export interface IEyedropper extends ITool {
   sampleSize: EyeDropperSampleSizes
 }
 
-export type AvailableTools = IBrush | IPen | IFill
+export type AvailableTools = IBrush | IPen | IFill | IEyedropper
 
 export type BlendModes =
   | "normal"

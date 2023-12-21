@@ -67,7 +67,7 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
 
     const onPointerUp = (event: PointerEvent) => {
       updatePointer(event)
-      callbackUp(event)
+      callbackUp()
     }
 
     const updateWheelDeltaY = (event: WheelEvent) => {

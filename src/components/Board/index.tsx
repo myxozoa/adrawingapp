@@ -22,7 +22,7 @@ function _Board() {
   const currentTool = useToolStore.use.currentTool()
 
   useEffect(() => {
-    DrawingManager.currentTool = currentTool
+    DrawingManager.swapTool(currentTool)
   }, [currentTool])
 
   useEffect(() => {
