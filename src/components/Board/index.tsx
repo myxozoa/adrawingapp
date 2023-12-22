@@ -65,7 +65,7 @@ function _Board() {
     <>
       <Container className="grow">
         <Panel className="flex relative w-full h-full">
-          <div className="relative w-full h-full canvas_background">
+          <div className="relative w-full h-full">
             <DrawCanvas ref={boardRef} />
           </div>
         </Panel>
