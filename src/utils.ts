@@ -109,8 +109,8 @@ export function findQuadtraticBezierControlPoint(
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
 
-let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
-let resizeObserver: ResizeObserver
+// let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
+// let resizeObserver: ResizeObserver
 
 type Options = {
   desynchronized: boolean
@@ -152,88 +152,84 @@ export function initializeCanvas(
     }),
   ) as Options
 
-  const targetDpi = window.devicePixelRatio * 2
+  const targetDpi = window.devicePixelRatio
 
-  if (!options.resize) {
-    canvas.width = Math.floor(width * targetDpi)
-    canvas.height = Math.floor(height * targetDpi)
-    canvas.style.width = `${width.toString()}px`
-    canvas.style.height = `${height.toString()}px`
-  }
+  // if (!options.resize) {
+  canvas.width = Math.floor(width * targetDpi)
+  canvas.height = Math.floor(height * targetDpi)
+  canvas.style.width = `${width.toString()}px`
+  canvas.style.height = `${height.toString()}px`
+  // }
 
   const context = canvas.getContext(options.contextType, options)
 
   if (!context) throw new Error("Unable to create canvas context")
 
-  const typeguard = (
-    contextType: Options["contextType"],
-    context: RenderingContext,
-  ): context is CanvasRenderingContext2D => context && contextType === "2d"
+  // const typeguard = (
+  //   contextType: Options["contextType"],
+  //   context: RenderingContext,
+  // ): context is CanvasRenderingContext2D => context && contextType === "2d"
 
-  if (typeguard(options.contextType, context)) context.scale(targetDpi, targetDpi)
+  // if (typeguard(options.contextType, context)) context.scale(targetDpi, targetDpi)
 
-  if (options.resize) {
-    canvasToDisplaySizeMap = new Map([[canvas, [width, height]]])
-    resizeObserver = new ResizeObserver(onResize)
-    resizeObserver.observe(canvas, { box: "content-box" })
-  }
+  // if (options.resize) {
+  //   canvasToDisplaySizeMap = new Map([[canvas, [width, height]]])
+  //   resizeObserver = new ResizeObserver(onResize)
+  //   resizeObserver.observe(canvas, { box: "content-box" })
+  // }
 
   return context
 }
 
 // https://webgl2fundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
 
-function onResize(entries: ResizeObserverEntry[]) {
-  for (const entry of entries) {
-    let width: number
-    let height: number
-    let dpr = window.devicePixelRatio
-    if (entry.devicePixelContentBoxSize) {
-      // NOTE: Only this path gives the correct answer
-      // The other 2 paths are an imperfect fallback
-      // for browsers that don't provide anyway to do this
-      width = entry.devicePixelContentBoxSize[0].inlineSize
-      height = entry.devicePixelContentBoxSize[0].blockSize
-      dpr = 1 // it's already in width and height
-    } else if (entry.contentBoxSize) {
-      if (entry.contentBoxSize[0]) {
-        width = entry.contentBoxSize[0].inlineSize
-        height = entry.contentBoxSize[0].blockSize
-      } else {
-        // legacy
-        // width = entry.contentBoxSize.inlineSize
-        // height = entry.contentBoxSize.blockSize
-        width = 0
-        height = 0
-      }
-    } else {
-      // legacy
-      width = entry.contentRect.width
-      height = entry.contentRect.height
-    }
-    const displayWidth = Math.round(width * dpr)
-    const displayHeight = Math.round(height * dpr)
-    canvasToDisplaySizeMap.set(entry.target as HTMLCanvasElement, [displayWidth, displayHeight])
-  }
-}
+// function onResize(entries: ResizeObserverEntry[]) {
+//   for (const entry of entries) {
+//     let width: number
+//     let height: number
+//     let dpr = window.devicePixelRatio
+//     if (entry.devicePixelContentBoxSize) {
+//       // NOTE: Only this path gives the correct answer
+//       // The other 2 paths are an imperfect fallback
+//       // for browsers that don't provide anyway to do this
+//       width = entry.devicePixelContentBoxSize[0].inlineSize
+//       height = entry.devicePixelContentBoxSize[0].blockSize
+//       dpr = 1 // it's already in width and height
+//     } else if (entry.contentBoxSize) {
+//       if (entry.contentBoxSize[0]) {
+//         width = entry.contentBoxSize[0].inlineSize
+//         height = entry.contentBoxSize[0].blockSize
+//       } else {
+//         // legacy
+//         // width = entry.contentBoxSize.inlineSize
+//         // height = entry.contentBoxSize.blockSize
+//         width = 0
+//         height = 0
+//       }
+//     } else {
+//       // legacy
+//       width = entry.contentRect.width
+//       height = entry.contentRect.height
+//     }
+//     const displayWidth = Math.round(width * dpr)
+//     const displayHeight = Math.round(height * dpr)
+//     canvasToDisplaySizeMap.set(entry.target as HTMLCanvasElement, [displayWidth, displayHeight])
+//   }
+// }
 
-export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback: () => void) {
-  // Get the size the browser is displaying the canvas in device pixels.
-  const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)!
-
-  // Check if the canvas is not the same size.
-  const needResize = canvas.width !== displayWidth || canvas.height !== displayHeight
-
-  if (needResize) {
-    // Make the canvas the same size
-    canvas.width = displayWidth
-    canvas.height = displayHeight
-
-    callback()
-  }
-
-  return needResize
-}
+// export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback: () => void) {
+// // Get the size the browser is displaying the canvas in device pixels.
+// const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)!
+// // Check if the canvas is not the same size.
+// const needResize = canvas.width !== displayWidth || canvas.height !== displayHeight
+// if (needResize) {
+//   // Make the canvas the same size
+//   canvas.width = displayWidth
+//   canvas.height = displayHeight
+//   callback()
+// }
+// return needResize
+// }
 
 // https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately/35363027#35363027
 

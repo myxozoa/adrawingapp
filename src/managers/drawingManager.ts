@@ -11,7 +11,7 @@ import {
   // findQuadtraticBezierControlPoint,
   // getCanvasColor,
   lerp,
-  resizeCanvasToDisplaySize,
+  // resizeCanvasToDisplaySize,
   performanceSafeguard,
 } from "@/utils.ts"
 
@@ -390,7 +390,7 @@ class _DrawingManager {
   loop = (currentUIInteraction: React.MutableRefObject<UIInteraction>, time: number) => {
     const gl = this.gl
 
-    resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
+    // resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
 
     // if (this.currentLayer.noDraw) return
 
