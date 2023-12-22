@@ -135,7 +135,7 @@ export function initializeCanvas(
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",
-    alpha: true,
+    alpha: false,
     premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
@@ -396,4 +396,19 @@ export const performanceSafeguard = () => {
       }
     }
   }
+}
+
+export function newPointAlongDirection(point0: Point, point1: Point, distance: number) {
+  const dx = point1.x - point0.x
+  const dy = point1.y - point0.y
+
+  const totalDistance = Math.sqrt(dx * dx + dy * dy)
+
+  const unitX = dx / totalDistance
+  const unitY = dy / totalDistance
+
+  const newX = point0.x + unitX * distance
+  const newY = point0.y + unitY * distance
+
+  return { x: newX, y: newY }
 }

@@ -6,7 +6,7 @@ import { useMainStore } from "@/stores/MainStore"
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { calculateHardness, getDistance, lerp } from "@/utils"
+import { calculateHardness, getDistance, lerp, newPointAlongDirection } from "@/utils"
 
 import * as v3 from "@/v3.ts"
 import * as m4 from "@/m4.ts"
@@ -141,52 +141,34 @@ export class Brush extends Tool implements IBrush {
   base = (gl: WebGL2RenderingContext, operation: IOperation) => {
     const lastIndex = operation.points.length - 1
     const prevPoint = operation.points.at(-2)
-    const currentPoint = operation.points.at(-1)
+    const currentPoint = operation.points.at(-1)!
 
-    if (!prevPoint || !currentPoint) return
-
-    const distance = getDistance(prevPoint, currentPoint)
-
-    if (lastIndex === 0) {
-      this.stamp(gl, operation.points[0])
+    if (!prevPoint || lastIndex === 0) {
+      this.stamp(gl, currentPoint)
+      currentPoint.drawn = true
       return
     }
 
-    let spacing = this.size * (this.spacing / 100)
-
-    if (currentPoint.pointerType === "pen") {
-      const pressure = currentPoint.pressure
-      spacing = spacing * pressure
-    }
-
-    if (distance > spacing * 2) {
-      this.line(gl, prevPoint, currentPoint)
-      prevPoint.drawn = true
-      currentPoint.drawn = true
-    } else {
-      this.stamp(gl, currentPoint)
-    }
+    this.line(gl, prevPoint, currentPoint)
+    prevPoint.drawn = true
+    currentPoint.drawn = true
   }
 
   line = (gl: WebGL2RenderingContext, point0: Point, point1: Point) => {
     const distance = getDistance(point0, point1)
     const step = this.size * (this.spacing / 100)
 
-    let progress = 0
     const steps = distance / step
 
     // Stamp at evenly spaced intervals between the two points
-    for (let i = 0; i < distance; i += step) {
-      const t = Math.max(0, Math.min(1, i / distance))
-      const x = point0.x + (point1.x - point0.x) * t
-      const y = point0.y + (point1.y - point0.y) * t
+    for (let i = step, j = 0; i < distance; i += step, j++) {
+      const { x, y } = newPointAlongDirection(point0, point1, i)
 
-      const pressure = lerp(point0.pressure, point1.pressure, progress / steps)
+      const pressure = lerp(point0.pressure, point1.pressure, j / steps)
 
       this.stamp(gl, { x, y, pointerType: point0.pointerType, pressure })
-
-      progress++
     }
+    this.stamp(gl, point1)
   }
 
   stamp = (gl: WebGL2RenderingContext, point: Point) => {
@@ -225,8 +207,6 @@ export class Brush extends Tool implements IBrush {
     gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    point.drawn = true
   }
 
   switchTo = (gl: WebGL2RenderingContext) => {
