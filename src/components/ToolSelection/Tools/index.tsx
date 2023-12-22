@@ -18,6 +18,7 @@ function _Tools() {
       <Panel className="flex flex-col grow w-full justify-between">
         <div>
           {Object.values(tools).map((tool) => {
+            if (tool.name === "PEN") return
             return (
               <Tool
                 key={tool.name}

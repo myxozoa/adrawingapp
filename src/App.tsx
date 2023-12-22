@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { Board } from "@/components/Board/"
-import { Layers } from "@/components/LayerSelection/Layers"
+// import { Layers } from "@/components/LayerSelection/Layers"
 import { Tools } from "@/components/ToolSelection/Tools"
 import { ToolSettings } from "@/components/ToolSettings"
 
@@ -17,7 +17,7 @@ function App() {
         <div className="flex flex-row flex-grow">
           <Tools />
           <Board />
-          <Layers />
+          {/* <Layers /> */}
         </div>
       </div>
     </ThemeProvider>
