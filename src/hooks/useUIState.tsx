@@ -1,19 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef } from "react"
 
-import { key_modifers } from '../constants'
+import { key_modifers } from "../constants"
 
-import { MouseState, Modifier, ModifierState, UIInteraction, PointerType } from '../types'
+import { MouseState, Modifier, ModifierState, UIInteraction, PointerType } from "../types"
 
-const defaultInteraction: UIInteraction = { mouseState: {}, keyModifiers: [], wheelDeltaY: 0 } as unknown as UIInteraction
+const defaultInteraction: UIInteraction = {
+  mouseState: {},
+  keyModifiers: [],
+  wheelDeltaY: 0,
+} as unknown as UIInteraction
 8
-function constructInteraction(mouseState: React.MutableRefObject<MouseState>, modifierState: React.MutableRefObject<ModifierState>, wheelDeltaY: React.MutableRefObject<number>): UIInteraction {
-  const interaction = { 
+function constructInteraction(
+  mouseState: React.MutableRefObject<MouseState>,
+  modifierState: React.MutableRefObject<ModifierState>,
+  wheelDeltaY: React.MutableRefObject<number>,
+): UIInteraction {
+  const interaction = {
     mouseState: mouseState.current,
     modifierState: modifierState.current,
-    wheelDeltaY: wheelDeltaY.current
- }
+    wheelDeltaY: wheelDeltaY.current,
+  }
 
- return interaction
+  return interaction
 }
 
 function handleModifier(modifierState: React.MutableRefObject<ModifierState>, addOrRemove: boolean, key: Modifier) {
@@ -30,7 +38,19 @@ function parseMouseButtons(event: PointerEvent) {
   const rightMouseDown = flags === 2
   const middleMouseDown = flags === 4
 
-  return {leftMouseDown, middleMouseDown, rightMouseDown}
+  return { leftMouseDown, middleMouseDown, rightMouseDown }
+}
+
+function isKeyboardEvent(event: Event): event is KeyboardEvent {
+  return event instanceof KeyboardEvent
+}
+
+function isWheelEvent(event: Event): event is WheelEvent {
+  return event instanceof WheelEvent
+}
+
+function isPointerEvent(event: Event): event is PointerEvent {
+  return event instanceof PointerEvent
 }
 
 function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args: any[]) => void) {
@@ -43,31 +63,40 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
   // const prevInteraction = useRef({...defaultInteraction})
 
   useEffect(() => {
-    const updatePointer = (event: PointerEvent) => {      
+    const updatePointer = (event: Event) => {
+      if (!isPointerEvent(event)) return
+
       const mouseButtons = parseMouseButtons(event)
-      
+
       mouseState.current = {
         x: event.clientX,
         y: event.clientY,
         ...mouseButtons,
         pressure: event.pressure,
-        pointerType: event.pointerType as unknown as PointerType }
-      
+        pointerType: event.pointerType as unknown as PointerType,
+      }
+
       currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
-    const onPointerUp = (event: PointerEvent) => {
+    const onPointerUp = (event: Event) => {
+      if (!isPointerEvent(event)) return
+
       updatePointer(event)
-      callbackUp(event)
+      callbackUp()
     }
 
-    const updateWheelDeltaY = (event: WheelEvent) => {
+    const updateWheelDeltaY = (event: Event) => {
+      if (!isWheelEvent(event)) return
+
       wheelDeltaY.current = event.deltaY
 
       currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
-    const updateKeyModifiers = (event: KeyboardEvent) => {
+    const updateKeyModifiers = (event: Event) => {
+      if (!isKeyboardEvent(event)) return
+
       handleModifier(modifierState, event.ctrlKey, key_modifers.ctrl)
       handleModifier(modifierState, event.altKey, key_modifers.alt)
       handleModifier(modifierState, event.shiftKey, key_modifers.shift)
@@ -75,33 +104,35 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
       currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
     }
 
-    const updateKeys = (event: KeyboardEvent) => {
+    const updateKeys = (event: Event) => {
+      if (!isKeyboardEvent(event)) return
+
       updateKeyModifiers(event)
 
       if (event.keyCode == 90 && event.ctrlKey) callbackUndo()
     }
 
-    document.addEventListener('pointermove', updatePointer)
-    document.addEventListener('pointerdown', updatePointer)
-    document.addEventListener('pointerup', onPointerUp)
-    // document.addEventListener('pointerout', onPointerUp)
-    document.addEventListener('wheel', updateWheelDeltaY)
-    document.addEventListener('keydown', updateKeys)
-    document.addEventListener('keyup', updateKeys)
+    const mapping = {
+      pointermove: updatePointer,
+      pointerdown: updatePointer,
+      pointerup: onPointerUp,
+      wheel: updateWheelDeltaY,
+      keydown: updateKeys,
+      keyup: updateKeys,
+    }
+
+    for (const [name, callback] of Object.entries(mapping)) {
+      document.addEventListener(name, callback)
+    }
 
     return () => {
-      document.removeEventListener('pointermove', updatePointer)
-      document.removeEventListener('pointerdown', updatePointer)
-      document.removeEventListener('pointerup', onPointerUp)
-      // document.removeEventListener('pointerout', onPointerUp)
-      document.removeEventListener('wheel', updateWheelDeltaY)
-    document.removeEventListener('keydown', updateKeys)
-    document.removeEventListener('keyup', updateKeys)
+      for (const [name, callback] of Object.entries(mapping)) {
+        document.removeEventListener(name, callback)
+      }
     }
   }, [])
 
   return { currentUIInteraction }
-
 }
 
 export default useUIState

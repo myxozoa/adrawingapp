@@ -1,31 +1,26 @@
-import './App.css'
-import Board from './components/Board/'
-import Layers from './components/Layers/'
-import Tools from './components/Tools/'
-import ToolSettings from './components/ToolSettings'
+import { useEffect } from "react"
+import { Board } from "@/components/Board"
+// import { Layers } from "@/components/LayerSelection/Layers"
+import { Tools } from "@/components/ToolSelection/Tools"
+import { ToolSettings } from "@/components/ToolSettings"
 
-import LayerStateProvider from './components/providers/LayerStateProvider'
-import ToolStateProvider from './components/providers/ToolStateProvider'
-import MainStateProvider from './components/providers/MainStateProvider'
+import { ThemeProvider } from "@/components/ThemeProvider"
 
 function App() {
+  useEffect(() => {
+    window.document.documentElement.classList.add("dark")
+  }, [])
   return (
-    <>
-    <div className="interface-container">
-      <MainStateProvider>
-        <LayerStateProvider>
-          <ToolStateProvider>
-            <ToolSettings/>
-            <div className='interface-main'>
-              <Tools />
-              <Board />
-              <Layers />
-            </div>
-          </ToolStateProvider>
-        </LayerStateProvider>
-      </MainStateProvider>
-    </div>
-    </>
+    <ThemeProvider storageKey="draw-ui-theme">
+      <div className="flex flex-col h-full">
+        <ToolSettings />
+        <div className="flex flex-row flex-grow">
+          <Tools />
+          <Board />
+          {/* <Layers /> */}
+        </div>
+      </div>
+    </ThemeProvider>
   )
 }
 
