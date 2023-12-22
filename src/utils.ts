@@ -412,3 +412,9 @@ export function newPointAlongDirection(point0: Point, point1: Point, distance: n
 
   return { x: newX, y: newY }
 }
+
+export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
+  const rect = (gl.canvas as HTMLCanvasElement).getBoundingClientRect()
+
+  return { x: point.x, y: rect.bottom - rect.top - point.y - 1 }
+}

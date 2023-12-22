@@ -3,6 +3,7 @@ import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
 import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
+import { glPickPosition } from "@/utils"
 
 export class Eyedropper extends Tool implements IEyedropper {
   sampleSize: EyeDropperSampleSizes
@@ -21,14 +22,12 @@ export class Eyedropper extends Tool implements IEyedropper {
     const { setColor } = useMainStore.getState()
 
     const point = operation.points[0]
-    const rect = (gl.canvas as HTMLCanvasElement).getBoundingClientRect()
 
-    const pickX = point.x
-    const pickY = rect.bottom - rect.top - point.y - 1
+    const { x, y } = glPickPosition(gl, point)
 
     const data = new Float32Array(4)
 
-    gl.readPixels(pickX, pickY, 1, 1, gl.RGBA, gl.FLOAT, data)
+    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.FLOAT, data)
 
     const color = Array.from(data).map((value) => Math.max(Math.floor(value * 255)))
 

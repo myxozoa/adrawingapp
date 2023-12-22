@@ -1,5 +1,6 @@
 import { tool_list } from "@/constants"
 import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
+import { useMainStore } from "@/stores/MainStore"
 import { IFill } from "@/types"
 
 export class Fill extends Tool implements IFill {
@@ -15,7 +16,9 @@ export class Fill extends Tool implements IFill {
     return
   }
 
-  use = () => {
-    return
+  use = (gl: WebGL2RenderingContext) => {
+    const color = useMainStore.getState().color
+
+    gl.clearBufferfv(gl.COLOR, 0, new Float32Array([...color.map((value) => value / 255), 1]))
   }
 }
