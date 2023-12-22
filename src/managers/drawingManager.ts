@@ -1,5 +1,8 @@
 import { MutableRefObject } from "react"
 
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { tools } from "@/stores/ToolStore.ts"
+
 import { tool_types } from "@/constants.tsx"
 
 import {
@@ -23,8 +26,6 @@ import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 import * as glUtils from "@/glUtils.ts"
 
 // import * as v3 from '@/v3.ts'
-
-import { tools } from "@/stores/ToolStore.ts"
 
 const checkfps = performanceSafeguard()
 
@@ -63,62 +64,6 @@ class _DrawingManager {
     this.renderProgramInfo = {} as unknown as typeof this.renderProgramInfo
   }
 
-  // basePen = (operation: IOperation) => {
-  //   const gl = this.gl
-  //   const points = operation.points
-
-  //   gl.lineCap = "round"
-  //   gl.lineJoin = "round"
-  //   gl.miterLimit = 10
-  //   gl.strokeStyle = getCanvasColor(this.main.color, operation.tool.opacity)
-
-  //   // TODO: make less lazy
-  //   if (points.length < 3) {
-  //     const point0 = points[0]
-  //     const point1 = points[1]
-
-  //     gl.beginPath()
-
-  //     gl.moveTo(point0.x, point0.y)
-  //     gl.lineTo(point1.x, point1.y)
-  //     gl.stroke()
-  //   } else {
-  //     // We need to have slightly overlapping curves otherwise we likely have holes when the list of points is shortened
-  //     for (let i = 2; i < points.length - 1; i += 1) {
-  //       const startPoint = points[i - 2]
-  //       const midPoint = points[i - 1]
-  //       const endPoint = points[i]
-  //       gl.beginPath()
-
-  //       gl.moveTo(startPoint.x, startPoint.y)
-
-  //       const controlPoint = findQuadtraticBezierControlPoint(startPoint, midPoint, endPoint)
-
-  //       if (midPoint.pointerType === "pen") {
-  //         gl.lineWidth = operation.tool.size! * midPoint.pressure
-  //       } else {
-  //         gl.lineWidth = operation.tool.size!
-  //       }
-
-  //       gl.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y)
-
-  //       gl.stroke()
-  //     }
-
-  //     if (points.length % 3 < 3) {
-  //       for (let i = points.length - (points.length % 3); i < points.length; i++) {
-  //         const point0 = points[i - 1]
-  //         const point1 = points[i]
-  //         gl.beginPath()
-
-  //         gl.moveTo(point0.x, point0.y)
-  //         gl.lineTo(point1.x, point1.y)
-  //         gl.stroke()
-  //       }
-  //     }
-  //   }
-  // }
-
   fill = () => {
     // this.gl.globalCompositeOperation ="source-over"
     // this.currentLayer.fill(getCanvasColor(this.main.color))
@@ -156,6 +101,7 @@ class _DrawingManager {
   }
 
   use = (relativeMouseState: MouseState, operation: IOperation) => {
+    const prefs = usePreferenceStore.getState().prefs
     if (!operation.tool || Object.keys(operation.tool).length === 0) {
       operation.tool = this.currentTool
       operation.readyToDraw = true
@@ -166,7 +112,7 @@ class _DrawingManager {
 
     if (relativeMouseState.pointerType === "pen") {
       const pressure = relativeMouseState.pressure
-      spacing = spacing * pressure
+      spacing = spacing * (pressure * prefs.pressureSensititity)
     }
 
     const prevPoint = operation.points.at(-1)

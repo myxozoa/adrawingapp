@@ -2,6 +2,7 @@ import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
 import { IBrush, IOperation, Point } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
@@ -172,6 +173,7 @@ export class Brush extends Tool implements IBrush {
   }
 
   stamp = (gl: WebGL2RenderingContext, point: Point) => {
+    const prefs = usePreferenceStore.getState().prefs
     const color = useMainStore.getState().color
 
     let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1, null)
@@ -186,7 +188,7 @@ export class Brush extends Tool implements IBrush {
 
     if (point.pointerType === "pen") {
       const pressure = point.pressure
-      size = size * pressure
+      size = size * (pressure * prefs.pressureSensititity)
     }
 
     const scaleVector = v3.create(baseSize, baseSize, 1)
