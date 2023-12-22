@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Board } from "@/components/Board/"
+import { Board } from "@/components/Board"
 // import { Layers } from "@/components/LayerSelection/Layers"
 import { Tools } from "@/components/ToolSelection/Tools"
 import { ToolSettings } from "@/components/ToolSettings"

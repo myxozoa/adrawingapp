@@ -1,5 +1,3 @@
-import "./styles.css"
-
 function PanelElement({
   id,
   select,
@@ -17,9 +15,11 @@ function PanelElement({
     <div
       onDoubleClick={onDoubleClick}
       onClick={() => select(id)}
-      className={`p-0.5 w-full h-10 rounded-sm hover:cursor-pointer ${selected ? "panelElement_selected" : ""}`}
+      className={`p-0.5 w-full h-10 rounded-sm hover:cursor-pointer ${
+        selected ? "bg-primary-foreground outline-1 outline outline-muted-foreground" : ""
+      }`}
     >
-      <div className="panelElement_selected_outline rounded-sm">{children}</div>
+      <div className="h-full flex items-center justify-center rounded-sm">{children}</div>
     </div>
   )
 }
