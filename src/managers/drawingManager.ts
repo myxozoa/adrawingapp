@@ -155,23 +155,69 @@ class _DrawingManager {
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA16F,
-      width,
-      height,
-      0,
-      gl.RGBA,
-      gl.FLOAT,
-      new Float32Array(width * height * 4).fill(1),
-    )
+    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
 
-    // No filtering is supported on floating point textures
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
+
+    if (!floatBufferExt) {
+      const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
+
+      if (!halfFloatTextureExt) {
+        throw new Error("Your device does not support half float textures (OES_texture_half_float).")
+      }
+
+      const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
+
+      // if (!halfFloatTextureLinearExt) {
+      //   throw new Error(
+      //     "Your device does not support linear filtering on half float textures (OES_texture_half_float_linear).",
+      //   )
+      // }
+
+      const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
+
+      if (!halfFloatColorBufferExt) {
+        throw new Error("Your device does not support half float color buffers (EXT_color_buffer_half_float).")
+      }
+
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA16F,
+        width,
+        height,
+        0,
+        gl.RGBA,
+        halfFloatTextureExt.HALF_FLOAT_OES,
+        new Float32Array(width * height * 4).fill(1),
+      )
+
+      const supportedFilterType = halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    } else {
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA16F,
+        width,
+        height,
+        0,
+        gl.RGBA,
+        gl.FLOAT,
+        new Float32Array(width * height * 4).fill(1),
+      )
+
+      const supportedFilterType = floatTextureLinearExt ? gl.LINEAR : gl.NEAREST
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    }
 
     // Unbind
     gl.bindTexture(gl.TEXTURE_2D, null)
@@ -327,15 +373,6 @@ class _DrawingManager {
     gl.depthFunc(gl.LEQUAL)
     gl.disable(gl.DEPTH_TEST)
     gl.depthMask(false)
-
-    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
-    const floatTextureExt = gl.getExtension("OES_texture_float_linear")
-
-    if (!floatBufferExt || !floatTextureExt) {
-      throw new Error(
-        "Your device does not support floating point textures/buffers. The dev should implement 8bit fallback.",
-      )
-    }
 
     this.initRenderTexture()
 
