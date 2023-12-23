@@ -14,7 +14,7 @@ type Action = {
 
 const usePreferenceStoreBase = create<State & Action>((set) => ({
   prefs: {
-    pressureSensititity: 0.8,
+    pressureSensititity: 1.0,
   },
   setPrefs: (prefs: Partial<State["prefs"]>) =>
     set((prev) => ({

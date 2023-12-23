@@ -117,7 +117,7 @@ class _DrawingManager {
 
     const prevPoint = operation.points.at(-1)
 
-    const smoothing = 0.2
+    const smoothing = 0.5
     const interpolatedPoint = { ...relativeMouseState }
 
     switch (operation.tool.type) {
