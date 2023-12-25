@@ -9,8 +9,8 @@ import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
 import { calculateHardness, getDistance, lerp, newPointAlongDirection } from "@/utils"
 
-import * as v3 from "@/v3.ts"
-import * as m4 from "@/m4.ts"
+import { mat4, vec3 } from "gl-matrix"
+
 import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
@@ -176,11 +176,13 @@ export class Brush extends Tool implements IBrush {
     const prefs = usePreferenceStore.getState().prefs
     const color = useMainStore.getState().color
 
-    let matrix = m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -1, 1, null)
+    const matrix = mat4.create()
 
-    const locationVector = v3.create(point.x, point.y, 0)
+    mat4.ortho(matrix, 0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
 
-    matrix = m4.translate(matrix, locationVector, null)
+    const locationVector = vec3.fromValues(point.x, point.y, 0)
+
+    mat4.translate(matrix, matrix, locationVector)
 
     const baseSize = 100
 
@@ -191,14 +193,15 @@ export class Brush extends Tool implements IBrush {
       size = size * (pressure * prefs.pressureSensititity)
     }
 
-    const scaleVector = v3.create(baseSize, baseSize, 1)
+    const scaleVector = vec3.fromValues(baseSize, baseSize, 1)
 
-    matrix = m4.scale(matrix, scaleVector, null)
+    mat4.scale(matrix, matrix, scaleVector)
 
     gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, matrix)
 
     gl.uniform2f(this.programInfo.uniforms.u_resolution, 100, 100)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
+
     gl.uniform3fv(
       this.programInfo.uniforms.u_brush_color,
       color.map((c) => c / 255),
