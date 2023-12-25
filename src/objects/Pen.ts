@@ -1,15 +1,22 @@
 import { tool_list } from "@/constants"
-import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
+import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { IPen } from "@/types"
 
 export class Pen extends Tool implements IPen {
-  size: number
-  opacity: number
+  settings: {
+    size: number
+    opacity: number
+  }
 
-  constructor(settings: Partial<IPen> = {}) {
+  constructor(settings: Partial<IPen["settings"]> = {}) {
     super()
     this.name = tool_list.PEN
-    setWithDefaults.call(this, settings, toolDefaults.PEN)
+
+    this.settings = {} as IPen["settings"]
+
+    Object.assign(this, toolProperties.PEN)
+    Object.assign(this.settings, toolDefaults.PEN)
+    Object.assign(this.settings, settings)
   }
 
   init = () => {

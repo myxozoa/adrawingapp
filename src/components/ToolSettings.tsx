@@ -11,11 +11,12 @@ import { throttle, hexToRgb, rgbToHex } from "@/utils"
 
 import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
+import { AvailableTools } from "@/types"
 
 const SliderSetting = (
   name: string,
   value: number,
-  _onValueChange: (value: any) => void,
+  _onValueChange: (value: number) => void,
   dependency: any,
   props: any,
 ) => {
@@ -23,10 +24,10 @@ const SliderSetting = (
   const handler = useCallback(throttle(onValueChange, 16), [dependency])
 
   return (
-    <div key={`${name}_setting`} className="h-full flex flex-row justify-center items-center">
+    <div key={`${name}_setting`} className="flex h-full flex-row items-center justify-center">
       <p className="pr-2 text-sm text-muted-foreground">{name}</p>
-      <Slider className="w-28 mr-4" {...props} value={[value]} onValueChange={handler} />
-      <p className="text-sm text-muted-foreground mr-2 w-[3ch]">{value}</p>
+      <Slider className="mr-4 w-28" {...props} value={[value]} onValueChange={handler} />
+      <p className="mr-2 w-[3ch] text-sm text-muted-foreground">{value}</p>
     </div>
   )
 }
@@ -37,18 +38,21 @@ function _ToolSettings() {
   const color = useMainStore.use.color()
   const setColor = useMainStore.use.setColor()
 
+  // TODO: Theres some other way to get this to be safe
   const [toolState, setToolState] = useState({
-    size: currentTool.size,
-    hardness: currentTool.hardness,
-    flow: currentTool.flow,
-    spacing: currentTool.spacing,
+    // @ts-expect-error spent too long on this
+    size: currentTool.settings.size as number | undefined,
+    // @ts-expect-error spent too long on this
+    hardness: currentTool.settings.hardness as number | undefined,
+    // @ts-expect-error spent too long on this
+    flow: currentTool.settings.flow as number | undefined,
+    // @ts-expect-error spent too long on this
+    spacing: currentTool.settings.spacing as number | undefined,
   })
 
   const changeToolSetting = useCallback(
-    (newSettings: any) => {
-      Object.keys(newSettings).forEach((setting) => {
-        setToolState((prev) => ({ ...prev, [setting]: newSettings[setting] }))
-      })
+    (newSettings: Partial<AvailableTools>) => {
+      setToolState((prev) => ({ ...prev, ...newSettings }))
 
       changeCurrentToolSetting(newSettings)
     },
@@ -60,8 +64,12 @@ function _ToolSettings() {
     const raiseSize = () => {
       let hackyVariable = null
       setToolState((prev) => {
-        hackyVariable = Math.min(prev.size + 5, 100)
-        return { ...prev, size: hackyVariable }
+        if (prev.size) {
+          hackyVariable = Math.min(prev.size + 5, 100)
+          return { ...prev, size: hackyVariable }
+        } else {
+          return prev
+        }
       })
 
       changeCurrentToolSetting({ size: hackyVariable })
@@ -69,8 +77,12 @@ function _ToolSettings() {
     const lowerSize = () => {
       let hackyVariable = null
       setToolState((prev) => {
-        hackyVariable = Math.max(prev.size - 5, 1)
-        return { ...prev, size: hackyVariable }
+        if (prev.size) {
+          hackyVariable = Math.max(prev.size - 5, 1)
+          return { ...prev, size: hackyVariable }
+        } else {
+          return prev
+        }
       })
 
       changeCurrentToolSetting({ size: hackyVariable })
@@ -88,46 +100,63 @@ function _ToolSettings() {
 
   useEffect(() => {
     setToolState({
-      size: currentTool.size,
-      hardness: currentTool.hardness,
-      flow: currentTool.flow,
-      spacing: currentTool.spacing,
+      // @ts-expect-error spent too long on this
+      size: currentTool.settings.size as number | undefined,
+      // @ts-expect-error spent too long on this
+      hardness: currentTool.settings.hardness as number | undefined,
+      // @ts-expect-error spent too long on this
+      flow: currentTool.settings.flow as number | undefined,
+      // @ts-expect-error spent too long on this
+      spacing: currentTool.settings.spacing as number | undefined,
     })
   }, [currentTool])
 
-  const changeColor = (event: React.ChangeEvent<HTMLInputElement>) => setColor(hexToRgb(event.target!.value)!)!
+  const changeColor = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const rgb = hexToRgb(event.target.value)
+
+    if (rgb) setColor(rgb)
+  }
 
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
     color: <input type="color" value={rgbToHex(color)} onChange={useCallback(throttle(changeColor, 60), [])} />,
-    size: SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), currentTool, {
-      min: 1,
-      max: 100,
-    }),
-    hardness: SliderSetting(
-      "Hardness",
-      toolState.hardness,
-      (hardness) => changeToolSetting({ hardness }),
-      currentTool,
-      { min: 1, max: 100 },
-    ),
-    flow: SliderSetting("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), currentTool, {
-      min: 1,
-      max: 100,
-    }),
-    spacing: SliderSetting("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), currentTool, {
-      min: 1,
-      max: 50,
-    }),
+    size:
+      toolState.size !== undefined
+        ? SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), currentTool, {
+            min: 1,
+            max: 100,
+          })
+        : null,
+    hardness:
+      toolState.hardness !== undefined
+        ? SliderSetting("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), currentTool, {
+            min: 1,
+            max: 100,
+          })
+        : null,
+    flow:
+      toolState.flow !== undefined
+        ? SliderSetting("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), currentTool, {
+            min: 1,
+            max: 100,
+          })
+        : null,
+    spacing:
+      toolState.spacing !== undefined
+        ? SliderSetting("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), currentTool, {
+            min: 1,
+            max: 50,
+          })
+        : null,
   }
 
   return (
     <Container className="h-10">
-      <Panel className="w-full h-full flex items-center">
+      <Panel className="flex h-full w-full items-center">
         <div className="flex flex-row">
           {/* <ToolPreview /> */}
           {currentTool.availableSettings.map((setting) => {
             return (
-              <div key={"tool_settings" + setting} className="pr-4 flex flex-row">
+              <div key={"tool_settings" + setting} className="flex flex-row pr-4">
                 {elements[setting]}
                 <Separator orientation="vertical" />
               </div>

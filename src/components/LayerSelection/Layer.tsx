@@ -36,10 +36,10 @@ function Layer({
   return (
     <PanelElement selected={selected} select={select} id={id} onDoubleClick={() => setEditingLayer(id)}>
       {!editing ? (
-        <p className="w-28 m-0 truncate">{name}</p>
+        <p className="m-0 w-28 truncate">{name}</p>
       ) : (
         <input
-          className="w-28 m-0"
+          className="m-0 w-28"
           autoFocus
           placeholder={name}
           value={newName}

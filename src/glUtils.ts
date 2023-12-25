@@ -6,7 +6,7 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
 
-  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS) as boolean
 
   if (success) {
     return shader
@@ -26,8 +26,8 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
   gl.linkProgram(program)
   gl.validateProgram(program)
 
-  const successLink = gl.getProgramParameter(program, gl.LINK_STATUS)
-  const successValidation = gl.getProgramParameter(program, gl.VALIDATE_STATUS)
+  const successLink = gl.getProgramParameter(program, gl.LINK_STATUS) as boolean
+  const successValidation = gl.getProgramParameter(program, gl.VALIDATE_STATUS) as boolean
 
   if (successLink && successValidation) {
     return program

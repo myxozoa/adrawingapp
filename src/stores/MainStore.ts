@@ -3,11 +3,11 @@ import { ColorArray } from "@/types"
 
 import { createSelectors } from "@/stores/selectors"
 
-type State = {
+interface State {
   color: ColorArray
 }
 
-type Action = {
+interface Action {
   setColor: (color: ColorArray) => void
 }
 

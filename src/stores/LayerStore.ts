@@ -5,13 +5,13 @@ import { Layer } from "@/objects/Layer"
 
 import { createSelectors } from "@/stores/selectors"
 
-type State = {
+interface State {
   layers: ILayer[]
   currentLayer: ILayer
   editingLayer: LayerID | null
 }
 
-type Action = {
+interface Action {
   setLayers: (layers: ILayer[]) => void
   _setCurrentLayer: (layer: ILayer) => void
   setEditingLayer: (id: LayerID) => void

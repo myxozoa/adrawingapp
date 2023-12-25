@@ -11,7 +11,7 @@ import { Fill } from "@/objects/Fill"
 import { Pen } from "@/objects/Pen"
 import { Eyedropper } from "@/objects/Eyedropper"
 
-type ToolMap = {
+interface ToolMap {
   PEN: Pen
   BRUSH: Brush
   ERASER: Eraser
@@ -31,22 +31,24 @@ export const tools: ToolDefaults = {
   EYEDROPPER: new Eyedropper(),
 }
 
-type State = {
+interface State {
   currentTool: AvailableTools
 }
 
-type Action = {
+interface Action {
   changeToolSetting: (newSettings: any) => void
   setCurrentTool: (name: ToolName) => void
 }
 
 const useToolStoreBase = create<State & Action>((set) => ({
   currentTool: tools[tool_list.BRUSH],
-  changeToolSetting: (newSettings: any) =>
+  changeToolSetting: (newSettings: Partial<AvailableTools["settings"]>) =>
     set((state) => {
       const _state = { ...state }
       Object.keys(newSettings).forEach((setting) => {
-        _state.currentTool[setting] = newSettings[setting]
+        // @ts-expect-error spent too long on this
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        _state.currentTool.settings[setting] = newSettings[setting] // TODO: Maybe rearchitect to get better type safety
       })
 
       return _state

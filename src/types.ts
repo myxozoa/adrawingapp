@@ -71,32 +71,54 @@ export interface ITool {
 }
 
 export interface IBrush extends ITool {
-  size: number
-  flow: number
-  opacity: number
-  hardness: number
-  spacing: number
+  settings: {
+    size: number
+    flow: number
+    opacity: number
+    hardness: number
+    spacing: number
+  }
+
+  switchTo: (gl: WebGL2RenderingContext) => void
+  base: (gl: WebGL2RenderingContext, operation: IOperation) => void
+  draw: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
 export interface IPen extends ITool {
-  size: number
-  opacity: number
+  settings: {
+    size: number
+    opacity: number
+  }
 }
 
 export interface IFill extends ITool {
-  flood: boolean
+  settings: {
+    flood: boolean
+  }
 
   use: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
 export interface IEraser extends ITool {
+  settings: {
+    size: number
+    flow: number
+    opacity: number
+    hardness: number
+    spacing: number
+  }
   brush: IBrush
+
+  base: (gl: WebGL2RenderingContext, operation: IOperation) => void
+  draw: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
 export type EyeDropperSampleSizes = "1x1" | "2x2" | "3x3"
 
 export interface IEyedropper extends ITool {
-  sampleSize: EyeDropperSampleSizes
+  settings: {
+    sampleSize: EyeDropperSampleSizes
+  }
 
   use: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }

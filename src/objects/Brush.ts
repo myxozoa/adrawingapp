@@ -1,4 +1,4 @@
-import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
+import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { IBrush, IOperation, Point } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
@@ -15,11 +15,13 @@ import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
 export class Brush extends Tool implements IBrush {
-  size: number
-  flow: number
-  opacity: number
-  hardness: number
-  spacing: number
+  settings: {
+    size: number
+    flow: number
+    opacity: number
+    hardness: number
+    spacing: number
+  }
 
   // TODO: Type this
   programInfo: {
@@ -30,10 +32,14 @@ export class Brush extends Tool implements IBrush {
     VAO: WebGLBuffer
   }
 
-  constructor(settings: Partial<IBrush> = {}) {
+  constructor(settings: Partial<IBrush["settings"]> = {}) {
     super()
     this.name = tool_list.BRUSH
-    setWithDefaults.call(this, settings, toolDefaults.BRUSH)
+    this.settings = {} as IBrush["settings"]
+
+    Object.assign(this, toolProperties.BRUSH)
+    Object.assign(this.settings, toolDefaults.BRUSH)
+    Object.assign(this.settings, settings)
 
     this.programInfo = {} as unknown as typeof this.programInfo
   }
@@ -157,7 +163,7 @@ export class Brush extends Tool implements IBrush {
 
   line = (gl: WebGL2RenderingContext, point0: Point, point1: Point) => {
     const distance = getDistance(point0, point1)
-    const step = this.size * (this.spacing / 100)
+    const step = this.settings.size * (this.settings.spacing / 100)
 
     const steps = distance / step
 
@@ -186,7 +192,7 @@ export class Brush extends Tool implements IBrush {
 
     const baseSize = 100
 
-    let size = this.size
+    let size = this.settings.size
 
     if (point.pointerType === "pen") {
       const pressure = point.pressure
@@ -206,9 +212,9 @@ export class Brush extends Tool implements IBrush {
       this.programInfo.uniforms.u_brush_color,
       color.map((c) => c / 255),
     )
-    gl.uniform1f(this.programInfo.uniforms.u_softness, calculateHardness(this.hardness, size) / 100)
+    gl.uniform1f(this.programInfo.uniforms.u_softness, calculateHardness(this.settings.hardness, size) / 100)
     gl.uniform1f(this.programInfo.uniforms.u_size, size)
-    gl.uniform1f(this.programInfo.uniforms.u_flow, this.flow / 100)
+    gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
     gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)

@@ -15,17 +15,23 @@ import {
   performanceSafeguard,
 } from "@/utils.ts"
 
-import { ILayer, UIInteraction, MouseState, IOperation, AvailableTools, IBrush } from "@/types.ts"
+import {
+  ILayer,
+  UIInteraction,
+  MouseState,
+  IOperation,
+  AvailableTools,
+  IBrush,
+  IEraser,
+  IEyedropper,
+  IFill,
+} from "@/types.ts"
 import { Operation } from "@/objects/Operation.ts"
 
 import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 
-// import * as m4 from '@/m4.ts'
-
 import * as glUtils from "@/glUtils.ts"
-
-// import * as v3 from '@/v3.ts'
 
 const checkfps = performanceSafeguard()
 
@@ -79,8 +85,16 @@ class _DrawingManager {
   execute = (operation: IOperation) => {
     if (operation.points.length === 0 || operation.points.at(-1)!.drawn) return
 
-    if (operation.tool.use) operation.tool.use(this.gl, operation)
-    if (operation.tool.draw) operation.tool.draw(this.gl, operation)
+    const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
+      return "use" in tool
+    }
+
+    const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
+      return "draw" in tool
+    }
+
+    if (useIfPossible(operation.tool)) operation.tool.use(this.gl, operation)
+    if (drawIfPossible(operation.tool)) operation.tool.draw(this.gl, operation)
   }
 
   swapTool = (tool: AvailableTools) => {
@@ -108,7 +122,11 @@ class _DrawingManager {
     }
 
     if (this.waitUntilInteractionEnd) return
-    let spacing = operation.tool.size * (operation.tool.spacing / 100)
+
+    let spacing =
+      "size" in operation.tool.settings && "spacing" in operation.tool.settings
+        ? operation.tool.settings.size * (operation.tool.settings.spacing / 100)
+        : 0
 
     if (relativeMouseState.pointerType === "pen") {
       const pressure = relativeMouseState.pressure
@@ -389,7 +407,11 @@ class _DrawingManager {
     gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderBufferInfo.framebuffer)
 
-    if (this.currentOperation.tool.switchTo) this.currentOperation.tool.switchTo(gl)
+    const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
+      return "switchTo" in tool
+    }
+
+    if (switchIfPossible(this.currentOperation.tool)) this.currentOperation.tool.switchTo(gl)
 
     this.execute(this.currentOperation)
 

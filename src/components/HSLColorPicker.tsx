@@ -185,8 +185,6 @@ function hsvReducer(state: HSV, action: HSVAction): HSV {
     case COLOR_PICKER_ACTIONS.SET_HUE_SAT_VAL:
       return { ...state, hue: action.data.hue!, saturation: action.data.saturation!, value: action.data.value! }
   }
-
-  throw new Error("Unknown HSV Reducer Action")
 }
 
 function ColorPicker({
@@ -244,8 +242,11 @@ function ColorPicker({
 
     onChange([r, g, b])
 
-    const pickerContext = pickerRef.current.getContext("2d") as CanvasRenderingContext2D
-    const indicatorContext = indicatorRef.current.getContext("2d") as CanvasRenderingContext2D
+    const pickerContext = pickerRef.current.getContext("2d")
+    const indicatorContext = indicatorRef.current.getContext("2d")
+
+    if (!pickerContext) throw new Error("Unable to create picker context")
+    if (!indicatorContext) throw new Error("Unable to create picker indicator context")
 
     drawHueIndicator(indicatorContext, hsvState)
 
@@ -278,7 +279,9 @@ function ColorPicker({
       y: event.clientY,
     })
 
-    const indicatorContext = indicatorRef.current.getContext("2d") as CanvasRenderingContext2D
+    const indicatorContext = indicatorRef.current.getContext("2d")
+
+    if (!indicatorContext) throw new Error("Unable to create picker indicator context")
 
     const { svBoxWidth, svBoxX, svBoxY } = getDimensions(indicatorContext, hsvState)
 
@@ -296,7 +299,9 @@ function ColorPicker({
   const mouseDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (selectingHue.current || selectingSV.current) return
 
-    const indicatorContext = indicatorRef.current.getContext("2d") as CanvasRenderingContext2D
+    const indicatorContext = indicatorRef.current.getContext("2d")
+
+    if (!indicatorContext) throw new Error("Unable to create picker indicator context")
 
     const { circleTrackSelectorInnerWidth, radius } = getDimensions(indicatorContext, hsvState)
 
@@ -327,11 +332,11 @@ function ColorPicker({
       <canvas
         width={size}
         height={size}
-        className="absolute top-0 left-0 z-10"
+        className="absolute left-0 top-0 z-10"
         ref={indicatorRef}
         onPointerDown={(e) => mouseDown(e)}
       />
-      <canvas width={size} height={size} className="absolute top-0 left-0 z-0" ref={pickerRef} />
+      <canvas width={size} height={size} className="absolute left-0 top-0 z-0" ref={pickerRef} />
     </div>
   )
 }

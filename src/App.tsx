@@ -12,9 +12,9 @@ function App() {
   }, [])
   return (
     <ThemeProvider storageKey="draw-ui-theme">
-      <div className="flex flex-col h-full">
+      <div className="flex h-full flex-col">
         <ToolSettings />
-        <div className="flex flex-row flex-grow">
+        <div className="flex grow flex-row">
           <Tools />
           <Board />
           {/* <Layers /> */}

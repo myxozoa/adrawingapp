@@ -1,15 +1,22 @@
 import { tool_list } from "@/constants"
-import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
+import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { useMainStore } from "@/stores/MainStore"
 import { IFill } from "@/types"
 
 export class Fill extends Tool implements IFill {
-  flood: boolean
+  settings: {
+    flood: boolean
+  }
 
-  constructor(settings: Partial<IFill> = {}) {
+  constructor(settings: Partial<IFill["settings"]> = {}) {
     super()
     this.name = tool_list.FILL
-    setWithDefaults.call(this, settings, toolDefaults.FILL)
+
+    this.settings = {} as IFill["settings"]
+
+    Object.assign(this, toolProperties.FILL)
+    Object.assign(this.settings, toolDefaults.FILL)
+    Object.assign(this.settings, settings)
   }
 
   init = () => {

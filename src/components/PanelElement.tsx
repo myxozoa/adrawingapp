@@ -15,11 +15,11 @@ function PanelElement({
     <div
       onDoubleClick={onDoubleClick}
       onClick={() => select(id)}
-      className={`p-0.5 w-full h-10 rounded-sm hover:cursor-pointer ${
-        selected ? "bg-primary-foreground outline-1 outline outline-muted-foreground" : ""
+      className={`h-10 w-full rounded-sm p-0.5 hover:cursor-pointer ${
+        selected ? "bg-primary-foreground outline outline-1 outline-muted-foreground" : ""
       }`}
     >
-      <div className="h-full flex items-center justify-center rounded-sm">{children}</div>
+      <div className="flex h-full items-center justify-center rounded-sm">{children}</div>
     </div>
   )
 }

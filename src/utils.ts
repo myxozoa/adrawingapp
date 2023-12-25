@@ -112,7 +112,7 @@ export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
 // let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
 // let resizeObserver: ResizeObserver
 
-type Options = {
+interface Options {
   desynchronized: boolean
   resize: boolean
   contextType: "2d" | "webgl" | "webgl2"
@@ -142,7 +142,7 @@ export function initializeCanvas(
     antialias: false,
   }
   type entries = [keyof Options, ValueOf<Options>]
-  const options: Options = Object.fromEntries(
+  const options = Object.fromEntries(
     (Object.entries(defaultOptions) as entries[]).map(([option]) => {
       if (_options[option] !== undefined) {
         return [option, _options[option]]
@@ -150,7 +150,7 @@ export function initializeCanvas(
         return [option, defaultOptions[option]]
       }
     }),
-  ) as Options
+  )
 
   const targetDpi = window.devicePixelRatio
 
@@ -161,7 +161,8 @@ export function initializeCanvas(
   canvas.style.height = `${height.toString()}px`
   // }
 
-  const context = canvas.getContext(options.contextType, options)
+  // TODO: fix this type
+  const context = canvas.getContext(options.contextType as string, options)
 
   if (!context) throw new Error("Unable to create canvas context")
 
@@ -245,27 +246,21 @@ export function HSVtoRGB(h: number, s: number, v: number) {
   const t = v * (1 - (1 - f) * s)
   switch (i % 6) {
     case 0:
-      // eslint-disable-next-line no-extra-semi
       ;(r = v), (g = t), (b = p)
       break
     case 1:
-      // eslint-disable-next-line no-extra-semi
       ;(r = q), (g = v), (b = p)
       break
     case 2:
-      // eslint-disable-next-line no-extra-semi
       ;(r = p), (g = v), (b = t)
       break
     case 3:
-      // eslint-disable-next-line no-extra-semi
       ;(r = p), (g = q), (b = v)
       break
     case 4:
-      // eslint-disable-next-line no-extra-semi
       ;(r = t), (g = p), (b = v)
       break
     case 5:
-      // eslint-disable-next-line no-extra-semi
       ;(r = v), (g = p), (b = q)
       break
   }

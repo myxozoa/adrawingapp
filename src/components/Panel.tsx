@@ -1,5 +1,5 @@
 function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-card p-1 border rounded-sm select-none ${className ? className : ""}`}>{children}</div>
+  return <div className={`select-none rounded-sm border bg-card p-1 ${className ? className : ""}`}>{children}</div>
 }
 
 export default Panel

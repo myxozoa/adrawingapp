@@ -2,13 +2,13 @@ import { create } from "zustand"
 
 import { createSelectors } from "@/stores/selectors"
 
-type State = {
+interface State {
   prefs: {
     pressureSensititity: number
   }
 }
 
-type Action = {
+interface Action {
   setPrefs: (prefs: Partial<State["prefs"]>) => void
 }
 

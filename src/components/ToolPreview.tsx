@@ -94,7 +94,9 @@ function _ToolPreview() {
         desynchronized: true,
         powerPreference: "low-power",
         premultipliedAlpha: false,
-      }) as WebGL2RenderingContext
+      })
+
+      if (!gl) throw new Error("Error creating tool preview canvas context")
 
       const { uniforms } = initGL(gl)
 

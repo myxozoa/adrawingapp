@@ -14,8 +14,8 @@ function _Layers() {
   const editingLayer = useLayerStore.use.editingLayer()
 
   return (
-    <Container className="w-38">
-      <Panel className="grow w-full overflow-y-auto">
+    <Container className="w-36">
+      <Panel className="w-full grow overflow-y-auto">
         {layers.map((layer, idx) => {
           return (
             <Layer

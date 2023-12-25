@@ -1,17 +1,24 @@
 import { tool_list } from "@/constants"
-import { Tool, toolDefaults, setWithDefaults } from "@/objects/Tool"
+import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { glPickPosition } from "@/utils"
 
 export class Eyedropper extends Tool implements IEyedropper {
-  sampleSize: EyeDropperSampleSizes
+  settings: {
+    sampleSize: EyeDropperSampleSizes
+  }
 
-  constructor(settings: Partial<IEyedropper> = {}) {
+  constructor(settings: Partial<IEyedropper["settings"]> = {}) {
     super()
     this.name = tool_list.EYEDROPPER
-    setWithDefaults.call(this, settings, toolDefaults.EYEDROPPER)
+
+    this.settings = {} as IEyedropper["settings"]
+
+    Object.assign(this, toolProperties.EYEDROPPER)
+    Object.assign(this.settings, toolDefaults.EYEDROPPER)
+    Object.assign(this.settings, settings)
   }
 
   init = () => {
