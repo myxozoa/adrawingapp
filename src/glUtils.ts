@@ -6,14 +6,7 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
 
-  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS) as boolean
-
-  if (success) {
-    return shader
-  }
-
-  throw new Error("Shader Compile error: " + gl.getShaderInfoLog(shader))
-  gl.deleteShader(shader)
+  return shader
 }
 
 export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
@@ -27,14 +20,18 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
   gl.validateProgram(program)
 
   const successLink = gl.getProgramParameter(program, gl.LINK_STATUS) as boolean
-  const successValidation = gl.getProgramParameter(program, gl.VALIDATE_STATUS) as boolean
 
-  if (successLink && successValidation) {
-    return program
+  if (!successLink) {
+    throw new Error(`
+    Link failed: ${gl.getProgramInfoLog(program)}
+    
+    vs info-log: ${gl.getShaderInfoLog(vertexShader)}
+
+    fs info-log: ${gl.getShaderInfoLog(fragmentShader)}
+    `)
   }
 
-  throw new Error("Program validation error: " + gl.getProgramInfoLog(program))
-  gl.deleteProgram(program)
+  return program
 }
 
 // export function initializeGL(gl: WebGL2RenderingContext) {

@@ -1,14 +1,4 @@
-import {
-  Maybe,
-  HexColor,
-  ColorArray,
-  ColorValue,
-  ColorValueString,
-  Operations,
-  Point,
-  MouseState,
-  ValueOf,
-} from "@/types"
+import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, Operations, Point, MouseState } from "@/types"
 
 // TODO: Type this function better
 export function getRelativeMousePos(
@@ -135,22 +125,14 @@ export function initializeCanvas(
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",
-    alpha: false,
+    alpha: true, // webgl alpha:false apparently has notable performance implications
     premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
     antialias: false,
   }
-  type entries = [keyof Options, ValueOf<Options>]
-  const options = Object.fromEntries(
-    (Object.entries(defaultOptions) as entries[]).map(([option]) => {
-      if (_options[option] !== undefined) {
-        return [option, _options[option]]
-      } else {
-        return [option, defaultOptions[option]]
-      }
-    }),
-  )
+
+  const options = { ...defaultOptions, ..._options }
 
   const targetDpi = window.devicePixelRatio
 
