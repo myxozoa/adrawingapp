@@ -1,5 +1,5 @@
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, Point } from "@/types"
+import { IBrush, IOperation, Point, Points } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
@@ -7,7 +7,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { calculateHardness, getDistance, lerp, newPointAlongDirection } from "@/utils"
+import { calculateHardness, getDistance, lerp, newPointAlongDirection, redistributePoints, cubicBezier } from "@/utils"
 
 import { mat4, vec3 } from "gl-matrix"
 
@@ -31,6 +31,9 @@ export class Brush extends Tool implements IBrush {
     VBO: WebGLBuffer
     VAO: WebGLBuffer
   }
+
+  numPointsDrawn: number
+  pointsToDraw: Points
 
   constructor(settings: Partial<IBrush["settings"]> = {}) {
     super()
@@ -137,45 +140,82 @@ export class Brush extends Tool implements IBrush {
   }
 
   draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
-
-    gl.blendEquation(gl.FUNC_ADD)
-
     this.base(gl, operation)
   }
 
   base = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    const lastIndex = operation.points.length - 1
-    const prevPoint = operation.points.at(-2)
-    const currentPoint = operation.points.at(-1)!
+    const points = redistributePoints(operation.points)
+    const prevPoint = points.at(-2)!
+    const currentPoint = points.at(-1)!
 
-    if (!prevPoint || lastIndex === 0) {
+    if (!prevPoint || points.length <= 1) {
       this.stamp(gl, currentPoint)
       currentPoint.drawn = true
       return
     }
 
-    this.line(gl, prevPoint, currentPoint)
-    prevPoint.drawn = true
-    currentPoint.drawn = true
+    if (points.length < 3) {
+      this.line(gl, prevPoint, currentPoint)
+    } else {
+      this.splineProcess(gl, points)
+    }
+
+    gl.flush()
   }
 
-  line = (gl: WebGL2RenderingContext, point0: Point, point1: Point) => {
-    const distance = getDistance(point0, point1)
+  splineProcess = (gl: WebGL2RenderingContext, points: Point[]) => {
+    const pointsToProcess = points.slice(-4)
+
+    for (let i = 0; i < pointsToProcess.length - 3; i += 3) {
+      const end = pointsToProcess[i + 3]
+      const control2 = pointsToProcess[i + 2]
+      const control = pointsToProcess[i + 1]
+      const start = pointsToProcess[i]
+      this.spline(gl, start, control, control2, end)
+    }
+  }
+
+  spline = (gl: WebGL2RenderingContext, start: Point, control: Point, control2: Point, end: Point) => {
+    const step = this.settings.size * (this.settings.spacing / 100)
+
+    const chord = getDistance(start, end)
+    const cont_net = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
+
+    const app_arc_length = (cont_net + chord) / 2
+
+    const steps = app_arc_length / step
+
+    const pointsToDraw = [start]
+
+    // Stamp at evenly spaced intervals between the two points
+    for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
+      const newPoint = cubicBezier(start, control, control2, end, t, j / steps)
+
+      pointsToDraw.push(newPoint)
+    }
+
+    pointsToDraw.push(end)
+
+    for (const point of pointsToDraw) {
+      this.stamp(gl, point)
+    }
+  }
+
+  line = (gl: WebGL2RenderingContext, start: Point, end: Point) => {
+    const distance = getDistance(start, end)
     const step = this.settings.size * (this.settings.spacing / 100)
 
     const steps = distance / step
 
     // Stamp at evenly spaced intervals between the two points
     for (let i = step, j = 0; i < distance; i += step, j++) {
-      const { x, y } = newPointAlongDirection(point0, point1, i)
+      const { x, y } = newPointAlongDirection(start, end, i)
 
-      const pressure = lerp(point0.pressure, point1.pressure, j / steps)
+      const pressure = lerp(start.pressure, end.pressure, j / steps)
 
-      this.stamp(gl, { x, y, pointerType: point0.pointerType, pressure })
+      this.stamp(gl, { x, y, pointerType: start.pointerType, pressure })
     }
-    this.stamp(gl, point1)
+    this.stamp(gl, end)
   }
 
   stamp = (gl: WebGL2RenderingContext, point: Point) => {
@@ -208,10 +248,8 @@ export class Brush extends Tool implements IBrush {
     gl.uniform2f(this.programInfo.uniforms.u_resolution, 100, 100)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
 
-    gl.uniform3fv(
-      this.programInfo.uniforms.u_brush_color,
-      color.map((c) => c / 255),
-    )
+    const colors = color.map((c) => c / 255)
+    gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
     gl.uniform1f(this.programInfo.uniforms.u_softness, calculateHardness(this.settings.hardness, size) / 100)
     gl.uniform1f(this.programInfo.uniforms.u_size, size)
     gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
@@ -224,5 +262,10 @@ export class Brush extends Tool implements IBrush {
     gl.useProgram(this.programInfo.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
+
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
+
+    gl.blendEquation(gl.FUNC_ADD)
   }
 }

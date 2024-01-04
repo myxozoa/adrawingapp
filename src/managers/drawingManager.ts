@@ -10,9 +10,10 @@ import {
   getDistance,
   // findQuadtraticBezierControlPoint,
   // getCanvasColor,
-  lerp,
   // resizeCanvasToDisplaySize,
   performanceSafeguard,
+  // debugPoints,
+  // redistributePoints,
 } from "@/utils.ts"
 
 import {
@@ -25,8 +26,11 @@ import {
   IEraser,
   IEyedropper,
   IFill,
+  Point,
 } from "@/types.ts"
 import { Operation } from "@/objects/Operation.ts"
+
+import { ExponentialSmoothingFilter1D, ExponentialSmoothingFilter2D } from "@/objects/ExponentialSmoothingFilter"
 
 import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
@@ -35,11 +39,14 @@ import * as glUtils from "@/glUtils.ts"
 
 const checkfps = performanceSafeguard()
 
+const pressureFilter = new ExponentialSmoothingFilter1D(0.5)
+const positionFilter = new ExponentialSmoothingFilter2D(0.5)
+
 class _DrawingManager {
   gl: WebGL2RenderingContext
   currentLayer: ILayer
   currentTool: AvailableTools
-  currentOperation: IOperation
+  currentOperation: IOperation | null
   toolBelt: Record<string, (operation: IOperation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
@@ -83,7 +90,8 @@ class _DrawingManager {
 
   // TODO: This framework isnt generic enough to describe many non-drawing tools
   execute = (operation: IOperation) => {
-    if (operation.points.length === 0 || operation.points.at(-1)!.drawn) return
+    // if (operation.points.length === 0 || operation.points.at(-1)!.drawn) return
+    if (operation.points.length === 0) return
 
     const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
       return "use" in tool
@@ -107,14 +115,24 @@ class _DrawingManager {
 
     this.waitUntilInteractionEnd = false
     this.needRedraw = true
+    positionFilter.reset()
+    pressureFilter.reset()
 
     if (save) {
       // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
     }
+
+    // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
+    // debugPoints(this.gl, this.renderBufferInfo, redistributePoints(this.currentOperation!.points), "1., 1., 0., 1.")
+
     this.currentOperation = new Operation(this.currentTool)
   }
 
-  use = (relativeMouseState: MouseState, operation: IOperation) => {
+  use = (relativeMouseState: MouseState) => {
+    if (!this.currentOperation) this.currentOperation = new Operation(this.currentTool)
+
+    const operation = this.currentOperation
+
     const prefs = usePreferenceStore.getState().prefs
     if (!operation.tool || Object.keys(operation.tool).length === 0) {
       operation.tool = this.currentTool
@@ -135,31 +153,28 @@ class _DrawingManager {
 
     const prevPoint = operation.points.at(-1)
 
-    const smoothing = 0.5
-    const interpolatedPoint = { ...relativeMouseState }
+    const interpolatedPoint = { ...relativeMouseState, drawn: false } as unknown as Point
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
         if (prevPoint && operation.points.length !== 0) {
-          interpolatedPoint.x = lerp(prevPoint.x, interpolatedPoint.x, smoothing)
-          interpolatedPoint.y = lerp(prevPoint.y, interpolatedPoint.y, smoothing)
+          const interpolated = positionFilter.filter(interpolatedPoint.x, interpolatedPoint.y)
+          interpolatedPoint.x = interpolated.x
+          interpolatedPoint.y = interpolated.y
 
-          interpolatedPoint.pressure = lerp(prevPoint.pressure, interpolatedPoint.pressure, 0.5)
+          const smoothed = pressureFilter.filter(interpolatedPoint.pressure)
+          interpolatedPoint.pressure = smoothed
         }
 
         if (operation.points.length === 0 || (prevPoint && getDistance(prevPoint, interpolatedPoint) >= spacing)) {
-          operation.points.push({ ...interpolatedPoint, drawn: false })
-
-          if (operation.points.length > 6) {
-            operation.points.shift()
-          }
+          operation.points.push(interpolatedPoint)
         }
         break
 
       case tool_types.POINT:
         this.waitUntilInteractionEnd = true
 
-        operation.points.push({ ...interpolatedPoint, drawn: false })
+        operation.points = [interpolatedPoint]
         break
     }
   }
@@ -209,8 +224,22 @@ class _DrawingManager {
         halfFloatTextureExt.HALF_FLOAT_OES,
         new Float32Array(width * height * 4).fill(1),
       )
+      // gl.texStorage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height)
+      // gl.texSubImage2D(
+      //   gl.TEXTURE_2D,
+      //   0,
+      //   0,
+      //   0,
+      //   width,
+      //   height,
+      //   gl.RGBA,
+      //   halfFloatTextureExt.HALF_FLOAT_OES,
+      //   new Float32Array(width * height * 4).fill(1),
+      // )
 
       const supportedFilterType = halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
+
+      console.log("half float")
 
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
@@ -228,6 +257,18 @@ class _DrawingManager {
         gl.FLOAT,
         new Float32Array(width * height * 4).fill(1),
       )
+      // gl.texStorage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height)
+      // gl.texSubImage2D(
+      //   gl.TEXTURE_2D,
+      //   0,
+      //   0,
+      //   0,
+      //   width,
+      //   height,
+      //   gl.RGBA,
+      //   gl.FLOAT,
+      //   new Float32Array(width * height * 4).fill(1),
+      // )
 
       const supportedFilterType = floatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
@@ -394,12 +435,15 @@ class _DrawingManager {
 
     this.initRenderTexture()
 
+    this.clear()
+
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
     })
   }
 
   executeCurrentOperation = () => {
+    if (!this.currentOperation) return
     const gl = this.gl
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
@@ -468,23 +512,17 @@ class _DrawingManager {
     // }
 
     const relativeMouseState = getRelativeMousePos(
-      this.gl.canvas as HTMLCanvasElement,
+      gl.canvas as HTMLCanvasElement,
       currentUIInteraction.current.mouseState,
     )
 
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
-      this.use(relativeMouseState, this.currentOperation)
+      this.use(relativeMouseState)
     }
 
     this.executeCurrentOperation()
 
     this.renderToScreen()
-
-    const error = gl.getError()
-
-    if (error !== gl.NO_ERROR) {
-      console.error("WebGL error: " + error)
-    }
 
     checkfps(time)
 

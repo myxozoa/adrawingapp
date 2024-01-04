@@ -391,3 +391,155 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
 
   return { x: point.x, y: rect.bottom - rect.top - point.y - 1 }
 }
+
+export function cubicBezier(start: Point, control1: Point, control2: Point, end: Point, t: number, j: number): Point {
+  const solve = (unit: "x" | "y") =>
+    Math.pow(1 - t, 3) * start[unit] +
+    3 * Math.pow(1 - t, 2) * t * control1[unit] +
+    3 * (1 - t) * Math.pow(t, 2) * control2[unit] +
+    Math.pow(t, 3) * end[unit]
+
+  const x = solve("x")
+  const y = solve("y")
+
+  let pressure = 0.5
+
+  if (t < 0.5) {
+    pressure = lerp(start.pressure, control1.pressure, j)
+  } else if (t < 0.75) {
+    pressure = lerp(control1.pressure, control2.pressure, j)
+  } else {
+    pressure = lerp(control2.pressure, end.pressure, j)
+  }
+
+  return { ...start, pressure, x, y }
+}
+
+export function redistributePoints(points: Point[]): Point[] {
+  const redistributedPoints: Point[] = [points[0]]
+
+  for (let i = 0; i < points.length - 3; i++) {
+    const start = points[i]
+    const control = points[i + 1]
+    const control2 = points[i + 2]
+    const end = points[i + 3]
+
+    // new point is halfway along cubicBezier curve defined by the 4 current points
+    const newPoint = cubicBezier(start, control, control2, end, 0.5, 0.75)
+    redistributedPoints.push(newPoint)
+  }
+
+  return redistributedPoints
+}
+
+//1., 0., 1., 1.
+export const debugPoints = (
+  gl: WebGL2RenderingContext,
+  renderBufferInfo: any,
+  points: Point[],
+  color: string,
+): void => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+  gl.bindTexture(gl.TEXTURE_2D, renderBufferInfo.targetTexture)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+  gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
+
+  /*==========Defining and storing the geometry=======*/
+
+  function transformToClipSpace(point: Point, canvas: HTMLCanvasElement | OffscreenCanvas): { x: number; y: number } {
+    // Calculate clip space coordinates for x and y
+    const clipX = (2 * point.x) / canvas.width - 1
+    const clipY = 1 - (2 * point.y) / canvas.height
+
+    return { x: clipX, y: clipY }
+  }
+
+  const vertices = points.reduce((acc: number[], point: Point) => {
+    const clipSpace = transformToClipSpace(point, gl.canvas)
+    return [...acc, clipSpace.x, clipSpace.y]
+  }, [] as number[])
+
+  // Create an empty buffer object to store the vertex buffer
+  const vertex_buffer = gl.createBuffer()
+
+  //Bind appropriate array buffer to it
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+
+  // Pass the vertex data to the buffer
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+
+  /*=========================Shaders========================*/
+
+  // vertex shader source code
+  const vertCode = `#version 300 es
+  #pragma vscode_glsllint_stage : vert
+  in vec2 a_Position;
+  void main() {
+    gl_Position = vec4(a_Position, 0., 1.);
+    gl_PointSize = 5.0;
+  }`
+
+  // Create a vertex shader object
+  const vertShader = gl.createShader(gl.VERTEX_SHADER)!
+
+  // Attach vertex shader source code
+  gl.shaderSource(vertShader, vertCode)
+
+  // Compile the vertex shader
+  gl.compileShader(vertShader)
+
+  // fragment shader source code
+  const fragCode = `#version 300 es
+  #pragma vscode_glsllint_stage : frag
+  precision highp float;
+  out vec4 color;
+  void main() {
+    color = vec4(${color});
+  }`
+  // Create fragment shader object
+  const fragShader = gl.createShader(gl.FRAGMENT_SHADER)!
+
+  // Attach fragment shader source code
+  gl.shaderSource(fragShader, fragCode)
+
+  // Compile the fragmentt shader
+  gl.compileShader(fragShader)
+
+  // Create a shader program object to store
+  // the combined shader program
+  const shaderProgram = gl.createProgram()!
+
+  // Attach a vertex shader
+  gl.attachShader(shaderProgram, vertShader)
+
+  // Attach a fragment shader
+  gl.attachShader(shaderProgram, fragShader)
+
+  // Link both programs
+  gl.linkProgram(shaderProgram)
+
+  // Use the combined shader program object
+  gl.useProgram(shaderProgram)
+
+  /*======== Associating shaders to buffer objects ========*/
+
+  const vao = gl.createVertexArray()
+  gl.bindVertexArray(vao)
+
+  // Bind vertex buffer object
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+
+  // Get the attribute location
+  const coord = gl.getAttribLocation(shaderProgram, "a_Position")
+
+  // Point an attribute to the currently bound VBO
+  gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0)
+
+  // Enable the attribute
+  gl.enableVertexAttribArray(coord)
+
+  /*============= Drawing the primitive ===============*/
+
+  // Draw the triangle
+  gl.drawArrays(gl.POINTS, 0, vertices.length / 2)
+}
