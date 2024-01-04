@@ -125,7 +125,7 @@ export function initializeCanvas(
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",
-    alpha: true, // webgl alpha:false apparently has notable performance implications
+    alpha: false,
     premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
