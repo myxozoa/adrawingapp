@@ -4,7 +4,8 @@ precision highp float;
 
 out vec4 fragColor;
 
-uniform sampler2D textureSampler;
+// With float textures iOS requires explicit highp or it will default to low
+uniform highp sampler2D textureSampler;
 in vec2 texCoords;
 
 void main() {
