@@ -37,14 +37,14 @@ export class Eraser extends Tool {
 
   switchTo = (gl: WebGL2RenderingContext) => {
     this.brush.switchTo(gl)
-  }
 
-  draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
     gl.blendFunc(gl.CONSTANT_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.BLEND)
 
     gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
+  }
 
+  draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
     this.brush.base(gl, operation)
   }
 }
