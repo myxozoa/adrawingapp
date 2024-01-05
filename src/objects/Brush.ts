@@ -225,15 +225,14 @@ export class Brush extends Tool implements IBrush {
 
     mat4.translate(matrix, matrix, locationVector)
 
-    const baseSize = 100
-
     let size = this.settings.size
 
     if (point.pointerType === "pen") {
       const pressure = point.pressure
-      size = size * (pressure * prefs.pressureSensititity)
+      size -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * size
     }
 
+    const baseSize = 100
     const scaleVector = vec3.fromValues(baseSize, baseSize, 1)
 
     mat4.scale(matrix, matrix, scaleVector)
@@ -241,7 +240,7 @@ export class Brush extends Tool implements IBrush {
     // Internals
 
     gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, matrix)
-    gl.uniform2f(this.programInfo.uniforms.u_resolution, 100, 100)
+    gl.uniform2f(this.programInfo.uniforms.u_resolution, baseSize, baseSize)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
 
     // Brush settings
