@@ -35,10 +35,6 @@ function _Board() {
       resize: true,
     }) as WebGL2RenderingContext
 
-    if (!context) {
-      throw new Error("WebGL2 is not supported")
-    }
-
     DrawingManager.gl = context
     DrawingManager.canvasRef = boardRef
 
@@ -47,15 +43,29 @@ function _Board() {
   }, [])
 
   // const saveImage = () => {
-  //   DrawingManager.render()
+  //   DrawingManager.renderToScreen()
+  //   const downloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
 
-  //   const downloadLink = document.createElement('a')
-  //   downloadLink.setAttribute('download', 'CanvasAsImage.png')
+  //   boardRef.current.toBlob(function (blob) {
+  //     if (!blob) {
+  //       console.error("Unable to create blob and save image")
+  //       return
+  //     }
 
-  //   boardRef.current.toBlob(function(blob) {
-  //     const url = URL.createObjectURL(blob)
-  //     downloadLink.setAttribute('href', url)
+  //     const data = new File([blob], "image.png", { type: "png" })
+  //     const url = URL.createObjectURL(data)
+
+  //     if (!downloadLink.id) {
+  //       downloadLink.id = "local_filesaver"
+  //       downloadLink.download = "image.png"
+  //       downloadLink.target = "_blank"
+  //       downloadLink.rel = "noopener"
+  //       downloadLink.style.display = "none"
+  //       document.body.appendChild(downloadLink)
+  //     }
+  //     downloadLink.setAttribute("href", url)
   //     downloadLink.click()
+  //     URL.revokeObjectURL(url)
   //   })
   // }
 
