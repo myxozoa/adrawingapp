@@ -432,6 +432,17 @@ export function redistributePoints(points: Point[]): Point[] {
   return redistributedPoints
 }
 
+export function toClipSpace(
+  point: { x: number; y: number },
+  canvas: HTMLCanvasElement | OffscreenCanvas,
+): { x: number; y: number } {
+  // Calculate clip space coordinates for x and y
+  const clipX = (2 * point.x) / canvas.width - 1
+  const clipY = 1 - (2 * point.y) / canvas.height
+
+  return { x: clipX, y: clipY }
+}
+
 //1., 0., 1., 1.
 export const debugPoints = (
   gl: WebGL2RenderingContext,
@@ -446,16 +457,8 @@ export const debugPoints = (
 
   /*==========Defining and storing the geometry=======*/
 
-  function transformToClipSpace(point: Point, canvas: HTMLCanvasElement | OffscreenCanvas): { x: number; y: number } {
-    // Calculate clip space coordinates for x and y
-    const clipX = (2 * point.x) / canvas.width - 1
-    const clipY = 1 - (2 * point.y) / canvas.height
-
-    return { x: clipX, y: clipY }
-  }
-
   const vertices = points.reduce((acc: number[], point: Point) => {
-    const clipSpace = transformToClipSpace(point, gl.canvas)
+    const clipSpace = toClipSpace(point, gl.canvas)
     return [...acc, clipSpace.x, clipSpace.y]
   }, [] as number[])
 
