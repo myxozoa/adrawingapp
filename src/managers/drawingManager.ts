@@ -14,6 +14,7 @@ import {
   performanceSafeguard,
   // debugPoints,
   // redistributePoints,
+  lerp,
 } from "@/utils.ts"
 
 import {
@@ -39,7 +40,7 @@ import * as glUtils from "@/glUtils.ts"
 
 const checkfps = performanceSafeguard()
 
-const pressureFilter = new ExponentialSmoothingFilter(0.5)
+const pressureFilter = new ExponentialSmoothingFilter(0.6)
 const positionFilter = new ExponentialSmoothingFilter(0.5)
 
 class _DrawingManager {
@@ -51,6 +52,12 @@ class _DrawingManager {
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
   canvasRef: MutableRefObject<HTMLCanvasElement>
+
+  glInfo: {
+    supportedType: number
+    supportedImageFormat: number
+    supportedFilterType: number
+  }
 
   renderProgramInfo: {
     program: WebGLProgram
@@ -73,6 +80,7 @@ class _DrawingManager {
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
+    this.glInfo = {} as unknown as typeof this.glInfo
     this.renderBufferInfo = {} as unknown as typeof this.renderBufferInfo
     this.renderProgramInfo = {} as unknown as typeof this.renderProgramInfo
   }
@@ -114,10 +122,12 @@ class _DrawingManager {
 
     if (relativeMouseState.pointerType === "pen") {
       const pressure = relativeMouseState.pressure
-      spacing = spacing * (pressure * prefs.pressureSensititity)
+
+      if (pressure < 0.01) return
+      spacing -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * spacing
     }
 
-    const prevPoint = operation.points.at(-1)
+    const prevPoint = operation.points.at(-1)!
 
     const interpolatedPoint = { ...relativeMouseState, drawn: false } as unknown as Point
 
@@ -127,6 +137,11 @@ class _DrawingManager {
           const [x, y] = positionFilter.filter([interpolatedPoint.x, interpolatedPoint.y])
           interpolatedPoint.x = x
           interpolatedPoint.y = y
+
+          const lerpVal = 0.9
+
+          interpolatedPoint.x = lerp(prevPoint.x, interpolatedPoint.x, lerpVal)
+          interpolatedPoint.y = lerp(prevPoint.y, interpolatedPoint.y, lerpVal)
 
           const [smoothed] = pressureFilter.filter([interpolatedPoint.pressure])
           interpolatedPoint.pressure = smoothed
@@ -151,7 +166,7 @@ class _DrawingManager {
   }
 
   /**
-   * @throws If unable to create texture
+   * @throws If unable to create texture or lacks support for some extensions
    */
   private createRenderTexture = (gl: WebGL2RenderingContext, width: number, height: number) => {
     const texture = gl.createTexture()
@@ -162,37 +177,20 @@ class _DrawingManager {
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
-    // WebGL2 Float textures are supported by default
-    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
-    const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
-    const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
-    const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
-    const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
-
-    const textureType = floatBufferExt
-      ? gl.FLOAT
-      : halfFloatTextureExt && halfFloatColorBufferExt
-        ? halfFloatTextureExt.HALF_FLOAT_OES
-        : gl.UNSIGNED_BYTE
-
-    const internalType = floatBufferExt || (halfFloatTextureExt && halfFloatColorBufferExt) ? gl.RGBA16F : gl.RGBA
-
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
-      internalType,
+      this.glInfo.supportedImageFormat,
       width,
       height,
       0,
       gl.RGBA,
-      textureType,
+      this.glInfo.supportedType,
       new Float32Array(width * height * 4).fill(1),
     )
 
-    const supportedFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
-
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedFilterType)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedFilterType)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
@@ -466,9 +464,36 @@ class _DrawingManager {
     gl.disable(gl.DEPTH_TEST)
     gl.depthMask(false)
 
-    this.initRenderTexture()
+    // WebGL2 Float textures are supported by default
+    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
+    // Firefox will give an implicit enable warning if EXT_float_blend is enabled before EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it
+    const floatBlendExt = gl.getExtension("EXT_float_blend")
+    const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
+    const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
+    const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
+    const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
 
-    this.clear()
+    // Possible to do a shader fallback?
+    if (!floatBlendExt) throw new Error("This device does not support float texture blending")
+
+    // TODO: 8bit fallback shouldn't be too hard now
+    if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))
+      throw new Error("This device does not support float buffers")
+
+    this.glInfo.supportedType = floatBufferExt
+      ? gl.FLOAT
+      : halfFloatTextureExt && halfFloatColorBufferExt
+        ? halfFloatTextureExt.HALF_FLOAT_OES
+        : gl.UNSIGNED_BYTE
+
+    this.glInfo.supportedImageFormat = floatBufferExt
+      ? gl.RGBA32F
+      : halfFloatTextureExt && halfFloatColorBufferExt
+        ? gl.RGBA16F
+        : gl.RGBA
+    this.glInfo.supportedFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
+
+    this.initRenderTexture()
 
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
@@ -482,6 +507,8 @@ class _DrawingManager {
     const gl = this.gl
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+
+    // this.clear()
 
     gl.useProgram(this.renderProgramInfo.program)
 

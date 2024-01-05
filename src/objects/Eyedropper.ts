@@ -2,6 +2,8 @@ import { tool_list } from "@/constants"
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
+import { DrawingManager } from "@/managers/drawingManager"
+
 import { useMainStore } from "@/stores/MainStore"
 import { glPickPosition } from "@/utils"
 
@@ -116,10 +118,13 @@ export class Eyedropper extends Tool implements IEyedropper {
 
     const data = new Float32Array(4)
 
-    await readPixelsAsync(gl, x, y, 1, 1, gl.RGBA, gl.FLOAT, data)
+    const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
+    const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+
+    await readPixelsAsync(gl, x, y, 1, 1, format, type, data)
 
     // TODO: This is currently assuming 8bit color
-    const color = Array.from(data).map((value) => Math.max(Math.floor(value * 255)))
+    const color = Array.from(data).map((value) => Math.min(Math.floor(value * 255), 255))
 
     setColor(color.slice(0, 3) as ColorArray)
 

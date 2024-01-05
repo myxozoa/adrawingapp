@@ -4,7 +4,7 @@ import { createSelectors } from "@/stores/selectors"
 
 interface State {
   prefs: {
-    pressureSensititity: number
+    pressureSensitivity: number
   }
 }
 
@@ -14,7 +14,7 @@ interface Action {
 
 const usePreferenceStoreBase = create<State & Action>((set) => ({
   prefs: {
-    pressureSensititity: 1.0,
+    pressureSensitivity: 0.5,
   },
   setPrefs: (prefs: Partial<State["prefs"]>) =>
     set((prev) => ({

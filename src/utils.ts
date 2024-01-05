@@ -475,7 +475,7 @@ export function redistributePoints(points: Point[]): Point[] {
     const end = points[i + 3]
 
     // new point is halfway along cubicBezier curve defined by the 4 current points
-    const newPoint = cubicBezier(start, control, control2, end, 0.5, 0.75)
+    const newPoint = cubicBezier(start, control, control2, end, 0.5, 0.5)
     redistributedPoints.push(newPoint)
   }
 
@@ -541,7 +541,7 @@ export const debugPoints = (
 
   const fragmentShaderCode = `#version 300 es
   #pragma vscode_glsllint_stage : frag
-  precision highp float;
+  precision mediump float;
   out vec4 fragColor;
   void main() {
     fragColor = vec4(${color});
