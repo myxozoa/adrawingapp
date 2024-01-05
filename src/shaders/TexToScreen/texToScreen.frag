@@ -1,11 +1,11 @@
 #version 300 es
 
-precision highp float;
+precision mediump float;
 
 out vec4 fragColor;
 
-// With float textures iOS requires explicit highp or it will default to low
-uniform highp sampler2D textureSampler;
+// With float textures iOS requires explicit precision or it will default to low
+uniform mediump sampler2D textureSampler;
 in vec2 texCoords;
 
 void main() {
