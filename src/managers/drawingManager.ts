@@ -129,7 +129,9 @@ class _DrawingManager {
 
     const prevPoint = operation.points.at(-1)!
 
-    const interpolatedPoint = { ...relativeMouseState, drawn: false } as unknown as Point
+    const interpolatedPoint = {
+      ...relativeMouseState,
+    } as unknown as Point
 
     switch (operation.tool.type) {
       case tool_types.STROKE:

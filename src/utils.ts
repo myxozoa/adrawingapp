@@ -434,15 +434,19 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
  * @returns new point at `curve(t)`
  */
 export function cubicBezier(start: Point, control1: Point, control2: Point, end: Point, t: number, j: number): Point {
-  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4.
-  const solve = (unit: "x" | "y") =>
-    Math.pow(1 - t, 3) * start[unit] +
-    3 * Math.pow(1 - t, 2) * t * control1[unit] +
-    3 * (1 - t) * Math.pow(t, 2) * control2[unit] +
-    Math.pow(t, 3) * end[unit]
+  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
 
-  const x = solve("x")
-  const y = solve("y")
+  const x =
+    Math.pow(1 - t, 3) * start.x +
+    3 * Math.pow(1 - t, 2) * t * control1.x +
+    3 * (1 - t) * Math.pow(t, 2) * control2.x +
+    Math.pow(t, 3) * end.x
+
+  const y =
+    Math.pow(1 - t, 3) * start.y +
+    3 * Math.pow(1 - t, 2) * t * control1.y +
+    3 * (1 - t) * Math.pow(t, 2) * control2.y +
+    Math.pow(t, 3) * end.y
 
   let pressure = 0.5
 

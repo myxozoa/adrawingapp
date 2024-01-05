@@ -27,7 +27,6 @@ export type Box = Size & Location
 export interface Point extends Location {
   pressure: number
   pointerType: PointerType
-  drawn?: boolean
 }
 export type Points = Point[]
 export interface IOperation {

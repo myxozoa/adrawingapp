@@ -1,5 +1,5 @@
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, Point, Points } from "@/types"
+import { IBrush, IOperation, Point } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
@@ -14,6 +14,8 @@ import { mat4, vec3 } from "gl-matrix"
 import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
+const baseSize = 100
+
 export class Brush extends Tool implements IBrush {
   settings: {
     size: number
@@ -23,6 +25,11 @@ export class Brush extends Tool implements IBrush {
     spacing: number
   }
 
+  glInfo: {
+    matrix: mat4
+    scaleVector: vec3
+  }
+
   programInfo: {
     program: WebGLProgram
     uniforms: Record<string, WebGLUniformLocation>
@@ -30,9 +37,6 @@ export class Brush extends Tool implements IBrush {
     VBO: WebGLBuffer
     VAO: WebGLBuffer
   }
-
-  numPointsDrawn: number
-  pointsToDraw: Points
 
   constructor(settings: Partial<IBrush["settings"]> = {}) {
     super()
@@ -44,6 +48,7 @@ export class Brush extends Tool implements IBrush {
     Object.assign(this.settings, settings)
 
     this.programInfo = {} as unknown as typeof this.programInfo
+    this.glInfo = {} as unknown as typeof this.glInfo
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -129,11 +134,11 @@ export class Brush extends Tool implements IBrush {
 
     if (!prevPoint || points.length <= 1) {
       this.stamp(gl, currentPoint)
-      currentPoint.drawn = true
+
       return
     }
 
-    if (points.length < 3) {
+    if (points.length <= 3) {
       this.line(gl, prevPoint, currentPoint)
     } else {
       this.splineProcess(gl, points)
@@ -148,16 +153,13 @@ export class Brush extends Tool implements IBrush {
    * @param points length > 4
    */
   private splineProcess = (gl: WebGL2RenderingContext, points: Point[]) => {
-    const pointsToProcess = points.slice(-4)
+    const i = points.length - 4
+    const end = points[i + 3]
+    const control2 = points[i + 2]
+    const control = points[i + 1]
+    const start = points[i]
 
-    for (let i = 0; i < pointsToProcess.length - 3; i += 3) {
-      const end = pointsToProcess[i + 3]
-      const control2 = pointsToProcess[i + 2]
-      const control = pointsToProcess[i + 1]
-      const start = pointsToProcess[i]
-
-      this.spline(gl, start, control, control2, end)
-    }
+    this.spline(gl, start, control, control2, end)
   }
 
   /**
@@ -173,19 +175,9 @@ export class Brush extends Tool implements IBrush {
 
     const steps = estimatedArcLength / stampSpacing
 
-    const pointsToDraw = [start]
-
-    // Get points along cubic bezier
+    // Stamp points along cubic bezier
     for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
-      const newPoint = cubicBezier(start, control, control2, end, t, j / steps)
-
-      pointsToDraw.push(newPoint)
-    }
-
-    pointsToDraw.push(end)
-
-    // Stamp points
-    for (const point of pointsToDraw) {
+      const point = cubicBezier(start, control, control2, end, t, j / steps)
       this.stamp(gl, point)
     }
   }
@@ -217,7 +209,7 @@ export class Brush extends Tool implements IBrush {
     const prefs = usePreferenceStore.getState().prefs
     const color = useMainStore.getState().color
 
-    const matrix = mat4.create()
+    const matrix = this.glInfo.matrix
 
     mat4.ortho(matrix, 0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
 
@@ -232,10 +224,7 @@ export class Brush extends Tool implements IBrush {
       size -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * size
     }
 
-    const baseSize = 100
-    const scaleVector = vec3.fromValues(baseSize, baseSize, 1)
-
-    mat4.scale(matrix, matrix, scaleVector)
+    mat4.scale(matrix, matrix, this.glInfo.scaleVector)
 
     // Internals
 
@@ -265,6 +254,9 @@ export class Brush extends Tool implements IBrush {
     const { program, attributes, uniforms } = this.setupProgramAndAttributeUniforms(gl)
     this.programInfo.program = program
     this.programInfo.uniforms = uniforms
+
+    this.glInfo.matrix = mat4.create()
+    this.glInfo.scaleVector = vec3.fromValues(baseSize, baseSize, 1)
 
     // VBO
 
