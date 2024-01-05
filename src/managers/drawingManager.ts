@@ -188,95 +188,39 @@ class _DrawingManager {
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
+    // WebGL2 Float textures are supported by default
     const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
-
     const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
+    const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
+    const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
+    const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
 
-    if (!floatBufferExt) {
-      const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
+    const textureType = floatBufferExt
+      ? gl.FLOAT
+      : halfFloatTextureExt && halfFloatColorBufferExt
+        ? halfFloatTextureExt.HALF_FLOAT_OES
+        : gl.UNSIGNED_BYTE
 
-      if (!halfFloatTextureExt) {
-        throw new Error("Your device does not support half float textures (OES_texture_half_float).")
-      }
+    const internalType = floatBufferExt || (halfFloatTextureExt && halfFloatColorBufferExt) ? gl.RGBA16F : gl.RGBA
 
-      const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      internalType,
+      width,
+      height,
+      0,
+      gl.RGBA,
+      textureType,
+      new Float32Array(width * height * 4).fill(1),
+    )
 
-      // if (!halfFloatTextureLinearExt) {
-      //   throw new Error(
-      //     "Your device does not support linear filtering on half float textures (OES_texture_half_float_linear).",
-      //   )
-      // }
+    const supportedFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
-      const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
-
-      if (!halfFloatColorBufferExt) {
-        throw new Error("Your device does not support half float color buffers (EXT_color_buffer_half_float).")
-      }
-
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA16F,
-        width,
-        height,
-        0,
-        gl.RGBA,
-        halfFloatTextureExt.HALF_FLOAT_OES,
-        new Float32Array(width * height * 4).fill(1),
-      )
-      // gl.texStorage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height)
-      // gl.texSubImage2D(
-      //   gl.TEXTURE_2D,
-      //   0,
-      //   0,
-      //   0,
-      //   width,
-      //   height,
-      //   gl.RGBA,
-      //   halfFloatTextureExt.HALF_FLOAT_OES,
-      //   new Float32Array(width * height * 4).fill(1),
-      // )
-
-      const supportedFilterType = halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
-
-      console.log("half float")
-
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    } else {
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA16F,
-        width,
-        height,
-        0,
-        gl.RGBA,
-        gl.FLOAT,
-        new Float32Array(width * height * 4).fill(1),
-      )
-      // gl.texStorage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height)
-      // gl.texSubImage2D(
-      //   gl.TEXTURE_2D,
-      //   0,
-      //   0,
-      //   0,
-      //   width,
-      //   height,
-      //   gl.RGBA,
-      //   gl.FLOAT,
-      //   new Float32Array(width * height * 4).fill(1),
-      // )
-
-      const supportedFilterType = floatTextureLinearExt ? gl.LINEAR : gl.NEAREST
-
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    }
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, supportedFilterType)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, supportedFilterType)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
     // Unbind
     gl.bindTexture(gl.TEXTURE_2D, null)
