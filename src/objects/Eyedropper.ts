@@ -24,6 +24,9 @@ function clientWaitAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: num
   })
 }
 
+/**
+ * @throws If unable to fence sync
+ */
 async function getBufferSubDataAsync(
   gl: WebGL2RenderingContext,
   target: number,
@@ -49,6 +52,9 @@ async function getBufferSubDataAsync(
   return dstBuffer
 }
 
+/**
+ * @throws If unable to create buffer
+ */
 async function readPixelsAsync(
   gl: WebGL2RenderingContext,
   x: number,
@@ -90,10 +96,17 @@ export class Eyedropper extends Tool implements IEyedropper {
     Object.assign(this.settings, settings)
   }
 
+  /** @override */
   init = () => {
     return
   }
 
+  /**
+   * Will asyncronously read pixel(s) from the the current layer or main render texture and set the value from it/them to the current color
+   *
+   * @param operation Will use the first/ideally only point
+   */
+  // TODO: Implement multiple pixel sampling/averaging
   use = async (gl: WebGL2RenderingContext, operation: IOperation) => {
     const { setColor } = useMainStore.getState()
 
@@ -103,10 +116,9 @@ export class Eyedropper extends Tool implements IEyedropper {
 
     const data = new Float32Array(4)
 
-    // gl.readPixels(x, y, 1, 1, gl.RGBA, gl.FLOAT, data)
-
     await readPixelsAsync(gl, x, y, 1, 1, gl.RGBA, gl.FLOAT, data)
 
+    // TODO: This is currently assuming 8bit color
     const color = Array.from(data).map((value) => Math.max(Math.floor(value * 255)))
 
     setColor(color.slice(0, 3) as ColorArray)

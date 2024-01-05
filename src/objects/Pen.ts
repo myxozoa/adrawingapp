@@ -2,6 +2,7 @@ import { tool_list } from "@/constants"
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { IPen } from "@/types"
 
+// TODO: Fix this
 export class Pen extends Tool implements IPen {
   settings: {
     size: number
@@ -19,6 +20,7 @@ export class Pen extends Tool implements IPen {
     Object.assign(this.settings, settings)
   }
 
+  /** @override */
   init = () => {
     return
   }

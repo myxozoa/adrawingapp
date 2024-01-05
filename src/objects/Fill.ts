@@ -19,13 +19,20 @@ export class Fill extends Tool implements IFill {
     Object.assign(this.settings, settings)
   }
 
+  /** @override */
   init = () => {
     return
   }
 
+  /**
+   * Currently this fills the current layer / render texture with the current color
+   *
+   */
+  // TODO: Implement flood fill
   use = (gl: WebGL2RenderingContext) => {
     const color = useMainStore.getState().color
 
+    // TODO: this is currently assuming 8bit color
     gl.clearBufferfv(gl.COLOR, 0, new Float32Array([...color.map((value) => value / 255), 1]))
   }
 }

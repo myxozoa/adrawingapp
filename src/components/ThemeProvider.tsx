@@ -59,6 +59,9 @@ export function ThemeProvider({
   )
 }
 
+/**
+ * @throws If used outside ThemeProvider
+ */
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
 

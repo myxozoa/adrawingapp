@@ -1,3 +1,6 @@
+/**
+ * @throws If the shader was unable to be created
+ */
 export function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
   const shader = gl.createShader(type)
 
@@ -9,6 +12,9 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
   return shader
 }
 
+/**
+ * @throws If the program was unable to be created or linked
+ */
 export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
   const program = gl.createProgram()
 

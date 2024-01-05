@@ -73,12 +73,14 @@ export const toolDefaults: ToolDefaults = {
   },
 }
 
+// TODO: Probably no longer necessary / more trouble than its worth
 export class Tool implements ITool {
   name: ToolName
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
 
+  /** @virtual */
   init = (gl: WebGL2RenderingContext) => {
     console.log(gl)
     return

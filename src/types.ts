@@ -80,7 +80,6 @@ export interface IBrush extends ITool {
   }
 
   switchTo: (gl: WebGL2RenderingContext) => void
-  base: (gl: WebGL2RenderingContext, operation: IOperation) => void
   draw: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 

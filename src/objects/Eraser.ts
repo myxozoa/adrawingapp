@@ -27,14 +27,27 @@ export class Eraser extends Tool {
     Object.assign(this.settings, settings)
   }
 
+  /** @override */
   base = () => {
     return
   }
 
+  /** Initialize necessary WebGL resources
+   *
+   *  Should be called once
+   *
+   * @override
+   */
   init = (gl: WebGL2RenderingContext) => {
     this.brush.init(gl)
   }
 
+  /** Switch WebGL state to what we need
+   *
+   *  MUST be called every time before a usage operation
+   *
+   * @override
+   */
   switchTo = (gl: WebGL2RenderingContext) => {
     this.brush.switchTo(gl)
 
@@ -44,6 +57,7 @@ export class Eraser extends Tool {
     gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
   }
 
+  /** @override */
   draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
     this.brush.base(gl, operation)
   }

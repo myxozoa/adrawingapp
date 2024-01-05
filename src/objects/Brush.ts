@@ -23,7 +23,6 @@ export class Brush extends Tool implements IBrush {
     spacing: number
   }
 
-  // TODO: Type this
   programInfo: {
     program: WebGLProgram
     uniforms: Record<string, WebGLUniformLocation>
@@ -47,7 +46,7 @@ export class Brush extends Tool implements IBrush {
     this.programInfo = {} as unknown as typeof this.programInfo
   }
 
-  setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
+  private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
     const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
     const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
 
@@ -73,7 +72,7 @@ export class Brush extends Tool implements IBrush {
     return { program, attributes, uniforms }
   }
 
-  setupVBO = (gl: WebGL2RenderingContext) => {
+  private setupVBO = (gl: WebGL2RenderingContext) => {
     const vbo = gl.createBuffer()
 
     if (!vbo) throw new Error("Unable to create WebGL Vertex Buffer")
@@ -106,7 +105,7 @@ export class Brush extends Tool implements IBrush {
     return vbo
   }
 
-  setupVAO = (gl: WebGL2RenderingContext, attribute: number) => {
+  private setupVAO = (gl: WebGL2RenderingContext, attribute: number) => {
     const vao = gl.createVertexArray()
 
     if (!vao) throw new Error("Unable to create WebGL Vertex Array")
@@ -123,27 +122,7 @@ export class Brush extends Tool implements IBrush {
     return vao
   }
 
-  init = (gl: WebGL2RenderingContext) => {
-    const { program, attributes, uniforms } = this.setupProgramAndAttributeUniforms(gl)
-    this.programInfo.program = program
-    this.programInfo.uniforms = uniforms
-
-    this.programInfo.VBO = this.setupVBO(gl)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
-
-    this.programInfo.VAO = this.setupVAO(gl, attributes.a_position)
-    gl.bindVertexArray(this.programInfo.VAO)
-
-    // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
-  }
-
-  draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    this.base(gl, operation)
-  }
-
-  base = (gl: WebGL2RenderingContext, operation: IOperation) => {
+  private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
     const points = redistributePoints(operation.points)
     const prevPoint = points.at(-2)!
     const currentPoint = points.at(-1)!
@@ -163,7 +142,12 @@ export class Brush extends Tool implements IBrush {
     gl.flush()
   }
 
-  splineProcess = (gl: WebGL2RenderingContext, points: Point[]) => {
+  /**
+   * Process array of points as spline
+   *
+   * @param points length > 4
+   */
+  private splineProcess = (gl: WebGL2RenderingContext, points: Point[]) => {
     const pointsToProcess = points.slice(-4)
 
     for (let i = 0; i < pointsToProcess.length - 3; i += 3) {
@@ -171,23 +155,27 @@ export class Brush extends Tool implements IBrush {
       const control2 = pointsToProcess[i + 2]
       const control = pointsToProcess[i + 1]
       const start = pointsToProcess[i]
+
       this.spline(gl, start, control, control2, end)
     }
   }
 
-  spline = (gl: WebGL2RenderingContext, start: Point, control: Point, control2: Point, end: Point) => {
-    const step = this.settings.size * (this.settings.spacing / 100)
+  /**
+   * Interpret the points as a bezier curve and stamp along it
+   */
+  private spline = (gl: WebGL2RenderingContext, start: Point, control: Point, control2: Point, end: Point) => {
+    const stampSpacing = this.settings.size * (this.settings.spacing / 100)
 
+    // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
     const chord = getDistance(start, end)
-    const cont_net = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
+    const totalDistance = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
+    const estimatedArcLength = (totalDistance + chord) / 2
 
-    const app_arc_length = (cont_net + chord) / 2
-
-    const steps = app_arc_length / step
+    const steps = estimatedArcLength / stampSpacing
 
     const pointsToDraw = [start]
 
-    // Stamp at evenly spaced intervals between the two points
+    // Get points along cubic bezier
     for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
       const newPoint = cubicBezier(start, control, control2, end, t, j / steps)
 
@@ -196,19 +184,23 @@ export class Brush extends Tool implements IBrush {
 
     pointsToDraw.push(end)
 
+    // Stamp points
     for (const point of pointsToDraw) {
       this.stamp(gl, point)
     }
   }
 
-  line = (gl: WebGL2RenderingContext, start: Point, end: Point) => {
+  /**
+   * Stamps along line between `start` and `end`
+   */
+  private line = (gl: WebGL2RenderingContext, start: Point, end: Point) => {
     const distance = getDistance(start, end)
-    const step = this.settings.size * (this.settings.spacing / 100)
+    const stampSpacing = this.settings.size * (this.settings.spacing / 100)
 
-    const steps = distance / step
+    const steps = distance / stampSpacing
 
     // Stamp at evenly spaced intervals between the two points
-    for (let i = step, j = 0; i < distance; i += step, j++) {
+    for (let i = stampSpacing, j = 0; i < distance; i += stampSpacing, j++) {
       const { x, y } = newPointAlongDirection(start, end, i)
 
       const pressure = lerp(start.pressure, end.pressure, j / steps)
@@ -218,7 +210,10 @@ export class Brush extends Tool implements IBrush {
     this.stamp(gl, end)
   }
 
-  stamp = (gl: WebGL2RenderingContext, point: Point) => {
+  /**
+   * Moves quad around and draws it based on brush settings and point info
+   */
+  private stamp = (gl: WebGL2RenderingContext, point: Point) => {
     const prefs = usePreferenceStore.getState().prefs
     const color = useMainStore.getState().color
 
@@ -243,10 +238,13 @@ export class Brush extends Tool implements IBrush {
 
     mat4.scale(matrix, matrix, scaleVector)
 
-    gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, matrix)
+    // Internals
 
+    gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, matrix)
     gl.uniform2f(this.programInfo.uniforms.u_resolution, 100, 100)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
+
+    // Brush settings
 
     const colors = color.map((c) => c / 255)
     gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
@@ -255,10 +253,53 @@ export class Brush extends Tool implements IBrush {
     gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
     gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 
+    // Drawing
+
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
 
-  switchTo = (gl: WebGL2RenderingContext) => {
+  /** Initialize necessary WebGL resources
+   *
+   *  Should be called once
+   */
+  public init = (gl: WebGL2RenderingContext) => {
+    const { program, attributes, uniforms } = this.setupProgramAndAttributeUniforms(gl)
+    this.programInfo.program = program
+    this.programInfo.uniforms = uniforms
+
+    // VBO
+
+    this.programInfo.VBO = this.setupVBO(gl)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
+
+    // VAO
+
+    this.programInfo.VAO = this.setupVAO(gl, attributes.a_position)
+    gl.bindVertexArray(this.programInfo.VAO)
+
+    // Unbind
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindVertexArray(null)
+  }
+
+  /**
+   * Begin the drawing process
+   *
+   * MUST have called this Brush's switchTo method
+   *
+   * @param operation uses this operations points to know where to draw
+   */
+  public draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
+    if (operation.points.length === 0) return
+
+    this.base(gl, operation)
+  }
+
+  /** Switch WebGL state to what we need
+   *
+   *  MUST be called every time before a usage operation
+   */
+  public switchTo = (gl: WebGL2RenderingContext) => {
     gl.useProgram(this.programInfo.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)

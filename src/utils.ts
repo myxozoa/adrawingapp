@@ -1,3 +1,4 @@
+import { createProgram, createShader } from "@/glUtils"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, Operations, Point, MouseState } from "@/types"
 
 // TODO: Type this function better
@@ -51,9 +52,9 @@ export function getDistance(
   const a = point0.x - point1.x
   const b = point0.y - point1.y
 
-  const c = Math.sqrt(a * a + b * b)
+  const distance = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2))
 
-  return c
+  return distance
 }
 
 export function countPoints(elements: Operations): number {
@@ -66,35 +67,34 @@ export function countPoints(elements: Operations): number {
   return pointCount
 }
 
+/**
+ * Parse hex color to rgb color array
+ *
+ */
 export function hexToRgb(hex: HexColor): Maybe<ColorArray> {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : undefined
 }
 
+/**
+ * Number to hex with 1 left padding
+ */
 export function componentToHex(color: ColorValue): ColorValueString {
   const hex = color.toString(16)
   return hex.length == 1 ? "0" + hex : hex
 }
 
+/**
+ * Translates array of 8bit rgb colors to hex
+ *
+ * @returns css style `#FFFFFF` color
+ */
 export function rgbToHex(color: ColorArray): HexColor {
   return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2])
 }
 
 export function offsetPoint(point: Point, offset: number) {
   return { ...point, x: point.x + offset, y: point.y + offset }
-}
-
-export function findQuadtraticBezierControlPoint(
-  startPoint: Point,
-  midPoint: Point,
-  endPoint: Point,
-): Pick<Point, "x" | "y"> {
-  const controlPoint = {
-    x: midPoint.x * 2 - (startPoint.x + endPoint.x) / 2,
-    y: midPoint.y * 2 - (startPoint.y + endPoint.y) / 2,
-  }
-
-  return controlPoint
 }
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
@@ -114,6 +114,13 @@ interface Options {
   antialias: boolean
 }
 
+/**
+ * Create canvas context with solid default options and proper size
+ *
+ * @returns created canvas context
+ *
+ * @throws If context was unable to be created
+ */
 export function initializeCanvas(
   canvas: HTMLCanvasElement,
   width: number,
@@ -216,6 +223,12 @@ export function initializeCanvas(
 
 // https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately/35363027#35363027
 
+/**
+ * @example
+ * ```
+ *  const { r, g, b } = HSVtoRGB(hsvState.hue / 360, saturationPercentage, 1 - valuePercentage)
+ * ```
+ */
 export function HSVtoRGB(h: number, s: number, v: number) {
   let r = 0
   let g = 0
@@ -312,11 +325,17 @@ export function scaleNumberToRange(
   return clampedOutput
 }
 
+/**
+ * Translates array of 8bit rgb colors to rgba
+ *
+ * @returns css style `rgba()` string
+ */
 export const getCanvasColor = function (color: ColorArray, opacity?: number) {
   const useOpacity = opacity !== undefined ? (opacity / 100).toFixed(2) : 1
   return `rgba(${color[0]},${color[1]},${color[2]}, ${useOpacity})`
 }
 
+// TODO: Update this function
 export const calculateMaxHardness = (size: number) => {
   // Log based curve fitted from eyeballing settings to get the least amount of over-hard edges
   // TODO: See if this works on all display DPIs
@@ -329,6 +348,18 @@ export const calculateHardness = (hardness: number, size: number) => {
   return Math.min(hardness, calculateMaxHardness(size))
 }
 
+/**
+ * Throws an alert() if the user's frame rate drops too low
+ *
+ * @example
+ * ```
+ * const checkfps = performanceSafeguard()
+ * // Later in requestAnimationFrame:
+ * checkfps(time)
+ * ```
+ *
+ * @returns Function that takes in RAF time
+ */
 export const performanceSafeguard = () => {
   const frameAverageWindow = 30
   let frameTimes: number[] = []
@@ -337,7 +368,7 @@ export const performanceSafeguard = () => {
 
   let previousTime = 0
 
-  return (time: number) => {
+  return (time: number, callback?: () => void) => {
     const seconds = time * 0.001
     const delta = seconds - previousTime
 
@@ -356,9 +387,10 @@ export const performanceSafeguard = () => {
       const averageFPS = totalFPS / frameTimes.length
 
       if (
-        (frameTimes.length === frameAverageWindow && averageFPS < 40) ||
+        (frameTimes.length === frameAverageWindow && averageFPS < 30) ||
         (frameTimes.length > 10 && averageFPS < 10)
       ) {
+        callback && callback()
         alert(
           "You may have hardware acceleration disabled or your device is not fast enough to run this application...",
         )
@@ -371,19 +403,22 @@ export const performanceSafeguard = () => {
   }
 }
 
-export function newPointAlongDirection(point0: Point, point1: Point, distance: number) {
+/**
+ * Create new point a given distance from `point0` in the direction of `point0 -> point1`
+ */
+export function newPointAlongDirection(point0: Point, point1: Point, distance: number): Point {
   const dx = point1.x - point0.x
   const dy = point1.y - point0.y
 
   const totalDistance = Math.sqrt(dx * dx + dy * dy)
 
-  const unitX = dx / totalDistance
-  const unitY = dy / totalDistance
+  const normalizedX = dx / totalDistance
+  const normalizedY = dy / totalDistance
 
-  const newX = point0.x + unitX * distance
-  const newY = point0.y + unitY * distance
+  const newX = point0.x + normalizedX * distance
+  const newY = point0.y + normalizedY * distance
 
-  return { x: newX, y: newY }
+  return { ...point0, x: newX, y: newY }
 }
 
 export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
@@ -392,7 +427,14 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
   return { x: point.x, y: rect.bottom - rect.top - point.y - 1 }
 }
 
+/**
+ * Interpolates a cubic bezier curve based on the `start` `end` and two `control points`, returning a new point along the curve
+ *
+ * @param j pressure lerp value
+ * @returns new point at `curve(t)`
+ */
 export function cubicBezier(start: Point, control1: Point, control2: Point, end: Point, t: number, j: number): Point {
+  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4.
   const solve = (unit: "x" | "y") =>
     Math.pow(1 - t, 3) * start[unit] +
     3 * Math.pow(1 - t, 2) * t * control1[unit] +
@@ -415,6 +457,14 @@ export function cubicBezier(start: Point, control1: Point, control2: Point, end:
   return { ...start, pressure, x, y }
 }
 
+/**
+ * Move curve points around to be evenly spaced from beginning to end
+ *
+ * @remarks
+ * Interprets a sliding window of 4 points as a cubic bezier curve and adds moves the first point to the middle of that curve
+ *
+ * @returns New points array
+ */
 export function redistributePoints(points: Point[]): Point[] {
   const redistributedPoints: Point[] = [points[0]]
 
@@ -432,6 +482,9 @@ export function redistributePoints(points: Point[]): Point[] {
   return redistributedPoints
 }
 
+/**
+ * Translate coordinates from `0...width` or `0...height` to clip space `-1...1`
+ */
 export function toClipSpace(
   point: { x: number; y: number },
   canvas: HTMLCanvasElement | OffscreenCanvas,
@@ -443,38 +496,38 @@ export function toClipSpace(
   return { x: clipX, y: clipY }
 }
 
-//1., 0., 1., 1.
+/**
+ * @example
+ * ```
+ * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
+ * ```
+ */
 export const debugPoints = (
   gl: WebGL2RenderingContext,
   renderBufferInfo: any,
   points: Point[],
   color: string,
 ): void => {
+  // Bind to draw to render texture
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
   gl.bindTexture(gl.TEXTURE_2D, renderBufferInfo.targetTexture)
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
 
-  /*==========Defining and storing the geometry=======*/
-
+  // Transform points to clip space
   const vertices = points.reduce((acc: number[], point: Point) => {
     const clipSpace = toClipSpace(point, gl.canvas)
     return [...acc, clipSpace.x, clipSpace.y]
   }, [] as number[])
 
-  // Create an empty buffer object to store the vertex buffer
   const vertex_buffer = gl.createBuffer()
-
-  //Bind appropriate array buffer to it
   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
-
-  // Pass the vertex data to the buffer
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
-  /*=========================Shaders========================*/
+  // Vert Shader
 
-  // vertex shader source code
-  const vertCode = `#version 300 es
+  const vertexShaderCode = `#version 300 es
   #pragma vscode_glsllint_stage : vert
   in vec2 a_Position;
   void main() {
@@ -482,67 +535,44 @@ export const debugPoints = (
     gl_PointSize = 5.0;
   }`
 
-  // Create a vertex shader object
-  const vertShader = gl.createShader(gl.VERTEX_SHADER)!
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderCode)
 
-  // Attach vertex shader source code
-  gl.shaderSource(vertShader, vertCode)
+  // Frag Shader
 
-  // Compile the vertex shader
-  gl.compileShader(vertShader)
-
-  // fragment shader source code
-  const fragCode = `#version 300 es
+  const fragmentShaderCode = `#version 300 es
   #pragma vscode_glsllint_stage : frag
   precision highp float;
-  out vec4 color;
+  out vec4 fragColor;
   void main() {
-    color = vec4(${color});
+    fragColor = vec4(${color});
   }`
-  // Create fragment shader object
-  const fragShader = gl.createShader(gl.FRAGMENT_SHADER)!
 
-  // Attach fragment shader source code
-  gl.shaderSource(fragShader, fragCode)
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderCode)
 
-  // Compile the fragmentt shader
-  gl.compileShader(fragShader)
+  const shaderProgram = createProgram(gl, vertexShader, fragmentShader)
 
-  // Create a shader program object to store
-  // the combined shader program
-  const shaderProgram = gl.createProgram()!
-
-  // Attach a vertex shader
-  gl.attachShader(shaderProgram, vertShader)
-
-  // Attach a fragment shader
-  gl.attachShader(shaderProgram, fragShader)
-
-  // Link both programs
-  gl.linkProgram(shaderProgram)
-
-  // Use the combined shader program object
   gl.useProgram(shaderProgram)
 
-  /*======== Associating shaders to buffer objects ========*/
+  // VAO
 
   const vao = gl.createVertexArray()
   gl.bindVertexArray(vao)
 
-  // Bind vertex buffer object
   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
 
-  // Get the attribute location
   const coord = gl.getAttribLocation(shaderProgram, "a_Position")
 
-  // Point an attribute to the currently bound VBO
   gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0)
-
-  // Enable the attribute
   gl.enableVertexAttribArray(coord)
 
-  /*============= Drawing the primitive ===============*/
+  // Draw
 
-  // Draw the triangle
   gl.drawArrays(gl.POINTS, 0, vertices.length / 2)
+
+  // Unbind
+
+  gl.bindVertexArray(null)
+  gl.bindBuffer(gl.ARRAY_BUFFER, null)
+  gl.bindTexture(gl.TEXTURE_2D, null)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 }

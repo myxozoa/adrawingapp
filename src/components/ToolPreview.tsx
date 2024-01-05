@@ -18,6 +18,13 @@ let cache: {
   uniforms: Record<string, WebGLUniformLocation>
 } | null = null
 
+// TODO: This component is out of date now
+
+// TODO: update generalize this across different parts of this app
+/**
+ *
+ * @throws If unable to create vertex buffer
+ */
 const initGL = (gl: WebGL2RenderingContext) => {
   if (cache) {
     return cache

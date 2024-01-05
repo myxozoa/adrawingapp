@@ -2,6 +2,7 @@ import { blend_modes } from "../constants"
 
 import { ILayer, LayerID, LayerName, BlendModes, Size, Box } from "@/types"
 
+// TODO: Fix this
 export class Layer implements ILayer {
   blendMode: BlendModes
   name: LayerName

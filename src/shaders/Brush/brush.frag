@@ -33,6 +33,8 @@ void main()
     vec4 color = mix(main_color, transparent, smoothstep(start, mid, d));
     color = mix(main_color, transparent, smoothstep(mid, end, d));
 
+    // Does this make things faster for small brush sizes?
+    // TODO: profile this
     if (color.a == 0.0)
         discard;
 

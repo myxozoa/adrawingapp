@@ -39,7 +39,7 @@ function _Board() {
     DrawingManager.canvasRef = boardRef
 
     DrawingManager.init()
-    DrawingManager.loop(currentUIInteraction, 0)
+    DrawingManager.start(currentUIInteraction)
   }, [])
 
   // const saveImage = () => {
