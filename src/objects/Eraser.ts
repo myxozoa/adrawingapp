@@ -18,9 +18,27 @@ export class Eraser extends Tool {
   constructor(settings: Partial<IBrush["settings"]> = {}) {
     super()
     this.name = tool_list.ERASER
-    this.brush = new Brush({ ...toolDefaults.ERASER, ...settings })
+    const brush = new Brush({ ...toolDefaults.ERASER, ...settings })
+    this.brush = brush
 
-    this.settings = {} as IEraser["settings"]
+    // Hack to get settings synced to the brush...could be worse
+    const intercept: ProxyHandler<IEraser["settings"]> = {
+      set(target: IEraser["settings"], p: string | symbol, newValue: any) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        target[p] = newValue
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        brush.settings[p] = newValue
+
+        return true
+      },
+    }
+
+    this.settings = new Proxy({} as IEraser["settings"], intercept)
 
     Object.assign(this, toolProperties.ERASER)
     Object.assign(this.settings, toolDefaults.ERASER)
@@ -51,14 +69,13 @@ export class Eraser extends Tool {
   switchTo = (gl: WebGL2RenderingContext) => {
     this.brush.switchTo(gl)
 
-    gl.blendFunc(gl.CONSTANT_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
-
     gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
+    gl.blendFuncSeparate(gl.ZERO, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
   }
 
   /** @override */
   draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    this.brush.base(gl, operation)
+    this.brush.draw(gl, operation)
   }
 }
