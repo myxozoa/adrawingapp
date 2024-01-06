@@ -5,6 +5,8 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
+import { Point } from "@/objects/Point"
+
 import {
   getRelativeMousePos,
   getDistance,
@@ -14,7 +16,6 @@ import {
   performanceSafeguard,
   // debugPoints,
   // redistributePoints,
-  lerp,
 } from "@/utils.ts"
 
 import {
@@ -27,7 +28,6 @@ import {
   IEraser,
   IEyedropper,
   IFill,
-  Point,
 } from "@/types.ts"
 import { Operation } from "@/objects/Operation.ts"
 
@@ -37,6 +37,7 @@ import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 
 import * as glUtils from "@/glUtils.ts"
+import { vec3 } from "gl-matrix"
 
 const checkfps = performanceSafeguard()
 
@@ -129,9 +130,9 @@ class _DrawingManager {
 
     const prevPoint = operation.points.at(-1)!
 
-    const interpolatedPoint = {
+    const interpolatedPoint = new Point({
       ...relativeMouseState,
-    } as unknown as Point
+    })
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
@@ -142,8 +143,7 @@ class _DrawingManager {
 
           const lerpVal = 0.9
 
-          interpolatedPoint.x = lerp(prevPoint.x, interpolatedPoint.x, lerpVal)
-          interpolatedPoint.y = lerp(prevPoint.y, interpolatedPoint.y, lerpVal)
+          vec3.lerp(interpolatedPoint.location, prevPoint.location, interpolatedPoint.location, lerpVal)
 
           const [smoothed] = pressureFilter.filter([interpolatedPoint.pressure])
           interpolatedPoint.pressure = smoothed

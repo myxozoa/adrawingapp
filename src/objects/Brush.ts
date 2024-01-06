@@ -1,8 +1,10 @@
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, Point } from "@/types"
+import { IBrush, IOperation, IPoint } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
+
+import { Point } from "@/objects/Point"
 
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
@@ -152,12 +154,12 @@ export class Brush extends Tool implements IBrush {
    *
    * @param points length > 4
    */
-  private splineProcess = (gl: WebGL2RenderingContext, points: Point[]) => {
+  private splineProcess = (gl: WebGL2RenderingContext, points: IPoint[]) => {
     const i = points.length - 4
-    const end = points[i + 3]
-    const control2 = points[i + 2]
-    const control = points[i + 1]
     const start = points[i]
+    const control = points[i + 1]
+    const control2 = points[i + 2]
+    const end = points[i + 3]
 
     this.spline(gl, start, control, control2, end)
   }
@@ -165,7 +167,7 @@ export class Brush extends Tool implements IBrush {
   /**
    * Interpret the points as a bezier curve and stamp along it
    */
-  private spline = (gl: WebGL2RenderingContext, start: Point, control: Point, control2: Point, end: Point) => {
+  private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
     const stampSpacing = this.settings.size * (this.settings.spacing / 100)
 
     // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
@@ -185,7 +187,7 @@ export class Brush extends Tool implements IBrush {
   /**
    * Stamps along line between `start` and `end`
    */
-  private line = (gl: WebGL2RenderingContext, start: Point, end: Point) => {
+  private line = (gl: WebGL2RenderingContext, start: IPoint, end: IPoint) => {
     const distance = getDistance(start, end)
     const stampSpacing = this.settings.size * (this.settings.spacing / 100)
 
@@ -197,7 +199,7 @@ export class Brush extends Tool implements IBrush {
 
       const pressure = lerp(start.pressure, end.pressure, j / steps)
 
-      this.stamp(gl, { x, y, pointerType: start.pointerType, pressure })
+      this.stamp(gl, new Point({ x, y, pointerType: start.pointerType, pressure }))
     }
     this.stamp(gl, end)
   }
@@ -205,30 +207,25 @@ export class Brush extends Tool implements IBrush {
   /**
    * Moves quad around and draws it based on brush settings and point info
    */
-  private stamp = (gl: WebGL2RenderingContext, point: Point) => {
+  private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
     const prefs = usePreferenceStore.getState().prefs
     const color = useMainStore.getState().color
 
-    const matrix = this.glInfo.matrix
+    mat4.ortho(this.glInfo.matrix, 0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
 
-    mat4.ortho(matrix, 0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
-
-    const locationVector = vec3.fromValues(point.x, point.y, 0)
-
-    mat4.translate(matrix, matrix, locationVector)
+    mat4.translate(this.glInfo.matrix, this.glInfo.matrix, point.location)
 
     let size = this.settings.size
 
     if (point.pointerType === "pen") {
-      const pressure = point.pressure
-      size -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * size
+      size -= (1 - Math.pow(point.pressure, prefs.pressureSensitivity)) * size
     }
 
-    mat4.scale(matrix, matrix, this.glInfo.scaleVector)
+    mat4.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.scaleVector)
 
     // Internals
 
-    gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, matrix)
+    gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, this.glInfo.matrix)
     gl.uniform2f(this.programInfo.uniforms.u_resolution, baseSize, baseSize)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
 

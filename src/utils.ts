@@ -1,5 +1,17 @@
 import { createProgram, createShader } from "@/glUtils"
-import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, Operations, Point, MouseState } from "@/types"
+import { Point } from "@/objects/Point"
+import {
+  Maybe,
+  HexColor,
+  ColorArray,
+  ColorValue,
+  ColorValueString,
+  Operations,
+  IPoint,
+  MouseState,
+  Points,
+} from "@/types"
+import { vec3 } from "gl-matrix"
 
 // TODO: Type this function better
 export function getRelativeMousePos(
@@ -43,11 +55,19 @@ export function throttle(func: (...args: any[]) => void, delay = 250): () => voi
   }
 }
 
+const isPoint = (point: IPoint | { x: number; y: number }): point is IPoint => {
+  return "location" in point
+}
+
 export function getDistance(
-  point0: Point | { x: number; y: number },
-  point1: Point | { x: number; y: number },
+  point0: IPoint | { x: number; y: number },
+  point1: IPoint | { x: number; y: number },
 ): number {
   if (!point0 || !point1) return 0
+
+  if (isPoint(point0) && isPoint(point1)) {
+    return vec3.distance(point0.location, point1.location)
+  }
 
   const a = point0.x - point1.x
   const b = point0.y - point1.y
@@ -93,8 +113,8 @@ export function rgbToHex(color: ColorArray): HexColor {
   return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2])
 }
 
-export function offsetPoint(point: Point, offset: number) {
-  return { ...point, x: point.x + offset, y: point.y + offset }
+export function offsetPoint(point: IPoint, offset: number) {
+  return new Point({ ...point, x: point.x + offset, y: point.y + offset })
 }
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
@@ -406,7 +426,7 @@ export const performanceSafeguard = () => {
 /**
  * Create new point a given distance from `point0` in the direction of `point0 -> point1`
  */
-export function newPointAlongDirection(point0: Point, point1: Point, distance: number): Point {
+export function newPointAlongDirection(point0: IPoint, point1: IPoint, distance: number): IPoint {
   const dx = point1.x - point0.x
   const dy = point1.y - point0.y
 
@@ -418,10 +438,10 @@ export function newPointAlongDirection(point0: Point, point1: Point, distance: n
   const newX = point0.x + normalizedX * distance
   const newY = point0.y + normalizedY * distance
 
-  return { ...point0, x: newX, y: newY }
+  return new Point({ ...point0, x: newX, y: newY })
 }
 
-export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
+export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
   const rect = (gl.canvas as HTMLCanvasElement).getBoundingClientRect()
 
   return { x: point.x, y: rect.bottom - rect.top - point.y - 1 }
@@ -433,7 +453,14 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: Point) {
  * @param j pressure lerp value
  * @returns new point at `curve(t)`
  */
-export function cubicBezier(start: Point, control1: Point, control2: Point, end: Point, t: number, j: number): Point {
+export function cubicBezier(
+  start: IPoint,
+  control1: IPoint,
+  control2: IPoint,
+  end: IPoint,
+  t: number,
+  j: number,
+): IPoint {
   // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
 
   const x =
@@ -458,7 +485,7 @@ export function cubicBezier(start: Point, control1: Point, control2: Point, end:
     pressure = lerp(control2.pressure, end.pressure, j)
   }
 
-  return { ...start, pressure, x, y }
+  return new Point({ ...start, pressure, x, y })
 }
 
 /**
@@ -469,8 +496,8 @@ export function cubicBezier(start: Point, control1: Point, control2: Point, end:
  *
  * @returns New points array
  */
-export function redistributePoints(points: Point[]): Point[] {
-  const redistributedPoints: Point[] = [points[0]]
+export function redistributePoints(points: Points): Points {
+  const redistributedPoints: Points = [points[0]]
 
   for (let i = 0; i < points.length - 3; i++) {
     const start = points[i]
@@ -506,12 +533,7 @@ export function toClipSpace(
  * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
  * ```
  */
-export const debugPoints = (
-  gl: WebGL2RenderingContext,
-  renderBufferInfo: any,
-  points: Point[],
-  color: string,
-): void => {
+export const debugPoints = (gl: WebGL2RenderingContext, renderBufferInfo: any, points: Points, color: string): void => {
   // Bind to draw to render texture
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
@@ -520,7 +542,7 @@ export const debugPoints = (
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
 
   // Transform points to clip space
-  const vertices = points.reduce((acc: number[], point: Point) => {
+  const vertices = points.reduce((acc: number[], point: IPoint) => {
     const clipSpace = toClipSpace(point, gl.canvas)
     return [...acc, clipSpace.x, clipSpace.y]
   }, [] as number[])

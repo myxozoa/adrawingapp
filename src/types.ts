@@ -1,3 +1,5 @@
+import { vec3 } from "gl-matrix"
+
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
 export type ValueOf<T> = T[keyof T]
@@ -24,11 +26,12 @@ export interface Location {
 
 export type Box = Size & Location
 
-export interface Point extends Location {
+export interface IPoint extends Location {
+  location: vec3
   pressure: number
   pointerType: PointerType
 }
-export type Points = Point[]
+export type Points = IPoint[]
 export interface IOperation {
   points: Points
   tool: AvailableTools

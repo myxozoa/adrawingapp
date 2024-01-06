@@ -2,8 +2,6 @@ import { tool_list } from "@/constants"
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
-import { DrawingManager } from "@/managers/drawingManager"
-
 import { useMainStore } from "@/stores/MainStore"
 import { glPickPosition } from "@/utils"
 
@@ -127,7 +125,5 @@ export class Eyedropper extends Tool implements IEyedropper {
     const color = Array.from(data).map((value) => Math.min(Math.floor(value * 255), 255))
 
     setColor(color.slice(0, 3) as ColorArray)
-
-    point.drawn = true
   }
 }
