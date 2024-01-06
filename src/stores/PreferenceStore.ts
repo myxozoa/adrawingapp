@@ -14,7 +14,7 @@ interface Action {
 
 const usePreferenceStoreBase = create<State & Action>((set) => ({
   prefs: {
-    pressureSensitivity: 0.5,
+    pressureSensitivity: 0.4,
   },
   setPrefs: (prefs: Partial<State["prefs"]>) =>
     set((prev) => ({

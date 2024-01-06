@@ -9,7 +9,7 @@ import { Point } from "@/objects/Point"
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { calculateHardness, getDistance, lerp, newPointAlongDirection, redistributePoints, cubicBezier } from "@/utils"
+import { getDistance, lerp, newPointAlongDirection, redistributePoints, cubicBezier } from "@/utils"
 
 import { mat4, vec3 } from "gl-matrix"
 
@@ -179,8 +179,7 @@ export class Brush extends Tool implements IBrush {
 
     // Stamp points along cubic bezier
     for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
-      const point = cubicBezier(start, control, control2, end, t, j / steps)
-      this.stamp(gl, point)
+      this.stamp(gl, cubicBezier(start, control, control2, end, t, j / steps))
     }
   }
 
@@ -197,9 +196,10 @@ export class Brush extends Tool implements IBrush {
     for (let i = stampSpacing, j = 0; i < distance; i += stampSpacing, j++) {
       const { x, y } = newPointAlongDirection(start, end, i)
 
-      const pressure = lerp(start.pressure, end.pressure, j / steps)
-
-      this.stamp(gl, new Point({ x, y, pointerType: start.pointerType, pressure }))
+      this.stamp(
+        gl,
+        new Point({ x, y, pointerType: start.pointerType, pressure: lerp(start.pressure, end.pressure, j / steps) }),
+      )
     }
     this.stamp(gl, end)
   }
@@ -209,11 +209,10 @@ export class Brush extends Tool implements IBrush {
    */
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
     const prefs = usePreferenceStore.getState().prefs
-    const color = useMainStore.getState().color
 
     mat4.ortho(this.glInfo.matrix, 0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
-
     mat4.translate(this.glInfo.matrix, this.glInfo.matrix, point.location)
+    mat4.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.scaleVector)
 
     let size = this.settings.size
 
@@ -221,22 +220,15 @@ export class Brush extends Tool implements IBrush {
       size -= (1 - Math.pow(point.pressure, prefs.pressureSensitivity)) * size
     }
 
-    mat4.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.scaleVector)
-
     // Internals
 
     gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, this.glInfo.matrix)
-    gl.uniform2f(this.programInfo.uniforms.u_resolution, baseSize, baseSize)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
 
     // Brush settings
 
-    const colors = color.map((c) => c / 255)
-    gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
-    gl.uniform1f(this.programInfo.uniforms.u_softness, calculateHardness(this.settings.hardness, size) / 100)
-    gl.uniform1f(this.programInfo.uniforms.u_size, size)
-    gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
-    gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
+    gl.uniform1f(this.programInfo.uniforms.u_size, size / 100)
+    // gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 
     // Drawing
 
@@ -280,6 +272,14 @@ export class Brush extends Tool implements IBrush {
   public draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
     if (operation.points.length === 0) return
 
+    const color = useMainStore.getState().color
+
+    gl.uniform2f(this.programInfo.uniforms.u_resolution, baseSize, baseSize)
+    const colors = color.map((c) => c / 255)
+    gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
+    gl.uniform1f(this.programInfo.uniforms.u_softness, this.settings.hardness / 100)
+    gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
+
     this.base(gl, operation)
   }
 
@@ -293,6 +293,7 @@ export class Brush extends Tool implements IBrush {
     gl.bindVertexArray(this.programInfo.VAO)
 
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
     gl.enable(gl.BLEND)
 
     gl.blendEquation(gl.FUNC_ADD)

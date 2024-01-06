@@ -141,7 +141,7 @@ class _DrawingManager {
           interpolatedPoint.x = x
           interpolatedPoint.y = y
 
-          const lerpVal = 0.9
+          const lerpVal = 0.8
 
           vec3.lerp(interpolatedPoint.location, prevPoint.location, interpolatedPoint.location, lerpVal)
 
@@ -153,9 +153,9 @@ class _DrawingManager {
           operation.points.push(interpolatedPoint)
 
           // Reduce load on reinterpreting a lot of points once they get stale
-          if (operation.points.length > 100) {
-            operation.points = operation.points.slice(-8)
-          }
+          // if (operation.points.length > 100) {
+          //   operation.points = operation.points.slice(-8)
+          // }
         }
         break
 

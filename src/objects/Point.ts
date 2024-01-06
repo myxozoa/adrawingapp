@@ -7,9 +7,9 @@ export class Point implements IPoint {
   pointerType: PointerType
 
   constructor(values: Partial<IPoint>) {
-    delete values.location
-
     this.location = vec3.create()
+    values.location = this.location
+
     Object.assign(this, values)
   }
 
