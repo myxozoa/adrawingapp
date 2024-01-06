@@ -3,7 +3,7 @@
  *   Prefer multiple instances for even loosely unrelated data ie mouse position and pressure
  */
 export class ExponentialSmoothingFilter {
-  private smoothAmount: number
+  public smoothAmount: number
   private smoothedValue: number[]
 
   constructor(smoothAmount: number) {

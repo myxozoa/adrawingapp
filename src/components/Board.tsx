@@ -42,33 +42,6 @@ function _Board() {
     DrawingManager.start(currentUIInteraction)
   }, [])
 
-  // const saveImage = () => {
-  //   DrawingManager.renderToScreen()
-  //   const downloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
-
-  //   boardRef.current.toBlob(function (blob) {
-  //     if (!blob) {
-  //       console.error("Unable to create blob and save image")
-  //       return
-  //     }
-
-  //     const data = new File([blob], "image.png", { type: "png" })
-  //     const url = URL.createObjectURL(data)
-
-  //     if (!downloadLink.id) {
-  //       downloadLink.id = "local_filesaver"
-  //       downloadLink.download = "image.png"
-  //       downloadLink.target = "_blank"
-  //       downloadLink.rel = "noopener"
-  //       downloadLink.style.display = "none"
-  //       document.body.appendChild(downloadLink)
-  //     }
-  //     downloadLink.setAttribute("href", url)
-  //     downloadLink.click()
-  //     URL.revokeObjectURL(url)
-  //   })
-  // }
-
   return (
     <>
       <Container className="grow">

@@ -109,6 +109,10 @@ class _DrawingManager {
     const operation = this.currentOperation
 
     const prefs = usePreferenceStore.getState().prefs
+
+    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.smoothAmount = prefs.pressureFiltering
+    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.smoothAmount = prefs.mouseFiltering
+
     if (!operation.tool || Object.keys(operation.tool).length === 0) {
       operation.tool = this.currentTool
       operation.readyToDraw = true
@@ -141,9 +145,7 @@ class _DrawingManager {
           interpolatedPoint.x = x
           interpolatedPoint.y = y
 
-          const lerpVal = 0.8
-
-          vec3.lerp(interpolatedPoint.location, prevPoint.location, interpolatedPoint.location, lerpVal)
+          vec3.lerp(interpolatedPoint.location, prevPoint.location, interpolatedPoint.location, prefs.mouseSmoothing)
 
           const [smoothed] = pressureFilter.filter([interpolatedPoint.pressure])
           interpolatedPoint.pressure = smoothed
