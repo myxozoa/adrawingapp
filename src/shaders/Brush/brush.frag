@@ -25,14 +25,15 @@ float circle(vec2 position)
 
 void main()
 {
-    vec2 position = (gl_FragCoord.xy - u_point + (u_resolution / 2.));
-    vec2 point = (2. * position - u_resolution.xy) / u_resolution.y;
+    vec2 position = (gl_FragCoord.xy - u_point + (u_resolution * .5));
+    vec2 point = ((2. * position) - u_resolution.xy) * (1. / u_resolution.y); // MAD optimization 
     float dist = circle(point);
     
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);
     vec4 transparent = vec4(u_brush_color.rgb, 0.);
 
-    vec4 color = mix(main_color, transparent, smoothstep(u_size - (u_size * (8. - (u_softness * 8.))), u_size, dist));
+    float edge = u_size - (u_size * (8. - (u_softness * 8.)));
+    vec4 color = mix(main_color, transparent, smoothstep(edge, u_size, dist));
 
     // This dramatically speeds up performance on my android phone
     // even without the randomness stuff
