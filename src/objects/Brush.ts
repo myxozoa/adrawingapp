@@ -18,6 +18,8 @@ import { tool_list } from "@/constants"
 
 const baseSize = 100
 
+const drawnPoints: Record<string, boolean> = {}
+
 export class Brush extends Tool implements IBrush {
   settings: {
     size: number
@@ -131,6 +133,8 @@ export class Brush extends Tool implements IBrush {
 
   private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
     const points = redistributePoints(operation.points)
+    const prevPrevPrevPoint = points.at(-4)!
+    const prevPrevPoint = points.at(-3)!
     const prevPoint = points.at(-2)!
     const currentPoint = points.at(-1)!
 
@@ -141,9 +145,22 @@ export class Brush extends Tool implements IBrush {
     }
 
     if (points.length <= 3) {
-      this.line(gl, prevPoint, currentPoint)
+      if (!drawnPoints[vec3.str(currentPoint.location)]) {
+
+        this.line(gl, prevPoint, currentPoint)
+        drawnPoints[vec3.str(currentPoint.location)] = true
+        drawnPoints[vec3.str(prevPoint.location)] = true
+      }
     } else {
-      this.splineProcess(gl, points)
+      if (!drawnPoints[vec3.str(currentPoint.location)] &&
+      !drawnPoints[vec3.str(prevPoint.location)] &&
+      !drawnPoints[vec3.str(prevPrevPoint.location)]) {
+        this.splineProcess(gl, points)
+        drawnPoints[vec3.str(currentPoint.location)] = true
+        drawnPoints[vec3.str(prevPoint.location)] = true
+        drawnPoints[vec3.str(prevPrevPoint.location)] = true
+        drawnPoints[vec3.str(prevPrevPrevPoint.location)] = true
+      }
     }
 
     gl.flush()
