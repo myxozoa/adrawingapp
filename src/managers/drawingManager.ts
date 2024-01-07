@@ -478,7 +478,7 @@ class _DrawingManager {
     const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
 
     // Possible to do a shader fallback?
-    if (floatBufferExt && !halfFloatTextureExt && !floatBlendExt) throw new Error("This device does not support float texture blending")
+    //if (floatBufferExt && !halfFloatTextureExt && !floatBlendExt) throw new Error("This device does not support float texture blending")
 
     // TODO: 8bit fallback shouldn't be too hard now
     if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))
