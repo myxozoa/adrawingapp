@@ -471,7 +471,7 @@ class _DrawingManager {
     // WebGL2 Float textures are supported by default
     const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
     // Firefox will give an implicit enable warning if EXT_float_blend is enabled before EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it
-    const floatBlendExt = gl.getExtension("EXT_float_blend")
+    //const floatBlendExt = gl.getExtension("EXT_float_blend")
     const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
     const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
     const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
