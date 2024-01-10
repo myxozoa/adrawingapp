@@ -1,5 +1,5 @@
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, IPoint } from "@/types"
+import { IBrush, IOperation, IPoint, IPoints } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
@@ -9,7 +9,14 @@ import { Point } from "@/objects/Point"
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { getDistance, lerp, newPointAlongDirection, redistributePoints, cubicBezier } from "@/utils"
+import {
+  getDistance,
+  lerp,
+  newPointAlongDirection,
+  redistributePoints,
+  cubicBezier,
+  pressureInterpolation,
+} from "@/utils"
 
 import { mat4, vec3 } from "gl-matrix"
 
@@ -18,9 +25,10 @@ import { tool_list } from "@/constants"
 
 const baseSize = 100
 
-const drawnPoints: Record<string, boolean> = {}
+// const drawnPoints: Record<string, boolean> = {}
 
 export class Brush extends Tool implements IBrush {
+  interpolationPoint: IPoint
   settings: {
     size: number
     flow: number
@@ -53,6 +61,8 @@ export class Brush extends Tool implements IBrush {
 
     this.programInfo = {} as unknown as typeof this.programInfo
     this.glInfo = {} as unknown as typeof this.glInfo
+
+    this.interpolationPoint = new Point()
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -132,37 +142,38 @@ export class Brush extends Tool implements IBrush {
   }
 
   private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    const points = redistributePoints(operation.points)
-    const prevPrevPrevPoint = points.at(-4)!
-    const prevPrevPoint = points.at(-3)!
-    const prevPoint = points.at(-2)!
-    const currentPoint = points.at(-1)!
+    // redistributePoints(operation.points)
+    const prevPrevPrevPoint = operation.points.getPoint(-4)!
+    const prevPrevPoint = operation.points.getPoint(-3)!
+    const prevPoint = operation.points.getPoint(-2)!
+    const currentPoint = operation.points.getPoint(-1)!
 
-    if (!prevPoint || points.length <= 1) {
+    if (!prevPoint.active) {
       this.stamp(gl, currentPoint)
 
       return
     }
 
-    if (points.length <= 3) {
-      if (!drawnPoints[vec3.str(currentPoint.location)]) {
-
-        this.line(gl, prevPoint, currentPoint)
-        drawnPoints[vec3.str(currentPoint.location)] = true
-        drawnPoints[vec3.str(prevPoint.location)] = true
-      }
+    if (!prevPrevPoint.active || !prevPrevPrevPoint.active) {
+      // if (!drawnPoints[vec3.str(currentPoint.location)]) {
+      this.line(gl, prevPoint, currentPoint)
+      // drawnPoints[vec3.str(currentPoint.location)] = true
+      // drawnPoints[vec3.str(prevPoint.location)] = true
+      // }
     } else {
-      if (!drawnPoints[vec3.str(currentPoint.location)] &&
-      !drawnPoints[vec3.str(prevPoint.location)] &&
-      !drawnPoints[vec3.str(prevPrevPoint.location)]) {
-        this.splineProcess(gl, points)
-        drawnPoints[vec3.str(currentPoint.location)] = true
-        drawnPoints[vec3.str(prevPoint.location)] = true
-        drawnPoints[vec3.str(prevPrevPoint.location)] = true
-        drawnPoints[vec3.str(prevPrevPrevPoint.location)] = true
-      }
-    }
+      // if (
+      //   !drawnPoints[vec3.str(currentPoint.location)] &&
+      //   !drawnPoints[vec3.str(prevPoint.location)] &&
+      //   !drawnPoints[vec3.str(prevPrevPoint.location)]
+      // ) {
+      this.splineProcess(gl, operation.points)
 
+      //   drawnPoints[vec3.str(currentPoint.location)] = true
+      //   drawnPoints[vec3.str(prevPoint.location)] = true
+      //   drawnPoints[vec3.str(prevPrevPoint.location)] = true
+      //   drawnPoints[vec3.str(prevPrevPrevPoint.location)] = true
+      // }
+    }
     gl.flush()
   }
 
@@ -171,12 +182,11 @@ export class Brush extends Tool implements IBrush {
    *
    * @param points length > 4
    */
-  private splineProcess = (gl: WebGL2RenderingContext, points: IPoint[]) => {
-    const i = points.length - 4
-    const start = points[i]
-    const control = points[i + 1]
-    const control2 = points[i + 2]
-    const end = points[i + 3]
+  private splineProcess = (gl: WebGL2RenderingContext, points: IPoints) => {
+    const start = points.getPoint(-4)!
+    const control = points.getPoint(-3)!
+    const control2 = points.getPoint(-2)!
+    const end = points.getPoint(-1)!
 
     this.spline(gl, start, control, control2, end)
   }
@@ -196,7 +206,15 @@ export class Brush extends Tool implements IBrush {
 
     // Stamp points along cubic bezier
     for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
-      this.stamp(gl, cubicBezier(start, control, control2, end, t, j / steps))
+      const x = cubicBezier(start.x, control.x, control.x, end.x, t)
+      const y = cubicBezier(start.y, control.y, control2.y, end.y, t)
+      const pressure = pressureInterpolation(start, control, control2, end, t, j / steps)
+
+      this.interpolationPoint.x = x
+      this.interpolationPoint.y = y
+      this.interpolationPoint.pressure = pressure
+
+      this.stamp(gl, this.interpolationPoint)
     }
   }
 
@@ -213,10 +231,11 @@ export class Brush extends Tool implements IBrush {
     for (let i = stampSpacing, j = 0; i < distance; i += stampSpacing, j++) {
       const { x, y } = newPointAlongDirection(start, end, i)
 
-      this.stamp(
-        gl,
-        new Point({ x, y, pointerType: start.pointerType, pressure: lerp(start.pressure, end.pressure, j / steps) }),
-      )
+      this.interpolationPoint.x = x
+      this.interpolationPoint.y = y
+      this.interpolationPoint.pressure = lerp(start.pressure, end.pressure, j / steps)
+
+      this.stamp(gl, this.interpolationPoint)
     }
     this.stamp(gl, end)
   }

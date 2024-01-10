@@ -5,12 +5,17 @@ export class Point implements IPoint {
   location: vec3
   pressure: number
   pointerType: PointerType
+  active: boolean
 
-  constructor(values: Partial<IPoint>) {
+  constructor(values?: Partial<IPoint>) {
+    this.active = false
+    this.pressure = 0.5
     this.location = vec3.create()
-    values.location = this.location
 
-    Object.assign(this, values)
+    if (values) {
+      values.location = this.location
+      Object.assign(this, values)
+    }
   }
 
   set x(value: number) {

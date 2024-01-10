@@ -110,7 +110,7 @@ export class Eyedropper extends Tool implements IEyedropper {
   use = async (gl: WebGL2RenderingContext, operation: IOperation) => {
     const { setColor } = useMainStore.getState()
 
-    const point = operation.points[0]
+    const point = operation.points.list[0]
 
     const { x, y } = glPickPosition(gl, point)
 

@@ -23,26 +23,31 @@ export const toolProperties: toolProperties = {
     availableSettings: ["size"],
     type: tool_types.STROKE,
     continuous: true,
+    numberOfPoints: 8,
   },
   BRUSH: {
     availableSettings: ["color", "size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
+    numberOfPoints: 8,
   },
   ERASER: {
     availableSettings: ["size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
+    numberOfPoints: 8,
   },
   FILL: {
     availableSettings: ["color"],
     type: tool_types.POINT,
     continuous: false,
+    numberOfPoints: 1,
   },
   EYEDROPPER: {
     availableSettings: [],
     type: tool_types.POINT,
     continuous: false,
+    numberOfPoints: 1,
   },
 }
 
@@ -79,6 +84,11 @@ export class Tool implements ITool {
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
+  numberOfPoints: number
+
+  constructor() {
+    this.numberOfPoints = 1
+  }
 
   /** @virtual */
   init = (gl: WebGL2RenderingContext) => {

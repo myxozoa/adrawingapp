@@ -1,16 +1,6 @@
 import { createProgram, createShader } from "@/glUtils"
 import { Point } from "@/objects/Point"
-import {
-  Maybe,
-  HexColor,
-  ColorArray,
-  ColorValue,
-  ColorValueString,
-  Operations,
-  IPoint,
-  MouseState,
-  Points,
-} from "@/types"
+import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec3 } from "gl-matrix"
 
 // TODO: Type this function better
@@ -77,15 +67,15 @@ export function getDistance(
   return distance
 }
 
-export function countPoints(elements: Operations): number {
-  let pointCount = 0
+// export function countPoints(elements: Operations): number {
+//   let pointCount = 0
 
-  elements.forEach((element) => {
-    pointCount += element.points.length
-  })
+//   elements.forEach((element) => {
+//     pointCount += element.points.length
+//   })
 
-  return pointCount
-}
+//   return pointCount
+// }
 
 /**
  * Parse hex color to rgb color array
@@ -453,30 +443,26 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
  * @param j pressure lerp value
  * @returns new point at `curve(t)`
  */
-export function cubicBezier(
+export function cubicBezier(start: number, control1: number, control2: number, end: number, t: number): number {
+  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
+
+  return (
+    Math.pow(1 - t, 3) * start +
+    3 * Math.pow(1 - t, 2) * t * control1 +
+    3 * (1 - t) * Math.pow(t, 2) * control2 +
+    Math.pow(t, 3) * end
+  )
+}
+
+export function pressureInterpolation(
   start: IPoint,
   control1: IPoint,
   control2: IPoint,
   end: IPoint,
   t: number,
   j: number,
-): IPoint {
-  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
-
-  const x =
-    Math.pow(1 - t, 3) * start.x +
-    3 * Math.pow(1 - t, 2) * t * control1.x +
-    3 * (1 - t) * Math.pow(t, 2) * control2.x +
-    Math.pow(t, 3) * end.x
-
-  const y =
-    Math.pow(1 - t, 3) * start.y +
-    3 * Math.pow(1 - t, 2) * t * control1.y +
-    3 * (1 - t) * Math.pow(t, 2) * control2.y +
-    Math.pow(t, 3) * end.y
-
+): number {
   let pressure = 0.5
-
   if (t < 0.5) {
     pressure = lerp(start.pressure, control1.pressure, j)
   } else if (t < 0.75) {
@@ -485,7 +471,7 @@ export function cubicBezier(
     pressure = lerp(control2.pressure, end.pressure, j)
   }
 
-  return new Point({ ...start, pressure, x, y })
+  return pressure
 }
 
 /**
@@ -494,23 +480,26 @@ export function cubicBezier(
  * @remarks
  * Interprets a sliding window of 4 points as a cubic bezier curve and adds moves the first point to the middle of that curve
  *
- * @returns New points array
  */
-export function redistributePoints(points: Points): Points {
-  const redistributedPoints: Points = [points[0]]
-
+export function redistributePoints(points: IPoints) {
   for (let i = 0; i < points.length - 3; i++) {
-    const start = points[i]
-    const control = points[i + 1]
-    const control2 = points[i + 2]
-    const end = points[i + 3]
+    const start = points.at(i)!
+    const control = points.at(i + 1)!
+    const control2 = points.at(i + 2)!
+    const end = points.at(i + 3)!
 
-    // new point is halfway along cubicBezier curve defined by the 4 current points
-    const newPoint = cubicBezier(start, control, control2, end, 0.5, 0.5)
-    redistributedPoints.push(newPoint)
+    if (start.active && control.active && control2.active && end.active) {
+      // halfway along cubicBezier curve defined by the 4 current points
+      const x = cubicBezier(start.x, control.x, control2.x, end.x, 0.5)
+      const y = cubicBezier(start.y, control.y, control2.y, end.y, 0.5)
+      const pressure = pressureInterpolation(start, control, control2, end, 0.5)
+
+      start.x = x
+      start.y = y
+
+      start.pressure = pressure
+    }
   }
-
-  return redistributedPoints
 }
 
 /**
@@ -533,7 +522,12 @@ export function toClipSpace(
  * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
  * ```
  */
-export const debugPoints = (gl: WebGL2RenderingContext, renderBufferInfo: any, points: Points, color: string): void => {
+export const debugPoints = (
+  gl: WebGL2RenderingContext,
+  renderBufferInfo: any,
+  points: IPoint[],
+  color: string,
+): void => {
   // Bind to draw to render texture
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access

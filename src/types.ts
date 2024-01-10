@@ -30,10 +30,24 @@ export interface IPoint extends Location {
   location: vec3
   pressure: number
   pointerType: PointerType
+  active: boolean
 }
-export type Points = IPoint[]
+
+export interface IPoints {
+  list: IPoint[]
+  currentPointIndex: number
+  currentPoint: IPoint
+  length: number
+  at: (index: number) => IPoint | undefined
+  getPoint: (index: number) => IPoint
+  updatePoint: (index: number, newInfo: Exclude<Partial<IPoint>, "location">, x?: number, y?: number) => void
+  updateCurrentPoint: (newInfo: Exclude<Partial<IPoint>, "location">, x?: number, y?: number) => void
+  nextPoint: () => void
+  prevPoint: () => void
+}
+
 export interface IOperation {
-  points: Points
+  points: IPoints
   tool: AvailableTools
   readyToDraw: boolean
 }
@@ -68,6 +82,7 @@ export interface ITool {
   availableSettings: ToolSetting[]
   type: ToolType
   continuous: boolean
+  numberOfPoints: number
 
   init: (gl: WebGL2RenderingContext) => void
 }
