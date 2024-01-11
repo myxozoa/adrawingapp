@@ -30,6 +30,12 @@ export class Points implements IPoints {
     this.currentPointIndex = (this.currentPointIndex + this.list.length + offset) % this.list.length
   }
 
+  public reset = () => {
+    this.list.forEach((point) => {
+      point.reset()
+    })
+  }
+
   public at = (index: number) => {
     return this.list.at(index)
   }

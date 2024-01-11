@@ -206,13 +206,11 @@ function ColorPicker({
 
   useEffect(() => {
     const pickerContext = initializeCanvas(pickerRef.current, size, size, {
-      desynchronized: true,
       resize: false,
       contextType: "2d",
       powerPreference: "low-power",
     }) as CanvasRenderingContext2D
     initializeCanvas(indicatorRef.current, size, size, {
-      desynchronized: true,
       resize: false,
       contextType: "2d",
       powerPreference: "low-power",

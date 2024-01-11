@@ -15,7 +15,7 @@ import { throttle, initializeCanvas } from "@/utils"
 
 function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
-  const { currentUIInteraction } = useUIState(DrawingManager.endInteraction, throttle(DrawingManager.undo))
+  const { currentUIInteraction } = useUIState(throttle(DrawingManager.undo))
   const currentLayer = useLayerStore.use.currentLayer()
   const currentTool = useToolStore.use.currentTool()
 
@@ -31,7 +31,6 @@ function _Board() {
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
     const context = initializeCanvas(boardRef.current, rect.width, rect.height, {
-      desynchronized: true,
       resize: true,
     }) as WebGL2RenderingContext
 

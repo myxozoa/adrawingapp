@@ -129,25 +129,20 @@ export class Brush extends Tool implements IBrush {
   }
 
   private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    const prevPrevPrevPoint = operation.points.getPoint(-4)!
-    const prevPrevPoint = operation.points.getPoint(-3)!
-    const prevPoint = operation.points.getPoint(-2)!
-    const currentPoint = operation.points.getPoint(-1)!
+    const prevPrevPrevPoint = operation.points.getPoint(-4)
+    const prevPrevPoint = operation.points.getPoint(-3)
+    const prevPoint = operation.points.getPoint(-2)
+    const currentPoint = operation.points.getPoint(-1)
 
     if (currentPoint.active && !prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!drawnPoints[vec3.str(currentPoint.location)]) {
         this.stamp(gl, currentPoint)
         drawnPoints[vec3.str(currentPoint.location)] = true
-
-        return
       }
-    }
-
-    if (prevPoint.active && (!prevPrevPoint.active || !prevPrevPrevPoint.active)) {
+    } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!drawnPoints[vec3.str(currentPoint.location)]) {
         this.line(gl, prevPoint, currentPoint)
         drawnPoints[vec3.str(currentPoint.location)] = true
-        drawnPoints[vec3.str(prevPoint.location)] = true
       }
     } else {
       if (
@@ -252,8 +247,6 @@ export class Brush extends Tool implements IBrush {
     this.glInfo.sizeVector[1] = this.glInfo.sizeVector[0]
     this.glInfo.sizeVector[2] = this.glInfo.sizeVector[0]
 
-    // vec3.divide(this.glInfo.renderSizeVector, this.glInfo.scaleVector, this.glInfo.sizeVector)
-
     // Internals
     mat4.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
     gl.uniform2f(this.programInfo.uniforms.u_resolution, this.glInfo.sizeVector[0], this.glInfo.sizeVector[0])
@@ -261,11 +254,7 @@ export class Brush extends Tool implements IBrush {
     gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, this.glInfo.matrix)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
 
-    // Brush settings
-
     // gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
-
-    // Drawing
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
@@ -305,7 +294,7 @@ export class Brush extends Tool implements IBrush {
    * @param operation uses this operations points to know where to draw
    */
   public draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    if (operation.points.length === 0) return
+    if (!operation.readyToDraw) return
 
     const color = useMainStore.getState().color
 

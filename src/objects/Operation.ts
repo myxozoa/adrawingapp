@@ -12,4 +12,9 @@ export class Operation implements IOperation {
     this.tool = tool
     this.readyToDraw = false
   }
+
+  public reset = () => {
+    this.points.reset()
+    this.readyToDraw = false
+  }
 }
