@@ -195,7 +195,7 @@ export class Brush extends Tool implements IBrush {
     for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
       const x = cubicBezier(start.x, control.x, control2.x, end.x, t)
       const y = cubicBezier(start.y, control.y, control2.y, end.y, t)
-      const pressure = pressureInterpolation(start, control, control2, end, t, j / steps)
+      const pressure = pressureInterpolation(start, end, j / steps)
 
       this.interpolationPoint.x = x
       this.interpolationPoint.y = y
@@ -241,7 +241,11 @@ export class Brush extends Tool implements IBrush {
     this.glInfo.sizeVector[0] = this.settings.size
 
     if (point.pointerType === "pen") {
-      this.glInfo.sizeVector[0] -= (1 - Math.pow(point.pressure, prefs.pressureSensitivity)) * this.glInfo.sizeVector[0]
+      const pressureSensitivity = prefs.pressureSensitivity * 10
+
+      this.glInfo.sizeVector[0] =
+        this.glInfo.sizeVector[0] -
+        (this.glInfo.sizeVector[0] * pressureSensitivity * (1 - point.pressure)) / (1 + pressureSensitivity)
     }
 
     this.glInfo.sizeVector[1] = this.glInfo.sizeVector[0]

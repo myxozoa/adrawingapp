@@ -118,15 +118,15 @@ class _DrawingManager {
         : 0
 
     if (relativeMouseState.pointerType === "pen") {
-      const pressure = relativeMouseState.pressure
+      const pressureSensitivity = prefs.pressureSensitivity * 10
 
-      if (pressure < 0.01) return
-      spacing -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * spacing
+      if (relativeMouseState.pressure < 0.01) return
+
+      spacing =
+        spacing - (spacing * pressureSensitivity * (1 - relativeMouseState.pressure)) / (1 + pressureSensitivity)
     }
 
-    const _prevPoint = operation.points.getPoint(-1)!
-
-    const prevPoint = _prevPoint.active ? operation.points.getPoint(-1)! : operation.points.currentPoint
+    const prevPoint = operation.points.getPoint(-1)! ? operation.points.getPoint(-1)! : operation.points.currentPoint
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
