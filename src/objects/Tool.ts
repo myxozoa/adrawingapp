@@ -23,19 +23,19 @@ export const toolProperties: toolProperties = {
     availableSettings: ["size"],
     type: tool_types.STROKE,
     continuous: true,
-    numberOfPoints: 8,
+    numberOfPoints: 4,
   },
   BRUSH: {
     availableSettings: ["color", "size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
-    numberOfPoints: 8,
+    numberOfPoints: 4,
   },
   ERASER: {
     availableSettings: ["size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
-    numberOfPoints: 8,
+    numberOfPoints: 4,
   },
   FILL: {
     availableSettings: ["color"],

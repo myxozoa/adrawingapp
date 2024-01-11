@@ -18,38 +18,35 @@ float random(vec2 st)
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
 }
 
-float circle(vec2 position)
+float circle(vec2 point)
 {
-    return length(position);
+    return length(point);
 }
 
 void main()
 {
     vec2 position = (gl_FragCoord.xy - u_point + (u_resolution * .5));
-    vec2 point = ((2. * position) - u_resolution.xy) * (1. / u_resolution.y); // MAD optimization 
+    vec2 point = ((2. * position) - u_resolution.xy) * (1. / u_resolution.y);
+    float rot = 0.9;
     float dist = circle(point);
-    
+
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);
     vec4 transparent = vec4(u_brush_color.rgb, 0.);
 
-    float edge = u_size - (u_size * (8. - (u_softness * 8.)));
-    vec4 color = mix(main_color, transparent, smoothstep(edge, u_size, dist));
-
-    // This dramatically speeds up performance on my android phone
-    // even without the randomness stuff
-    if (color.a == 0.)
-        discard;
+    float edge = 1. - (4. - (u_softness * 4.));
+    float delta = fwidth(dist);
+    vec4 color = mix(main_color, transparent, smoothstep(clamp(edge - delta, 0., 1.), 1. + delta, dist));
 
     // Add a small amount of noise to the alpha channel
-    // vec2 st = (gl_FragCoord.xy / u_resolution.xy) + u_random;
+    vec2 st = (gl_FragCoord.xy * (1. / u_resolution.xy)) + u_random;
 
-    // float randomNumber = random(st);
+    float randomNumber = random(st);
 
-    // float amount = 0.001;
+    float amount = 0.001;
 
-    // float alpha = (randomNumber * (amount)) - (amount - 0.01);
+    float alpha = (randomNumber * (amount)) - (amount - 0.01);
 
-    // color.a = clamp(color.a - alpha, 0., 1.);
+    color.a = clamp(color.a - alpha, 0., 1.);
     
     fragColor = color;
 }

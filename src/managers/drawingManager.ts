@@ -77,7 +77,7 @@ class _DrawingManager {
     this.gl = {} as WebGL2RenderingContext
     this.currentLayer = {} as ILayer
     this.currentTool = {} as AvailableTools
-    this.currentOperation = new Operation({} as IBrush)
+    this.currentOperation = null
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
@@ -131,7 +131,9 @@ class _DrawingManager {
       spacing -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * spacing
     }
 
-    const prevPoint = operation.points.getPoint(-1)!
+    const _prevPoint = operation.points.getPoint(-1)!
+
+    const prevPoint = _prevPoint.active ? operation.points.getPoint(-1)! : operation.points.currentPoint
 
     // const interpolatedPoint = {
     //   ...relativeMouseState,
@@ -143,6 +145,8 @@ class _DrawingManager {
           const [x, y] = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
           operation.points.currentPoint.x = x
           operation.points.currentPoint.y = y
+          operation.points.currentPoint.pressure = relativeMouseState.pressure
+          operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
           vec3.lerp(
             operation.points.currentPoint.location,
@@ -428,7 +432,6 @@ class _DrawingManager {
 
   public swapTool = (tool: AvailableTools) => {
     this.currentTool = tool
-    this.currentOperation = new Operation(this.currentTool)
   }
 
   /**
@@ -454,7 +457,7 @@ class _DrawingManager {
     // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
     // debugPoints(this.gl, this.renderBufferInfo, redistributePoints(this.currentOperation!.points), "1., 1., 0., 1.")
 
-    this.currentOperation = new Operation(this.currentTool)
+    this.currentOperation = null
   }
 
   /**

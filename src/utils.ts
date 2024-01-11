@@ -492,7 +492,7 @@ export function redistributePoints(points: IPoints) {
       // halfway along cubicBezier curve defined by the 4 current points
       const x = cubicBezier(start.x, control.x, control2.x, end.x, 0.5)
       const y = cubicBezier(start.y, control.y, control2.y, end.y, 0.5)
-      const pressure = pressureInterpolation(start, control, control2, end, 0.5)
+      const pressure = pressureInterpolation(start, control, control2, end, 0.5, 0.5)
 
       start.x = x
       start.y = y
@@ -525,7 +525,7 @@ export function toClipSpace(
 export const debugPoints = (
   gl: WebGL2RenderingContext,
   renderBufferInfo: any,
-  points: IPoint[],
+  points: IPoints,
   color: string,
 ): void => {
   // Bind to draw to render texture
@@ -536,7 +536,7 @@ export const debugPoints = (
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
 
   // Transform points to clip space
-  const vertices = points.reduce((acc: number[], point: IPoint) => {
+  const vertices = points.list.reduce((acc: number[], point: IPoint) => {
     const clipSpace = toClipSpace(point, gl.canvas)
     return [...acc, clipSpace.x, clipSpace.y]
   }, [] as number[])

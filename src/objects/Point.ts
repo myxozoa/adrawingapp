@@ -11,6 +11,7 @@ export class Point implements IPoint {
     this.active = false
     this.pressure = 0.5
     this.location = vec3.create()
+    this.pointerType = "mouse"
 
     if (values) {
       values.location = this.location
