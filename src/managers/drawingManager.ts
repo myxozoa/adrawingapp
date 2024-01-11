@@ -5,14 +5,9 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import { Point } from "@/objects/Point"
-
 import {
   getRelativeMousePos,
   getDistance,
-  // findQuadtraticBezierControlPoint,
-  // getCanvasColor,
-  // resizeCanvasToDisplaySize,
   performanceSafeguard,
   // debugPoints,
   // redistributePoints,
@@ -77,7 +72,7 @@ class _DrawingManager {
     this.gl = {} as WebGL2RenderingContext
     this.currentLayer = {} as ILayer
     this.currentTool = {} as AvailableTools
-    this.currentOperation = new Operation({} as IBrush)
+    this.currentOperation = null
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
@@ -88,7 +83,6 @@ class _DrawingManager {
 
   // TODO: This framework may not be generic enough to describe many non-drawing tools
   private execute = (operation: IOperation) => {
-    // if (operation.points.length === 0 || operation.points.at(-1)!.drawn) return
     if (operation.points.length === 0) return
 
     const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
@@ -132,39 +126,41 @@ class _DrawingManager {
       spacing -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * spacing
     }
 
-    const prevPoint = operation.points.at(-1)!
+    const _prevPoint = operation.points.getPoint(-1)!
 
-    const interpolatedPoint = new Point({
-      ...relativeMouseState,
-    })
+    const prevPoint = _prevPoint.active ? operation.points.getPoint(-1)! : operation.points.currentPoint
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (prevPoint && operation.points.length !== 0) {
-          const [x, y] = positionFilter.filter([interpolatedPoint.x, interpolatedPoint.y])
-          interpolatedPoint.x = x
-          interpolatedPoint.y = y
+        if (prevPoint && getDistance(prevPoint, relativeMouseState) >= spacing) {
+          const [x, y] = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
+          operation.points.currentPoint.x = x
+          operation.points.currentPoint.y = y
+          operation.points.currentPoint.pressure = relativeMouseState.pressure
+          operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-          vec3.lerp(interpolatedPoint.location, prevPoint.location, interpolatedPoint.location, prefs.mouseSmoothing)
+          vec3.lerp(
+            operation.points.currentPoint.location,
+            prevPoint.location,
+            operation.points.currentPoint.location,
+            prefs.mouseSmoothing,
+          )
 
-          const [smoothed] = pressureFilter.filter([interpolatedPoint.pressure])
-          interpolatedPoint.pressure = smoothed
-        }
+          const [smoothed] = pressureFilter.filter([operation.points.currentPoint.pressure])
+          operation.points.currentPoint.pressure = smoothed
 
-        if (operation.points.length === 0 || (prevPoint && getDistance(prevPoint, interpolatedPoint) >= spacing)) {
-          operation.points.push(interpolatedPoint)
-
-          // Reduce load on reinterpreting a lot of points once they get stale
-          // if (operation.points.length > 100) {
-          //   operation.points = operation.points.slice(-8)
-          // }
+          operation.points.currentPoint.active = true
+          operation.points.nextPoint()
         }
         break
 
       case tool_types.POINT:
         this.waitUntilInteractionEnd = true
 
-        operation.points = [interpolatedPoint]
+        operation.points.updateCurrentPoint({}, relativeMouseState.x, relativeMouseState.y)
+        operation.points.currentPoint.active = true
+
+        operation.points.nextPoint()
         break
     }
   }
@@ -427,7 +423,6 @@ class _DrawingManager {
 
   public swapTool = (tool: AvailableTools) => {
     this.currentTool = tool
-    this.currentOperation = new Operation(this.currentTool)
   }
 
   /**
@@ -453,7 +448,7 @@ class _DrawingManager {
     // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
     // debugPoints(this.gl, this.renderBufferInfo, redistributePoints(this.currentOperation!.points), "1., 1., 0., 1.")
 
-    this.currentOperation = new Operation(this.currentTool)
+    this.currentOperation = null
   }
 
   /**
@@ -470,15 +465,14 @@ class _DrawingManager {
 
     // WebGL2 Float textures are supported by default
     const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
+
     // Firefox will give an implicit enable warning if EXT_float_blend is enabled before EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it
-    //const floatBlendExt = gl.getExtension("EXT_float_blend")
+    // this is not supported on iOS
+    gl.getExtension("EXT_float_blend")
     const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
     const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
     const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
     const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
-
-    // Possible to do a shader fallback?
-    //if (floatBufferExt && !halfFloatTextureExt && !floatBlendExt) throw new Error("This device does not support float texture blending")
 
     // TODO: 8bit fallback shouldn't be too hard now
     if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))

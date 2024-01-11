@@ -1,16 +1,6 @@
 import { createProgram, createShader } from "@/glUtils"
 import { Point } from "@/objects/Point"
-import {
-  Maybe,
-  HexColor,
-  ColorArray,
-  ColorValue,
-  ColorValueString,
-  Operations,
-  IPoint,
-  MouseState,
-  Points,
-} from "@/types"
+import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec3 } from "gl-matrix"
 
 // TODO: Type this function better
@@ -59,6 +49,13 @@ const isPoint = (point: IPoint | { x: number; y: number }): point is IPoint => {
   return "location" in point
 }
 
+/**
+ * Calculate Euclidean distance between provided points
+ *
+ * Either a Point object or location object { x: number, y: number }
+ *
+ * @returns Distance in pixels
+ */
 export function getDistance(
   point0: IPoint | { x: number; y: number },
   point1: IPoint | { x: number; y: number },
@@ -77,15 +74,17 @@ export function getDistance(
   return distance
 }
 
-export function countPoints(elements: Operations): number {
-  let pointCount = 0
+// export function countPoints(elements: Operations): number {
+//   let pointCount = 0
 
-  elements.forEach((element) => {
-    pointCount += element.points.length
-  })
+//   elements.forEach((element) => {
+//     pointCount += element.points.length
+//   })
 
-  return pointCount
-}
+//   return pointCount
+// }
+
+//https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
 /**
  * Parse hex color to rgb color array
@@ -111,10 +110,6 @@ export function componentToHex(color: ColorValue): ColorValueString {
  */
 export function rgbToHex(color: ColorArray): HexColor {
   return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2])
-}
-
-export function offsetPoint(point: IPoint, offset: number) {
-  return new Point({ ...point, x: point.x + offset, y: point.y + offset })
 }
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
@@ -355,19 +350,6 @@ export const getCanvasColor = function (color: ColorArray, opacity?: number) {
   return `rgba(${color[0]},${color[1]},${color[2]}, ${useOpacity})`
 }
 
-// TODO: Update this function
-export const calculateMaxHardness = (size: number) => {
-  // Log based curve fitted from eyeballing settings to get the least amount of over-hard edges
-  // TODO: See if this works on all display DPIs
-  const max = 23.943 * Math.log(0.905444 * size)
-
-  return Math.min(Math.max(max, 1), 98)
-}
-
-export const calculateHardness = (hardness: number, size: number) => {
-  return Math.min(hardness, calculateMaxHardness(size))
-}
-
 /**
  * Throws an alert() if the user's frame rate drops too low
  *
@@ -448,35 +430,31 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
 }
 
 /**
- * Interpolates a cubic bezier curve based on the `start` `end` and two `control points`, returning a new point along the curve
+ * Interpolates a cubic bezier curve based on the one dimension of `start` `end` and two `control points`
  *
- * @param j pressure lerp value
- * @returns new point at `curve(t)`
+ * @param t position from 0...1 along curve
+ * @returns number curve(t)
  */
-export function cubicBezier(
+export function cubicBezier(start: number, control1: number, control2: number, end: number, t: number): number {
+  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
+
+  return (
+    Math.pow(1 - t, 3) * start +
+    3 * Math.pow(1 - t, 2) * t * control1 +
+    3 * (1 - t) * Math.pow(t, 2) * control2 +
+    Math.pow(t, 3) * end
+  )
+}
+
+export function pressureInterpolation(
   start: IPoint,
   control1: IPoint,
   control2: IPoint,
   end: IPoint,
   t: number,
   j: number,
-): IPoint {
-  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
-
-  const x =
-    Math.pow(1 - t, 3) * start.x +
-    3 * Math.pow(1 - t, 2) * t * control1.x +
-    3 * (1 - t) * Math.pow(t, 2) * control2.x +
-    Math.pow(t, 3) * end.x
-
-  const y =
-    Math.pow(1 - t, 3) * start.y +
-    3 * Math.pow(1 - t, 2) * t * control1.y +
-    3 * (1 - t) * Math.pow(t, 2) * control2.y +
-    Math.pow(t, 3) * end.y
-
+): number {
   let pressure = 0.5
-
   if (t < 0.5) {
     pressure = lerp(start.pressure, control1.pressure, j)
   } else if (t < 0.75) {
@@ -485,7 +463,7 @@ export function cubicBezier(
     pressure = lerp(control2.pressure, end.pressure, j)
   }
 
-  return new Point({ ...start, pressure, x, y })
+  return pressure
 }
 
 /**
@@ -494,23 +472,28 @@ export function cubicBezier(
  * @remarks
  * Interprets a sliding window of 4 points as a cubic bezier curve and adds moves the first point to the middle of that curve
  *
- * @returns New points array
+ * Directly manipulates input object
+ *
  */
-export function redistributePoints(points: Points): Points {
-  const redistributedPoints: Points = [points[0]]
-
+export function redistributePoints(points: IPoints) {
   for (let i = 0; i < points.length - 3; i++) {
-    const start = points[i]
-    const control = points[i + 1]
-    const control2 = points[i + 2]
-    const end = points[i + 3]
+    const start = points.at(i)!
+    const control = points.at(i + 1)!
+    const control2 = points.at(i + 2)!
+    const end = points.at(i + 3)!
 
-    // new point is halfway along cubicBezier curve defined by the 4 current points
-    const newPoint = cubicBezier(start, control, control2, end, 0.5, 0.5)
-    redistributedPoints.push(newPoint)
+    if (start.active && control.active && control2.active && end.active) {
+      // halfway along cubicBezier curve defined by the 4 current points
+      const x = cubicBezier(start.x, control.x, control2.x, end.x, 0.5)
+      const y = cubicBezier(start.y, control.y, control2.y, end.y, 0.5)
+      const pressure = pressureInterpolation(start, control, control2, end, 0.5, 0.5)
+
+      start.x = x
+      start.y = y
+
+      start.pressure = pressure
+    }
   }
-
-  return redistributedPoints
 }
 
 /**
@@ -533,7 +516,12 @@ export function toClipSpace(
  * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
  * ```
  */
-export const debugPoints = (gl: WebGL2RenderingContext, renderBufferInfo: any, points: Points, color: string): void => {
+export const debugPoints = (
+  gl: WebGL2RenderingContext,
+  renderBufferInfo: any,
+  points: IPoints,
+  color: string,
+): void => {
   // Bind to draw to render texture
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
@@ -542,7 +530,7 @@ export const debugPoints = (gl: WebGL2RenderingContext, renderBufferInfo: any, p
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
 
   // Transform points to clip space
-  const vertices = points.reduce((acc: number[], point: IPoint) => {
+  const vertices = points.list.reduce((acc: number[], point: IPoint) => {
     const clipSpace = toClipSpace(point, gl.canvas)
     return [...acc, clipSpace.x, clipSpace.y]
   }, [] as number[])
