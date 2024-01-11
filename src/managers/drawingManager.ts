@@ -5,14 +5,9 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-// import { Point } from "@/objects/Point"
-
 import {
   getRelativeMousePos,
   getDistance,
-  // findQuadtraticBezierControlPoint,
-  // getCanvasColor,
-  // resizeCanvasToDisplaySize,
   performanceSafeguard,
   // debugPoints,
   // redistributePoints,
@@ -134,10 +129,6 @@ class _DrawingManager {
     const _prevPoint = operation.points.getPoint(-1)!
 
     const prevPoint = _prevPoint.active ? operation.points.getPoint(-1)! : operation.points.currentPoint
-
-    // const interpolatedPoint = {
-    //   ...relativeMouseState,
-    // }
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
@@ -475,19 +466,13 @@ class _DrawingManager {
     // WebGL2 Float textures are supported by default
     const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
 
-    // let floatBlendExt = null
-    // if (floatBufferExt) {
-    //   // Firefox will give an implicit enable warning if EXT_float_blend is enabled before EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it
-    //   // this is not supported on iOS
-    //   floatBlendExt = gl.getExtension("EXT_float_blend")
-    // }
+    // Firefox will give an implicit enable warning if EXT_float_blend is enabled before EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it
+    // this is not supported on iOS
+    gl.getExtension("EXT_float_blend")
     const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
     const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
     const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
     const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
-
-    // Possible to do a shader fallback?
-    //if (floatBufferExt && !halfFloatTextureExt && !floatBlendExt) throw new Error("This device does not support float texture blending")
 
     // TODO: 8bit fallback shouldn't be too hard now
     if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))

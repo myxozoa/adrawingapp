@@ -49,6 +49,13 @@ const isPoint = (point: IPoint | { x: number; y: number }): point is IPoint => {
   return "location" in point
 }
 
+/**
+ * Calculate Euclidean distance between provided points
+ *
+ * Either a Point object or location object { x: number, y: number }
+ *
+ * @returns Distance in pixels
+ */
 export function getDistance(
   point0: IPoint | { x: number; y: number },
   point1: IPoint | { x: number; y: number },
@@ -77,6 +84,8 @@ export function getDistance(
 //   return pointCount
 // }
 
+//https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+
 /**
  * Parse hex color to rgb color array
  *
@@ -101,10 +110,6 @@ export function componentToHex(color: ColorValue): ColorValueString {
  */
 export function rgbToHex(color: ColorArray): HexColor {
   return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2])
-}
-
-export function offsetPoint(point: IPoint, offset: number) {
-  return new Point({ ...point, x: point.x + offset, y: point.y + offset })
 }
 
 export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
@@ -345,19 +350,6 @@ export const getCanvasColor = function (color: ColorArray, opacity?: number) {
   return `rgba(${color[0]},${color[1]},${color[2]}, ${useOpacity})`
 }
 
-// TODO: Update this function
-export const calculateMaxHardness = (size: number) => {
-  // Log based curve fitted from eyeballing settings to get the least amount of over-hard edges
-  // TODO: See if this works on all display DPIs
-  const max = 23.943 * Math.log(0.905444 * size)
-
-  return Math.min(Math.max(max, 1), 98)
-}
-
-export const calculateHardness = (hardness: number, size: number) => {
-  return Math.min(hardness, calculateMaxHardness(size))
-}
-
 /**
  * Throws an alert() if the user's frame rate drops too low
  *
@@ -438,10 +430,10 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
 }
 
 /**
- * Interpolates a cubic bezier curve based on the `start` `end` and two `control points`, returning a new point along the curve
+ * Interpolates a cubic bezier curve based on the one dimension of `start` `end` and two `control points`
  *
- * @param j pressure lerp value
- * @returns new point at `curve(t)`
+ * @param t position from 0...1 along curve
+ * @returns number curve(t)
  */
 export function cubicBezier(start: number, control1: number, control2: number, end: number, t: number): number {
   // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
@@ -479,6 +471,8 @@ export function pressureInterpolation(
  *
  * @remarks
  * Interprets a sliding window of 4 points as a cubic bezier curve and adds moves the first point to the middle of that curve
+ *
+ * Directly manipulates input object
  *
  */
 export function redistributePoints(points: IPoints) {
