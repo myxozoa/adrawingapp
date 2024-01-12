@@ -53,8 +53,10 @@ export interface IOperation {
   points: IPoints
   tool: AvailableTools
   readyToDraw: boolean
+  drawnPoints: number
 
   reset: () => void
+  addDrawnPoints: (number?: number) => void
 }
 export type Operations = IOperation[]
 

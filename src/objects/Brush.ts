@@ -22,6 +22,7 @@ const drawnPoints: Record<string, boolean> = {}
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: IPoint
+  interpolationPoint2: IPoint
   settings: {
     size: number
     flow: number
@@ -59,6 +60,7 @@ export class Brush extends Tool implements IBrush {
     this.glInfo.sizeVector = vec3.fromValues(1, 1, 1)
 
     this.interpolationPoint = new Point()
+    this.interpolationPoint2 = new Point()
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -129,6 +131,7 @@ export class Brush extends Tool implements IBrush {
   }
 
   private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
+    // redistributePoints(operation.points)
     const prevPrevPrevPoint = operation.points.getPoint(-4)
     const prevPrevPoint = operation.points.getPoint(-3)
     const prevPoint = operation.points.getPoint(-2)
@@ -138,11 +141,13 @@ export class Brush extends Tool implements IBrush {
       if (!drawnPoints[vec3.str(currentPoint.location)]) {
         this.stamp(gl, currentPoint)
         drawnPoints[vec3.str(currentPoint.location)] = true
+        operation.addDrawnPoints(1)
       }
     } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!drawnPoints[vec3.str(currentPoint.location)]) {
         this.line(gl, prevPoint, currentPoint)
         drawnPoints[vec3.str(currentPoint.location)] = true
+        operation.addDrawnPoints(2)
       }
     } else {
       if (
@@ -154,12 +159,14 @@ export class Brush extends Tool implements IBrush {
         prevPrevPoint.active &&
         prevPrevPrevPoint.active
       ) {
-        this.splineProcess(gl, operation.points)
+        this.splineProcess(gl, operation)
 
         drawnPoints[vec3.str(currentPoint.location)] = true
         drawnPoints[vec3.str(prevPoint.location)] = true
         drawnPoints[vec3.str(prevPrevPoint.location)] = true
         drawnPoints[vec3.str(prevPrevPrevPoint.location)] = true
+
+        operation.addDrawnPoints(4)
       }
     }
   }
@@ -169,11 +176,25 @@ export class Brush extends Tool implements IBrush {
    *
    * @param points length > 4
    */
-  private splineProcess = (gl: WebGL2RenderingContext, points: IPoints) => {
-    const start = points.getPoint(-4)!
-    const control = points.getPoint(-3)!
-    const control2 = points.getPoint(-2)!
-    const end = points.getPoint(-1)!
+  private splineProcess = (gl: WebGL2RenderingContext, operation: IOperation) => {
+    const points = operation.points
+
+    // Current Spline
+    const start = points.getPoint(-4)
+    const control = points.getPoint(-3)
+    const control2 = points.getPoint(-2)
+    const end = points.getPoint(-1)
+
+    if (operation.drawnPoints > 4) {
+      // From Previous spline
+      const prevControl2 = points.getPoint(-5)
+
+      // Move control point to be in line with the previous splines c2 control point
+      // and the previous curve/current curve's shared end/start point
+      // This results in a smoothly joined curve
+      control.x = start.x + (start.x - prevControl2.x)
+      control.y = start.y + (start.y - prevControl2.y)
+    }
 
     this.spline(gl, start, control, control2, end)
   }

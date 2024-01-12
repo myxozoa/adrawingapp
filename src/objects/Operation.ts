@@ -21,7 +21,8 @@ export class Operation implements IOperation {
     this.drawnPoints = 0
   }
 
-  public addDrawnPoint = () => {
-    this.drawnPoints++
+  public addDrawnPoints = (number?: number) => {
+    if (number) this.drawnPoints += number
+    else this.drawnPoints++
   }
 }
