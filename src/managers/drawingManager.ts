@@ -126,11 +126,13 @@ class _DrawingManager {
         spacing - (spacing * pressureSensitivity * (1 - relativeMouseState.pressure)) / (1 + pressureSensitivity)
     }
 
-    const prevPoint = operation.points.getPoint(-1)! ? operation.points.getPoint(-1)! : operation.points.currentPoint
+    const prevPoint = operation.points.getPoint(-1).active
+      ? operation.points.getPoint(-1)
+      : operation.points.currentPoint
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (prevPoint && getDistance(prevPoint, relativeMouseState) >= spacing) {
+        if ((prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing) || !prevPoint.active) {
           const [x, y] = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
           operation.points.currentPoint.x = x
           operation.points.currentPoint.y = y
@@ -452,7 +454,7 @@ class _DrawingManager {
     }
 
     // TODO: Debug mode menu option so these don't need to be commented on and off
-    // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
+    // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation.points, "1., 0., 1., 1.")
     // debugPoints(this.gl, this.renderBufferInfo, redistributePoints(this.currentOperation!.points), "1., 1., 0., 1.")
   }
 

@@ -150,7 +150,7 @@ export function initializeCanvas(
     alpha: false,
     premultipliedAlpha: false,
     colorSpace: "srgb",
-    preserveDrawingBuffer: false,
+    preserveDrawingBuffer: true,
     antialias: false,
   }
 
@@ -479,6 +479,18 @@ export function redistributePoints(points: IPoints) {
     }
   }
 }
+
+// export function calculateControlPoint(
+//   p3: Point,
+//   incomingTangent: Point,
+//   outgoingTangent: Point,
+//   fraction: number
+// ): Point {
+//   return {
+//       x: p3.x + (incomingTangent.x + outgoingTangent.x) * fraction,
+//       y: p3.y + (incomingTangent.y + outgoingTangent.y) * fraction,
+//   }
+// }
 
 /**
  * Translate coordinates from `0...width` or `0...height` to clip space `-1...1`
