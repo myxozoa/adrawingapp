@@ -9,19 +9,17 @@ const defaultInteraction: UIInteraction = {
   keyModifiers: [],
   wheelDeltaY: 0,
 } as unknown as UIInteraction
-8
+
 function constructInteraction(
   mouseState: React.MutableRefObject<MouseState>,
   modifierState: React.MutableRefObject<ModifierState>,
   wheelDeltaY: React.MutableRefObject<number>,
 ): UIInteraction {
-  const interaction = {
+  return {
     mouseState: mouseState.current,
     modifierState: modifierState.current,
     wheelDeltaY: wheelDeltaY.current,
   }
-
-  return interaction
 }
 
 function handleModifier(modifierState: React.MutableRefObject<ModifierState>, addOrRemove: boolean, key: Modifier) {
@@ -53,7 +51,7 @@ function isPointerEvent(event: Event): event is PointerEvent {
   return event instanceof PointerEvent
 }
 
-function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args: any[]) => void) {
+function useUIState(callbackUndo: (...args: any[]) => void) {
   const mouseState = useRef({}) as React.MutableRefObject<MouseState>
   const modifierState = useRef(new Set()) as React.MutableRefObject<ModifierState>
   // const commandState = useRef({ ctrlZ: false })
@@ -83,7 +81,6 @@ function useUIState(callbackUp: (...args: any[]) => void, callbackUndo: (...args
       if (!isPointerEvent(event)) return
 
       updatePointer(event)
-      callbackUp()
     }
 
     const updateWheelDeltaY = (event: Event) => {

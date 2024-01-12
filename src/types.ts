@@ -31,6 +31,8 @@ export interface IPoint extends Location {
   pressure: number
   pointerType: PointerType
   active: boolean
+
+  reset: () => void
 }
 
 export interface IPoints {
@@ -44,12 +46,17 @@ export interface IPoints {
   updateCurrentPoint: (newInfo: Exclude<Partial<IPoint>, "location">, x?: number, y?: number) => void
   nextPoint: () => void
   prevPoint: () => void
+  reset: () => void
 }
 
 export interface IOperation {
   points: IPoints
   tool: AvailableTools
   readyToDraw: boolean
+  drawnPoints: number
+
+  reset: () => void
+  addDrawnPoints: (number?: number) => void
 }
 export type Operations = IOperation[]
 

@@ -43,7 +43,7 @@ class _DrawingManager {
   gl: WebGL2RenderingContext
   currentLayer: ILayer
   currentTool: AvailableTools
-  currentOperation: IOperation | null
+  currentOperation: IOperation
   toolBelt: Record<string, (operation: IOperation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
@@ -72,7 +72,7 @@ class _DrawingManager {
     this.gl = {} as WebGL2RenderingContext
     this.currentLayer = {} as ILayer
     this.currentTool = {} as AvailableTools
-    this.currentOperation = null
+    this.currentOperation = {} as Operation
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
 
@@ -98,8 +98,6 @@ class _DrawingManager {
   }
 
   private use = (relativeMouseState: MouseState) => {
-    if (!this.currentOperation) this.currentOperation = new Operation(this.currentTool)
-
     const operation = this.currentOperation
 
     const prefs = usePreferenceStore.getState().prefs
@@ -120,19 +118,21 @@ class _DrawingManager {
         : 0
 
     if (relativeMouseState.pointerType === "pen") {
-      const pressure = relativeMouseState.pressure
+      const pressureSensitivity = prefs.pressureSensitivity * 10
 
-      if (pressure < 0.01) return
-      spacing -= (1 - Math.pow(pressure, prefs.pressureSensitivity)) * spacing
+      if (relativeMouseState.pressure < 0.01) return
+
+      spacing =
+        spacing - (spacing * pressureSensitivity * (1 - relativeMouseState.pressure)) / (1 + pressureSensitivity)
     }
 
-    const _prevPoint = operation.points.getPoint(-1)!
-
-    const prevPoint = _prevPoint.active ? operation.points.getPoint(-1)! : operation.points.currentPoint
+    const prevPoint = operation.points.getPoint(-1).active
+      ? operation.points.getPoint(-1)
+      : operation.points.currentPoint
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (prevPoint && getDistance(prevPoint, relativeMouseState) >= spacing) {
+        if ((prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing) || !prevPoint.active) {
           const [x, y] = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
           operation.points.currentPoint.x = x
           operation.points.currentPoint.y = y
@@ -151,6 +151,8 @@ class _DrawingManager {
 
           operation.points.currentPoint.active = true
           operation.points.nextPoint()
+
+          operation.readyToDraw = true
         }
         break
 
@@ -161,6 +163,8 @@ class _DrawingManager {
         operation.points.currentPoint.active = true
 
         operation.points.nextPoint()
+
+        operation.readyToDraw = true
         break
     }
   }
@@ -368,11 +372,11 @@ class _DrawingManager {
 
     this.execute(this.currentOperation)
 
+    gl.flush()
+
     // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindVertexArray(null)
   }
 
   private loop = (currentUIInteraction: React.MutableRefObject<UIInteraction>, time: number) => {
@@ -403,6 +407,10 @@ class _DrawingManager {
 
     if (currentUIInteraction.current.mouseState.leftMouseDown && relativeMouseState.inbounds) {
       this.use(relativeMouseState)
+    } else {
+      if (this.currentOperation.readyToDraw) {
+        this.endInteraction()
+      }
     }
 
     this.executeCurrentOperation()
@@ -439,16 +447,15 @@ class _DrawingManager {
     this.needRedraw = true
     positionFilter.reset()
     pressureFilter.reset()
+    this.currentOperation.reset()
 
     if (save) {
       // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
     }
 
     // TODO: Debug mode menu option so these don't need to be commented on and off
-    // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
+    // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation.points, "1., 0., 1., 1.")
     // debugPoints(this.gl, this.renderBufferInfo, redistributePoints(this.currentOperation!.points), "1., 1., 0., 1.")
-
-    this.currentOperation = null
   }
 
   /**
@@ -496,6 +503,10 @@ class _DrawingManager {
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
     })
+
+    this.currentOperation = new Operation(this.currentTool)
+
+    gl.flush()
   }
 
   /**

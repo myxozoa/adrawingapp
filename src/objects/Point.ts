@@ -34,4 +34,14 @@ export class Point implements IPoint {
   get y() {
     return this.location[1]
   }
+
+  public reset = () => {
+    this.location[0] = 0
+    this.location[1] = 0
+    this.location[2] = 0
+
+    this.pressure = 0.5
+    this.pointerType = "mouse"
+    this.active = false
+  }
 }

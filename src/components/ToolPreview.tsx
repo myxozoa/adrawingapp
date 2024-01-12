@@ -88,7 +88,6 @@ function _ToolPreview() {
 
   useLayoutEffect(() => {
     initializeCanvas(previewCanvasRef.current, toolPreviewSize, toolPreviewSize, {
-      desynchronized: true,
       resize: false,
       powerPreference: "low-power",
     })
@@ -98,7 +97,6 @@ function _ToolPreview() {
     if (previewCanvasRef.current) {
       const gl = previewCanvasRef.current.getContext("webgl2", {
         alpha: true,
-        desynchronized: true,
         powerPreference: "low-power",
         premultipliedAlpha: false,
       })

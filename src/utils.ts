@@ -74,16 +74,6 @@ export function getDistance(
   return distance
 }
 
-// export function countPoints(elements: Operations): number {
-//   let pointCount = 0
-
-//   elements.forEach((element) => {
-//     pointCount += element.points.length
-//   })
-
-//   return pointCount
-// }
-
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
 /**
@@ -150,7 +140,7 @@ export function initializeCanvas(
     alpha: false,
     premultipliedAlpha: false,
     colorSpace: "srgb",
-    preserveDrawingBuffer: false,
+    preserveDrawingBuffer: true,
     antialias: false,
   }
 
@@ -446,24 +436,8 @@ export function cubicBezier(start: number, control1: number, control2: number, e
   )
 }
 
-export function pressureInterpolation(
-  start: IPoint,
-  control1: IPoint,
-  control2: IPoint,
-  end: IPoint,
-  t: number,
-  j: number,
-): number {
-  let pressure = 0.5
-  if (t < 0.5) {
-    pressure = lerp(start.pressure, control1.pressure, j)
-  } else if (t < 0.75) {
-    pressure = lerp(control1.pressure, control2.pressure, j)
-  } else {
-    pressure = lerp(control2.pressure, end.pressure, j)
-  }
-
-  return pressure
+export function pressureInterpolation(start: IPoint, end: IPoint, j: number): number {
+  return lerp(start.pressure, end.pressure, j)
 }
 
 /**
@@ -486,7 +460,7 @@ export function redistributePoints(points: IPoints) {
       // halfway along cubicBezier curve defined by the 4 current points
       const x = cubicBezier(start.x, control.x, control2.x, end.x, 0.5)
       const y = cubicBezier(start.y, control.y, control2.y, end.y, 0.5)
-      const pressure = pressureInterpolation(start, control, control2, end, 0.5, 0.5)
+      const pressure = pressureInterpolation(start, end, 0.5)
 
       start.x = x
       start.y = y

@@ -14,7 +14,11 @@ export default defineConfig({
     },
   },
   build: {
-    minify: "esbuild",
+    target: "es2020",
+    minify: true,
     cssMinify: true,
+    rollupOptions: {
+      treeshake: "safest",
+    },
   },
 })
