@@ -35,6 +35,9 @@ void main()
     float delta = fwidth(dist);
     vec4 color = mix(main_color, transparent, smoothstep(clamp(edge - delta, 0., 1.), 1. + delta, dist));
 
+    if (color.a == 0.)
+        discard;
+
     // Add a small amount of noise to the alpha channel
     // vec2 st = (gl_FragCoord.xy * (1. / u_resolution.xy)) + u_random;
 
