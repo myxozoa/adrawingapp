@@ -20,10 +20,6 @@ function _Board() {
   const currentTool = useToolStore.use.currentTool()
 
   useEffect(() => {
-    DrawingManager.swapTool(currentTool)
-  }, [currentTool])
-
-  useEffect(() => {
     DrawingManager.currentLayer = currentLayer
   }, [currentLayer])
 
@@ -40,6 +36,10 @@ function _Board() {
     DrawingManager.init()
     DrawingManager.start(currentUIInteraction)
   }, [])
+
+  useEffect(() => {
+    DrawingManager.swapTool(currentTool)
+  }, [currentTool])
 
   return (
     <>

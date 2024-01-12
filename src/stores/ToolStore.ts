@@ -23,11 +23,10 @@ type ToolDefaults = {
   [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never
 }
 
-// @ts-expect-error: will reenable when eraser works
 export const tools: ToolDefaults = {
   PEN: new Pen(),
   BRUSH: new Brush(),
-  // ERASER: new Eraser(),
+  ERASER: new Eraser(),
   FILL: new Fill(),
   EYEDROPPER: new Eyedropper(),
 }

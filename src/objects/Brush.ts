@@ -1,5 +1,5 @@
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, IPoint, IPoints } from "@/types"
+import { IBrush, IOperation, IPoint } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
@@ -22,7 +22,6 @@ const drawnPoints: Record<string, boolean> = {}
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: IPoint
-  interpolationPoint2: IPoint
   settings: {
     size: number
     flow: number
@@ -60,7 +59,6 @@ export class Brush extends Tool implements IBrush {
     this.glInfo.sizeVector = vec3.fromValues(1, 1, 1)
 
     this.interpolationPoint = new Point()
-    this.interpolationPoint2 = new Point()
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {

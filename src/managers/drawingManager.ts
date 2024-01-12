@@ -34,6 +34,8 @@ import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 import * as glUtils from "@/glUtils.ts"
 import { vec3 } from "gl-matrix"
 
+import { TransparencyGrid } from "@/objects/TransparencyGrid"
+
 const checkfps = performanceSafeguard()
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
@@ -415,6 +417,8 @@ class _DrawingManager {
 
     this.executeCurrentOperation()
 
+    TransparencyGrid.renderToScreen(gl)
+
     this.renderToScreen()
 
     checkfps(time, this.endInteraction)
@@ -431,6 +435,8 @@ class _DrawingManager {
 
   public swapTool = (tool: AvailableTools) => {
     this.currentTool = tool
+    this.currentOperation.reset()
+    this.currentOperation.tool = tool
   }
 
   /**
@@ -499,6 +505,7 @@ class _DrawingManager {
     this.glInfo.supportedFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
     this.initRenderTexture()
+    TransparencyGrid.init(gl)
 
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
