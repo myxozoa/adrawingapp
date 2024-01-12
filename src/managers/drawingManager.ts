@@ -532,6 +532,8 @@ class _DrawingManager {
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
+    gl.flush()
+
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
