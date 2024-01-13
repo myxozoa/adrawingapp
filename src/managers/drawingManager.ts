@@ -134,7 +134,7 @@ class _DrawingManager {
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if ((prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing) || !prevPoint.active) {
+        if (!prevPoint.active || (prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing)) {
           const [x, y] = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
           operation.points.currentPoint.x = x
           operation.points.currentPoint.y = y
@@ -152,6 +152,7 @@ class _DrawingManager {
           operation.points.currentPoint.pressure = smoothed
 
           operation.points.currentPoint.active = true
+
           operation.points.nextPoint()
 
           operation.readyToDraw = true
@@ -162,6 +163,7 @@ class _DrawingManager {
         this.waitUntilInteractionEnd = true
 
         operation.points.updateCurrentPoint({}, relativeMouseState.x, relativeMouseState.y)
+
         operation.points.currentPoint.active = true
 
         operation.points.nextPoint()
@@ -374,8 +376,6 @@ class _DrawingManager {
 
     this.execute(this.currentOperation)
 
-    gl.flush()
-
     // Unbind
     gl.bindTexture(gl.TEXTURE_2D, null)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
@@ -422,6 +422,8 @@ class _DrawingManager {
     this.renderToScreen()
 
     checkfps(time, this.endInteraction)
+
+    gl.flush()
 
     requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
   }
@@ -512,8 +514,6 @@ class _DrawingManager {
     })
 
     this.currentOperation = new Operation(this.currentTool)
-
-    gl.flush()
   }
 
   /**
@@ -538,8 +538,6 @@ class _DrawingManager {
     gl.blendEquation(gl.FUNC_ADD)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    gl.flush()
 
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
