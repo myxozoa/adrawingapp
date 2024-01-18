@@ -14,7 +14,7 @@ function _Tools() {
   const setCurrentTool = useToolStore.use.setCurrentTool()
 
   return (
-    <Container className="w-12">
+    <Container className="absolute top-1/2 z-10 w-12 -translate-y-1/2">
       <Panel className="flex w-full grow flex-col justify-between">
         <div>
           {Object.values(tools).map((tool) => {

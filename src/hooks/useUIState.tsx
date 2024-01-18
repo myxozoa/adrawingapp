@@ -62,7 +62,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
 
   useEffect(() => {
     const updatePointer = (event: Event) => {
-      if (!isPointerEvent(event)) return
+      if (!isPointerEvent(event) || (event.target as HTMLElement).nodeName !== "CANVAS") return
 
       const mouseButtons = parseMouseButtons(event)
 

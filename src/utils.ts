@@ -10,14 +10,9 @@ export function getRelativeMousePos(
 ): MouseState {
   const rect = canvas.getBoundingClientRect()
 
-  const style = window.getComputedStyle(canvas, null)
-
-  const paddingLeft = parseFloat(style.getPropertyValue("padding-left"))
-  const paddingTop = parseFloat(style.getPropertyValue("padding-top"))
-
   const relativePosition = {
-    x: (mouseState.x - (rect.left + paddingLeft)) * window.devicePixelRatio,
-    y: (mouseState.y - (rect.top + paddingTop)) * window.devicePixelRatio,
+    x: (mouseState.x - rect.left) * window.devicePixelRatio,
+    y: (mouseState.y - rect.top) * window.devicePixelRatio,
   }
 
   return {

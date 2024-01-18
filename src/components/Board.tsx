@@ -43,14 +43,7 @@ function _Board() {
 
   return (
     <>
-      <Container className="grow">
-        <Panel className="relative flex h-full w-full">
-          <div className="relative h-full w-full">
-            <DrawCanvas ref={boardRef} />
-          </div>
-        </Panel>
-      </Container>
-      {/* <button onClick={() => saveImage()}>SAVE</button> */}
+      <DrawCanvas ref={boardRef} />
     </>
   )
 }
