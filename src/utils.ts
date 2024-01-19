@@ -157,15 +157,9 @@ export function initializeCanvas(
   canvas.style.height = `${height.toString()}px`
   // }
 
-  // TODO: fix this type
-  const context = canvas.getContext(options.contextType as string, options)
+  const context = canvas.getContext(options.contextType, options)
 
   if (!context) throw new Error("Unable to create canvas context")
-
-  // const typeguard = (
-  //   contextType: Options["contextType"],
-  //   context: RenderingContext,
-  // ): context is CanvasRenderingContext2D => context && contextType === "2d"
 
   // if (typeguard(options.contextType, context)) context.scale(targetDpi, targetDpi)
 

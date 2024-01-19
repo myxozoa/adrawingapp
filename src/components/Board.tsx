@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react"
 
-import Panel from "@/components/Panel"
-import Container from "@/components/Container"
 import { DrawCanvas } from "@/components/DrawCanvas"
 
 import useUIState from "@/hooks/useUIState"
@@ -42,9 +40,9 @@ function _Board() {
   }, [currentTool])
 
   return (
-    <>
+    <div className="flex flex-1">
       <DrawCanvas ref={boardRef} />
-    </>
+    </div>
   )
 }
 
