@@ -1,7 +1,7 @@
 import * as glUtils from "@/glUtils.ts"
 
 import rtFragment from "@/shaders/TransparencyGrid/transparencyGrid.frag?raw"
-import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
+import rtVertex from "@/shaders/TransparencyGrid/transparencyGrid.vert?raw"
 
 import { DrawingManager } from "@/managers/drawingManager"
 
@@ -180,14 +180,14 @@ class _TransparencyGrid {
     const targetTextureWidth = gl.canvas.width
     const targetTextureHeight = gl.canvas.height
 
+    const { program, attributes } = this.setupRenderTextureProgramAndAttributes(gl)
+    this.renderProgramInfo.program = program
+
     this.renderBufferInfo.targetTexture = this.createRenderTexture(gl, targetTextureWidth, targetTextureHeight)
     gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
 
     this.renderBufferInfo.framebuffer = this.setupRenderTextureFramebuffer(gl, this.renderBufferInfo.targetTexture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderBufferInfo.framebuffer)
-
-    const { program, attributes } = this.setupRenderTextureProgramAndAttributes(gl)
-    this.renderProgramInfo.program = program
 
     this.renderProgramInfo.VBO = this.setupRenderTextureVBO(gl)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.renderProgramInfo.VBO)
