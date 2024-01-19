@@ -71,7 +71,14 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_flow", "u_random"]
+    const uniformNames = [
+      "u_matrix",
+      "u_point",
+      "u_resolution",
+      "u_brush_color",
+      "u_softness",
+      "u_flow" /*, "u_random"*/,
+    ]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -187,11 +194,14 @@ export class Brush extends Tool implements IBrush {
       // From Previous spline
       const prevControl2 = points.getPoint(-5)
 
+      const dist = getDistance(start, control)
+      const prevDist = getDistance(prevControl2, start)
+
       // Move control point to be in line with the previous splines c2 control point
       // and the previous curve/current curve's shared end/start point
       // This results in a smoothly joined curve
-      control.x = start.x + (start.x - prevControl2.x)
-      control.y = start.y + (start.y - prevControl2.y)
+      control.x = start.x + (start.x - prevControl2.x) * (dist / prevDist)
+      control.y = start.y + (start.y - prevControl2.y) * (dist / prevDist)
     }
 
     this.spline(gl, start, control, control2, end)

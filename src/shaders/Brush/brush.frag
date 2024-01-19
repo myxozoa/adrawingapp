@@ -9,7 +9,7 @@ uniform vec2 u_point;
 uniform vec3 u_brush_color;
 uniform float u_softness;
 uniform float u_flow;
-uniform float u_random;
+// uniform float u_random;
 
 // book of shaders
 float random(vec2 st)

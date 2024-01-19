@@ -65,7 +65,7 @@ class _TransparencyGrid {
 
     const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
 
-    const attributeNames = ["a_position", "a_tex_coord"]
+    const attributeNames = ["a_position"]
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
@@ -197,9 +197,6 @@ class _TransparencyGrid {
 
     const uvBuffer = this.setupRenderTextureUVBuffer(gl)
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
-
-    gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
-    gl.enableVertexAttribArray(attributes.a_tex_coord)
 
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
