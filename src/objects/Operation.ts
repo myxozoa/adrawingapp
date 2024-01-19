@@ -21,6 +21,11 @@ export class Operation implements IOperation {
     this.drawnPoints = 0
   }
 
+  public swapTool = (tool: AvailableTools) => {
+    this.tool = tool
+    this.points = new Points(tool.numberOfPoints)
+  }
+
   public addDrawnPoints = (number?: number) => {
     if (number) this.drawnPoints += number
     else this.drawnPoints++

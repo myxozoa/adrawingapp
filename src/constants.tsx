@@ -1,7 +1,7 @@
 import { BlendModes, Modifier, ToolName, ToolType } from "@/types"
 
 export const tool_list: Record<ToolName, ToolName> = {
-  PEN: "PEN",
+  // PEN: "PEN",
   BRUSH: "BRUSH",
   ERASER: "ERASER",
   FILL: "FILL",

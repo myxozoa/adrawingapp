@@ -3,21 +3,23 @@ import { Point } from "@/objects/Point"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec3 } from "gl-matrix"
 
+let rectCache: DOMRect | null = null
 // TODO: Type this function better
 export function getRelativeMousePos(
   canvas: HTMLCanvasElement,
   mouseState: MouseState | { x: number; y: number },
 ): MouseState {
-  const rect = canvas.getBoundingClientRect()
+  let rect = null
 
-  const style = window.getComputedStyle(canvas, null)
-
-  const paddingLeft = parseFloat(style.getPropertyValue("padding-left"))
-  const paddingTop = parseFloat(style.getPropertyValue("padding-top"))
+  if (rectCache) rect = rectCache
+  else {
+    rect = canvas.getBoundingClientRect()
+    rectCache = rect
+  }
 
   const relativePosition = {
-    x: (mouseState.x - (rect.left + paddingLeft)) * window.devicePixelRatio,
-    y: (mouseState.y - (rect.top + paddingTop)) * window.devicePixelRatio,
+    x: (mouseState.x - rect.left) * window.devicePixelRatio,
+    y: (mouseState.y - rect.top) * window.devicePixelRatio,
   }
 
   return {
@@ -155,15 +157,9 @@ export function initializeCanvas(
   canvas.style.height = `${height.toString()}px`
   // }
 
-  // TODO: fix this type
-  const context = canvas.getContext(options.contextType as string, options)
+  const context = canvas.getContext(options.contextType, options)
 
   if (!context) throw new Error("Unable to create canvas context")
-
-  // const typeguard = (
-  //   contextType: Options["contextType"],
-  //   context: RenderingContext,
-  // ): context is CanvasRenderingContext2D => context && contextType === "2d"
 
   // if (typeguard(options.contextType, context)) context.scale(targetDpi, targetDpi)
 

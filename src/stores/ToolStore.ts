@@ -8,11 +8,11 @@ import { tool_list } from "@/constants"
 import { Brush } from "@/objects/Brush"
 import { Eraser } from "@/objects/Eraser"
 import { Fill } from "@/objects/Fill"
-import { Pen } from "@/objects/Pen"
+// import { Pen } from "@/objects/Pen"
 import { Eyedropper } from "@/objects/Eyedropper"
 
 interface ToolMap {
-  PEN: Pen
+  // PEN: Pen
   BRUSH: Brush
   ERASER: Eraser
   FILL: Fill
@@ -23,11 +23,10 @@ type ToolDefaults = {
   [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never
 }
 
-// @ts-expect-error: will reenable when eraser works
 export const tools: ToolDefaults = {
-  PEN: new Pen(),
+  // PEN: new Pen(),
   BRUSH: new Brush(),
-  // ERASER: new Eraser(),
+  ERASER: new Eraser(),
   FILL: new Fill(),
   EYEDROPPER: new Eyedropper(),
 }
@@ -57,7 +56,7 @@ const useToolStoreBase = create<State & Action>((set) => ({
   setCurrentTool: (name: ToolName) =>
     set(() => {
       if (!name) {
-        return { currentTool: tools[tool_list.PEN] }
+        return { currentTool: tools[tool_list.BRUSH] }
       } else {
         return { currentTool: tools[name] }
       }

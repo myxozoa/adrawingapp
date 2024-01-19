@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react"
 
-import Panel from "@/components/Panel"
-import Container from "@/components/Container"
 import { DrawCanvas } from "@/components/DrawCanvas"
 
 import useUIState from "@/hooks/useUIState"
@@ -18,10 +16,6 @@ function _Board() {
   const { currentUIInteraction } = useUIState(throttle(DrawingManager.undo))
   const currentLayer = useLayerStore.use.currentLayer()
   const currentTool = useToolStore.use.currentTool()
-
-  useEffect(() => {
-    DrawingManager.swapTool(currentTool)
-  }, [currentTool])
 
   useEffect(() => {
     DrawingManager.currentLayer = currentLayer
@@ -41,17 +35,14 @@ function _Board() {
     DrawingManager.start(currentUIInteraction)
   }, [])
 
+  useEffect(() => {
+    DrawingManager.swapTool(currentTool)
+  }, [currentTool])
+
   return (
-    <>
-      <Container className="grow">
-        <Panel className="relative flex h-full w-full">
-          <div className="relative h-full w-full">
-            <DrawCanvas ref={boardRef} />
-          </div>
-        </Panel>
-      </Container>
-      {/* <button onClick={() => saveImage()}>SAVE</button> */}
-    </>
+    <div className="flex flex-1">
+      <DrawCanvas ref={boardRef} />
+    </div>
   )
 }
 

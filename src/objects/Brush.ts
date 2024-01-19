@@ -1,5 +1,5 @@
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, IPoint, IPoints } from "@/types"
+import { IBrush, IOperation, IPoint } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
@@ -22,7 +22,6 @@ const drawnPoints: Record<string, boolean> = {}
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: IPoint
-  interpolationPoint2: IPoint
   settings: {
     size: number
     flow: number
@@ -60,7 +59,6 @@ export class Brush extends Tool implements IBrush {
     this.glInfo.sizeVector = vec3.fromValues(1, 1, 1)
 
     this.interpolationPoint = new Point()
-    this.interpolationPoint2 = new Point()
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -73,7 +71,14 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_matrix", "u_point", "u_resolution", "u_brush_color", "u_softness", "u_flow", "u_random"]
+    const uniformNames = [
+      "u_matrix",
+      "u_point",
+      "u_resolution",
+      "u_brush_color",
+      "u_softness",
+      "u_flow" /*, "u_random"*/,
+    ]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -151,13 +156,13 @@ export class Brush extends Tool implements IBrush {
       }
     } else {
       if (
-        !drawnPoints[vec3.str(currentPoint.location)] &&
-        !drawnPoints[vec3.str(prevPoint.location)] &&
-        !drawnPoints[vec3.str(prevPrevPoint.location)] &&
         currentPoint.active &&
         prevPoint.active &&
         prevPrevPoint.active &&
-        prevPrevPrevPoint.active
+        prevPrevPrevPoint.active &&
+        !drawnPoints[vec3.str(currentPoint.location)] &&
+        !drawnPoints[vec3.str(prevPoint.location)] &&
+        !drawnPoints[vec3.str(prevPrevPoint.location)]
       ) {
         this.splineProcess(gl, operation)
 
@@ -189,11 +194,14 @@ export class Brush extends Tool implements IBrush {
       // From Previous spline
       const prevControl2 = points.getPoint(-5)
 
+      const dist = getDistance(start, control)
+      const prevDist = getDistance(prevControl2, start)
+
       // Move control point to be in line with the previous splines c2 control point
       // and the previous curve/current curve's shared end/start point
       // This results in a smoothly joined curve
-      control.x = start.x + (start.x - prevControl2.x)
-      control.y = start.y + (start.y - prevControl2.y)
+      control.x = start.x + (start.x - prevControl2.x) * (dist / prevDist)
+      control.y = start.y + (start.y - prevControl2.y) * (dist / prevDist)
     }
 
     this.spline(gl, start, control, control2, end)
