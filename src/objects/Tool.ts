@@ -19,12 +19,12 @@ type toolProperties = {
 }
 
 export const toolProperties: toolProperties = {
-  PEN: {
-    availableSettings: ["size"],
-    type: tool_types.STROKE,
-    continuous: true,
-    numberOfPoints: 8,
-  },
+  // PEN: {
+  //   availableSettings: ["size"],
+  //   type: tool_types.STROKE,
+  //   continuous: true,
+  //   numberOfPoints: 8,
+  // },
   BRUSH: {
     availableSettings: ["color", "size", "hardness", "flow", "spacing"],
     type: tool_types.STROKE,
@@ -52,10 +52,10 @@ export const toolProperties: toolProperties = {
 }
 
 export const toolDefaults: ToolDefaults = {
-  PEN: {
-    size: 10,
-    opacity: 100,
-  },
+  // PEN: {
+  //   size: 10,
+  //   opacity: 100,
+  // },
   BRUSH: {
     size: 10,
     opacity: 100,

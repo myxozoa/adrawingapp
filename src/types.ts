@@ -81,7 +81,7 @@ export interface UIInteraction {
 }
 
 export type ToolType = "STROKE" | "POINT"
-export type ToolName = "PEN" | "BRUSH" | "ERASER" | "FILL" | "EYEDROPPER"
+export type ToolName = /*"PEN" | */ "BRUSH" | "ERASER" | "FILL" | "EYEDROPPER"
 export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
 
 export interface ITool {
