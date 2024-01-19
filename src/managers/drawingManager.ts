@@ -438,7 +438,7 @@ class _DrawingManager {
   public swapTool = (tool: AvailableTools) => {
     this.currentTool = tool
     this.currentOperation.reset()
-    this.currentOperation.tool = tool
+    this.currentOperation.swapTool(tool)
   }
 
   /**

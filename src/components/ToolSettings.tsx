@@ -144,7 +144,7 @@ function _ToolSettings() {
   }
 
   return (
-    <Container className="absolute left-1/2 z-10 h-10 -translate-x-1/2">
+    <Container className="absolute left-1/2 z-10 h-10 -translate-x-1/2 shadow-md">
       <Panel className="flex h-full w-full items-center">
         <div className="flex flex-row">
           {/* <ToolPreview /> */}

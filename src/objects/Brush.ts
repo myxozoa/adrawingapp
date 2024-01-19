@@ -149,13 +149,13 @@ export class Brush extends Tool implements IBrush {
       }
     } else {
       if (
-        !drawnPoints[vec3.str(currentPoint.location)] &&
-        !drawnPoints[vec3.str(prevPoint.location)] &&
-        !drawnPoints[vec3.str(prevPrevPoint.location)] &&
         currentPoint.active &&
         prevPoint.active &&
         prevPrevPoint.active &&
-        prevPrevPrevPoint.active
+        prevPrevPrevPoint.active &&
+        !drawnPoints[vec3.str(currentPoint.location)] &&
+        !drawnPoints[vec3.str(prevPoint.location)] &&
+        !drawnPoints[vec3.str(prevPrevPoint.location)]
       ) {
         this.splineProcess(gl, operation)
 

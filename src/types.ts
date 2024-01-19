@@ -57,6 +57,7 @@ export interface IOperation {
 
   reset: () => void
   addDrawnPoints: (number?: number) => void
+  swapTool: (tool: AvailableTools) => void
 }
 export type Operations = IOperation[]
 

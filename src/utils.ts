@@ -3,12 +3,19 @@ import { Point } from "@/objects/Point"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec3 } from "gl-matrix"
 
+let rectCache: DOMRect | null = null
 // TODO: Type this function better
 export function getRelativeMousePos(
   canvas: HTMLCanvasElement,
   mouseState: MouseState | { x: number; y: number },
 ): MouseState {
-  const rect = canvas.getBoundingClientRect()
+  let rect = null
+
+  if (rectCache) rect = rectCache
+  else {
+    rect = canvas.getBoundingClientRect()
+    rectCache = rect
+  }
 
   const relativePosition = {
     x: (mouseState.x - rect.left) * window.devicePixelRatio,
