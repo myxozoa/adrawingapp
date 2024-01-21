@@ -1,4 +1,4 @@
-import { vec3 } from "gl-matrix"
+import { vec2 } from "gl-matrix"
 
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
@@ -27,7 +27,7 @@ export interface Location {
 export type Box = Size & Location
 
 export interface IPoint extends Location {
-  location: vec3
+  location: vec2
   pressure: number
   pointerType: PointerType
   active: boolean

@@ -11,7 +11,7 @@ import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
 import { getDistance, lerp, newPointAlongDirection, cubicBezier, pressureInterpolation } from "@/utils"
 
-import { mat4, vec3 } from "gl-matrix"
+import { mat3, vec2 } from "gl-matrix"
 
 import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
@@ -31,9 +31,9 @@ export class Brush extends Tool implements IBrush {
   }
 
   glInfo: {
-    matrix: mat4
-    scaleVector: vec3
-    sizeVector: vec3
+    matrix: mat3
+    scaleVector: vec2
+    sizeVector: vec2
   }
 
   programInfo: {
@@ -56,7 +56,7 @@ export class Brush extends Tool implements IBrush {
     this.programInfo = {} as unknown as typeof this.programInfo
     this.glInfo = {} as unknown as typeof this.glInfo
 
-    this.glInfo.sizeVector = vec3.fromValues(1, 1, 1)
+    this.glInfo.sizeVector = vec2.fromValues(1, 1)
 
     this.interpolationPoint = new Point()
   }
@@ -96,18 +96,24 @@ export class Brush extends Tool implements IBrush {
       // Triangle 1
       -1.0,
       1.0, // Top left
+      0,
       -1.0,
       -1.0, // Bottom left
+      0,
       1.0,
       1.0, // Top right
+      0,
 
       // Triangle 2
       -1.0,
       -1.0, // Bottom left
+      0,
       1.0,
       -1.0, // Bottom right
+      0,
       1.0,
       1.0, // Top right
+      0,
     ]
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
@@ -127,7 +133,7 @@ export class Brush extends Tool implements IBrush {
 
     gl.enableVertexAttribArray(attribute)
 
-    gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0)
+    gl.vertexAttribPointer(attribute, 3, gl.FLOAT, false, 0, 0)
 
     // Unbind
     gl.bindVertexArray(null)
@@ -143,15 +149,15 @@ export class Brush extends Tool implements IBrush {
     const currentPoint = operation.points.getPoint(-1)
 
     if (currentPoint.active && !prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
-      if (!drawnPoints[vec3.str(currentPoint.location)]) {
+      if (!drawnPoints[vec2.str(currentPoint.location)]) {
         this.stamp(gl, currentPoint)
-        drawnPoints[vec3.str(currentPoint.location)] = true
+        drawnPoints[vec2.str(currentPoint.location)] = true
         operation.addDrawnPoints(1)
       }
     } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
-      if (!drawnPoints[vec3.str(currentPoint.location)]) {
+      if (!drawnPoints[vec2.str(currentPoint.location)]) {
         this.line(gl, prevPoint, currentPoint)
-        drawnPoints[vec3.str(currentPoint.location)] = true
+        drawnPoints[vec2.str(currentPoint.location)] = true
         operation.addDrawnPoints(2)
       }
     } else {
@@ -160,16 +166,16 @@ export class Brush extends Tool implements IBrush {
         prevPoint.active &&
         prevPrevPoint.active &&
         prevPrevPrevPoint.active &&
-        !drawnPoints[vec3.str(currentPoint.location)] &&
-        !drawnPoints[vec3.str(prevPoint.location)] &&
-        !drawnPoints[vec3.str(prevPrevPoint.location)]
+        !drawnPoints[vec2.str(currentPoint.location)] &&
+        !drawnPoints[vec2.str(prevPoint.location)] &&
+        !drawnPoints[vec2.str(prevPrevPoint.location)]
       ) {
         this.splineProcess(gl, operation)
 
-        drawnPoints[vec3.str(currentPoint.location)] = true
-        drawnPoints[vec3.str(prevPoint.location)] = true
-        drawnPoints[vec3.str(prevPrevPoint.location)] = true
-        drawnPoints[vec3.str(prevPrevPrevPoint.location)] = true
+        drawnPoints[vec2.str(currentPoint.location)] = true
+        drawnPoints[vec2.str(prevPoint.location)] = true
+        drawnPoints[vec2.str(prevPrevPoint.location)] = true
+        drawnPoints[vec2.str(prevPrevPrevPoint.location)] = true
 
         operation.addDrawnPoints(4)
       }
@@ -264,8 +270,8 @@ export class Brush extends Tool implements IBrush {
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
     const prefs = usePreferenceStore.getState().prefs
 
-    mat4.ortho(this.glInfo.matrix, 0, gl.canvas.width, gl.canvas.height, 0, -1, 1)
-    mat4.translate(this.glInfo.matrix, this.glInfo.matrix, point.location)
+    mat3.identity(this.glInfo.matrix)
+    mat3.translate(this.glInfo.matrix, this.glInfo.matrix, point.location)
 
     this.glInfo.sizeVector[0] = this.settings.size
 
@@ -278,13 +284,12 @@ export class Brush extends Tool implements IBrush {
     }
 
     this.glInfo.sizeVector[1] = this.glInfo.sizeVector[0]
-    this.glInfo.sizeVector[2] = this.glInfo.sizeVector[0]
 
     // Internals
-    mat4.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
+    mat3.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
     gl.uniform2f(this.programInfo.uniforms.u_resolution, this.glInfo.sizeVector[0], this.glInfo.sizeVector[0])
 
-    gl.uniformMatrix4fv(this.programInfo.uniforms.u_matrix, true, this.glInfo.matrix)
+    gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, this.glInfo.matrix)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, gl.canvas.height - point.y)
 
     // gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
@@ -301,8 +306,8 @@ export class Brush extends Tool implements IBrush {
     this.programInfo.program = program
     this.programInfo.uniforms = uniforms
 
-    this.glInfo.matrix = mat4.create()
-    this.glInfo.scaleVector = vec3.fromValues(baseSize, baseSize, 1)
+    this.glInfo.matrix = mat3.create()
+    this.glInfo.scaleVector = vec2.fromValues(baseSize, baseSize)
 
     // VBO
 
