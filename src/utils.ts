@@ -1,7 +1,7 @@
 import { createProgram, createShader } from "@/glUtils"
 import { Point } from "@/objects/Point"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
-import { vec3 } from "gl-matrix"
+import { vec2 } from "gl-matrix"
 
 let rectCache: DOMRect | null = null
 // TODO: Type this function better
@@ -17,17 +17,20 @@ export function getRelativeMousePos(
     rectCache = rect
   }
 
+  // TODO: Add hiDPI setting on project creation
+  const dpr = 1
+
   const relativePosition = {
-    x: (mouseState.x - rect.left) * window.devicePixelRatio,
-    y: (mouseState.y - rect.top) * window.devicePixelRatio,
+    x: (mouseState.x - rect.left) * dpr,
+    y: (mouseState.y - rect.top) * dpr,
   }
 
   return {
     inbounds:
       relativePosition.x >= 0 &&
       relativePosition.y >= 0 &&
-      relativePosition.x <= rect.width * window.devicePixelRatio &&
-      relativePosition.y <= rect.height * window.devicePixelRatio,
+      relativePosition.x <= rect.width * dpr &&
+      relativePosition.y <= rect.height * dpr,
     ...mouseState,
     ...relativePosition,
   } as MouseState
@@ -65,7 +68,7 @@ export function getDistance(
   if (!point0 || !point1) return 0
 
   if (isPoint(point0) && isPoint(point1)) {
-    return vec3.distance(point0.location, point1.location)
+    return vec2.distance(point0.location, point1.location)
   }
 
   const a = point0.x - point1.x
@@ -148,7 +151,8 @@ export function initializeCanvas(
 
   const options = { ...defaultOptions, ..._options }
 
-  const targetDpi = window.devicePixelRatio
+  // TODO: Add hiDPI setting on project creation
+  const targetDpi = 1
 
   // if (!options.resize) {
   canvas.width = Math.floor(width * targetDpi)

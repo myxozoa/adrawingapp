@@ -1,8 +1,8 @@
 import { IPoint, PointerType } from "@/types"
-import { vec3 } from "gl-matrix"
+import { vec2 } from "gl-matrix"
 
 export class Point implements IPoint {
-  location: vec3
+  location: vec2
   pressure: number
   pointerType: PointerType
   active: boolean
@@ -10,7 +10,7 @@ export class Point implements IPoint {
   constructor(values?: Partial<IPoint>) {
     this.active = false
     this.pressure = 0.5
-    this.location = vec3.create()
+    this.location = vec2.create()
     this.pointerType = "mouse"
 
     if (values) {
@@ -20,7 +20,7 @@ export class Point implements IPoint {
   }
 
   set x(value: number) {
-    vec3.set(this.location, value, this.location[1], 0)
+    vec2.set(this.location, value, this.location[1])
   }
 
   get x() {
@@ -28,7 +28,7 @@ export class Point implements IPoint {
   }
 
   set y(value: number) {
-    vec3.set(this.location, this.location[0], value, 0)
+    vec2.set(this.location, this.location[0], value)
   }
 
   get y() {

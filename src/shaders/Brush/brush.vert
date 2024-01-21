@@ -1,9 +1,9 @@
 #version 300 es
 
-in vec4 a_position;
+in vec3 a_position;
 
-uniform mat4 u_matrix;
+uniform mat3 u_matrix;
 
 void main() {
-  gl_Position = a_position * u_matrix;
+  gl_Position = vec4((u_matrix * a_position), 1);
 }

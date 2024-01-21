@@ -32,7 +32,7 @@ import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 
 import * as glUtils from "@/glUtils.ts"
-import { vec3 } from "gl-matrix"
+import { vec2 } from "gl-matrix"
 
 import { TransparencyGrid } from "@/objects/TransparencyGrid"
 
@@ -141,7 +141,7 @@ class _DrawingManager {
           operation.points.currentPoint.pressure = relativeMouseState.pressure
           operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-          vec3.lerp(
+          vec2.lerp(
             operation.points.currentPoint.location,
             prevPoint.location,
             operation.points.currentPoint.location,
