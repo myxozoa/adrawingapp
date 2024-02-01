@@ -4,7 +4,7 @@ precision mediump float;
 
 out vec4 fragColor;
 
-uniform vec2 u_resolution;
+uniform float u_size;
 uniform vec2 u_point;
 uniform vec3 u_brush_color;
 uniform float u_softness;
@@ -12,10 +12,10 @@ uniform float u_flow;
 // uniform float u_random;
 
 // book of shaders
-float random(vec2 st)
-{
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-}
+// float random(vec2 st)
+// {
+//     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+// }
 
 float circle(vec2 point)
 {
@@ -24,8 +24,9 @@ float circle(vec2 point)
 
 void main()
 {
-    vec2 position = (gl_FragCoord.xy - u_point + (u_resolution * .5));
-    vec2 point = ((2. * position) - u_resolution.xy) * (1. / u_resolution.y);
+
+    vec2 position = (gl_FragCoord.xy - u_point + (u_size * .5));
+    vec2 point = ((position) - u_size) * (1. / u_size);
     float dist = circle(point);
 
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);
@@ -39,7 +40,7 @@ void main()
         discard;
 
     // Add a small amount of noise to the alpha channel
-    // vec2 st = (gl_FragCoord.xy * (1. / u_resolution.xy)) + u_random;
+    // vec2 st = (gl_FragCoord.xy * (1. / u_size.xy)) + u_random;
 
     // float randomNumber = random(st);
 
@@ -60,7 +61,7 @@ void main()
 
 // out vec4 fragColor;
 
-// uniform vec2 u_resolution;
+// uniform vec2 u_size;
 // uniform vec2 u_point;
 // uniform vec3 u_brush_color;
 // uniform float u_softness;
@@ -98,8 +99,8 @@ void main()
 
 // void main()
 // {
-//     vec2 position = (gl_FragCoord.xy - u_point + (u_resolution * .5));
-//     vec2 point = ((2. * position) - u_resolution.xy) * (1. / u_resolution.y);
+//     vec2 position = (gl_FragCoord.xy - u_point + (u_size * .5));
+//     vec2 point = ((2. * position) - u_size.xy) * (1. / u_size.y);
 //     float rot = 0.9;
 //     // float dist = box(point, vec2(0., 1.), vec2(cos(rot), sin(rot)));
 //     float dist = circle(point);
@@ -112,7 +113,7 @@ void main()
 //     vec4 color = mix(main_color, transparent, smoothstep(clamp(edge - delta, 0., 1.), 1. + delta, dist));
 
 //     // Add a small amount of noise to the alpha channel
-//     vec2 st = (gl_FragCoord.xy * (1. / u_resolution.xy)) + u_random;
+//     vec2 st = (gl_FragCoord.xy * (1. / u_size.xy)) + u_random;
 
 //     float randomNumber = random(st);
 

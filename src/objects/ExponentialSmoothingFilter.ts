@@ -15,7 +15,7 @@ export class ExponentialSmoothingFilter {
    * Arrays need to be aligned and the same length
    *
    * @remarks
-   * If the provided newValues array length does not match the stored smoothedValue array, smoothedValue will be overwritten
+   * If the provided newValues array length does not match the internal smoothedValue array, smoothedValue will be overwritten
    *
    * This may be changed in the future if I think of a less lazy way of doing this
    *

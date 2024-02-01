@@ -3,22 +3,23 @@ import { useEffect, useRef } from "react"
 import { key_modifers } from "../constants"
 
 import { MouseState, Modifier, ModifierState, UIInteraction, PointerType } from "../types"
+import { Camera } from "@/objects/Camera"
+
+import { getRelativeMousePos, toClipSpace } from "@/utils"
+import { vec2 } from "gl-matrix"
 
 const defaultInteraction: UIInteraction = {
   mouseState: {},
-  keyModifiers: [],
-  wheelDeltaY: 0,
+  modifierState: new Set(),
 } as unknown as UIInteraction
 
 function constructInteraction(
   mouseState: React.MutableRefObject<MouseState>,
   modifierState: React.MutableRefObject<ModifierState>,
-  wheelDeltaY: React.MutableRefObject<number>,
 ): UIInteraction {
   return {
     mouseState: mouseState.current,
     modifierState: modifierState.current,
-    wheelDeltaY: wheelDeltaY.current,
   }
 }
 
@@ -55,7 +56,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
   const mouseState = useRef({}) as React.MutableRefObject<MouseState>
   const modifierState = useRef(new Set()) as React.MutableRefObject<ModifierState>
   // const commandState = useRef({ ctrlZ: false })
-  const wheelDeltaY = useRef({}) as React.MutableRefObject<number>
+  // const wheelDeltaY = useRef({}) as React.MutableRefObject<number>
 
   const currentUIInteraction = useRef({ ...defaultInteraction }) as React.MutableRefObject<UIInteraction>
   // const prevInteraction = useRef({...defaultInteraction})
@@ -74,7 +75,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
         pointerType: event.pointerType as unknown as PointerType,
       }
 
-      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState)
     }
 
     const onPointerUp = (event: Event) => {
@@ -86,9 +87,32 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
     const updateWheelDeltaY = (event: Event) => {
       if (!isWheelEvent(event)) return
 
-      wheelDeltaY.current = event.deltaY
+      const relativeMouseState = getRelativeMousePos(
+        Camera.gl.canvas as HTMLCanvasElement,
+        currentUIInteraction.current.mouseState,
+      )
 
-      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
+      const before = vec2.create()
+
+      vec2.transformMat3(
+        before,
+        toClipSpace(relativeMouseState, Camera.gl.canvas as HTMLCanvasElement),
+        Camera.getInverseViewProjectionMatrix(),
+      )
+
+      const newZoom = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
+      Camera.zoom = Math.max(0.1, Math.min(4, newZoom))
+
+      const after = vec2.create()
+
+      vec2.transformMat3(
+        after,
+        toClipSpace(relativeMouseState, Camera.gl.canvas as HTMLCanvasElement),
+        Camera.getInverseViewProjectionMatrix(),
+      )
+
+      Camera.x += before[0] - after[0]
+      Camera.y += before[1] - after[1]
     }
 
     const updateKeyModifiers = (event: Event) => {
@@ -97,8 +121,9 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
       handleModifier(modifierState, event.ctrlKey, key_modifers.ctrl)
       handleModifier(modifierState, event.altKey, key_modifers.alt)
       handleModifier(modifierState, event.shiftKey, key_modifers.shift)
+      handleModifier(modifierState, event.code === "Space" && event.type === "keydown", key_modifers.space)
 
-      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelDeltaY)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState)
     }
 
     const updateKeys = (event: Event) => {
@@ -106,7 +131,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
 
       updateKeyModifiers(event)
 
-      if (event.keyCode == 90 && event.ctrlKey) callbackUndo()
+      if (event.code === "z" && event.ctrlKey) callbackUndo()
     }
 
     const mapping = {

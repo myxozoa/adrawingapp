@@ -36,6 +36,7 @@ export const key_modifers: Record<string, Modifier> = {
   ctrl: "ctrl",
   alt: "alt",
   shift: "shift",
+  space: "space",
 }
 
 export const toolPreviewSize = 25

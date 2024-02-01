@@ -48,8 +48,10 @@ class _TransparencyGrid {
       new Float32Array(width * height * 4).fill(1),
     )
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, DrawingManager.glInfo.supportedFilterType)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, DrawingManager.glInfo.supportedFilterType)
+    // supportedMagFilterType on both because we don't need mipmap support here and wont be generating them
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, DrawingManager.glInfo.supportedMagFilterType)
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, DrawingManager.glInfo.supportedMagFilterType)
+
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
@@ -209,8 +211,6 @@ class _TransparencyGrid {
    * Draw render buffer texture to the canvas draw buffer
    */
   public renderToScreen = (gl: WebGL2RenderingContext) => {
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
     // this.clear()
 
     gl.useProgram(this.renderProgramInfo.program)

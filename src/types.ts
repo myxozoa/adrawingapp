@@ -31,6 +31,7 @@ export interface IPoint extends Location {
   pressure: number
   pointerType: PointerType
   active: boolean
+  id: string
 
   reset: () => void
 }
@@ -71,13 +72,12 @@ export interface MouseState extends Location {
   inbounds?: boolean
 }
 
-export type Modifier = "ctrl" | "alt" | "shift"
+export type Modifier = "ctrl" | "alt" | "shift" | "space"
 export type ModifierState = Set<Modifier>
 
 export interface UIInteraction {
   mouseState: MouseState
   modifierState: ModifierState
-  wheelDeltaY: number
 }
 
 export type ToolType = "STROKE" | "POINT"

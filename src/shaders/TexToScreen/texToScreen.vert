@@ -2,10 +2,12 @@
 
 in vec2 a_position;
 in vec2 a_tex_coord;
-out vec2 texCoords;
+out vec2 v_tex_coord;
+
+uniform mat3 u_matrix;
 
 void main() {
-  texCoords = a_tex_coord;
+  v_tex_coord = a_tex_coord;
 
-  gl_Position = vec4(a_position, 0., 1.0);
+  gl_Position = vec4((u_matrix * vec3(a_position, 1.)).xy, 0., 1.);
 }
