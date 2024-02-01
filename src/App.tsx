@@ -13,10 +13,12 @@ function App() {
   }, [])
   return (
     <ThemeProvider storageKey="draw-ui-theme">
-      <TopMenu />
-      <ToolSettings />
-      <Tools />
-      <Board />
+      <div className="flex max-h-[100dvh] min-h-[100dvh] flex-col">
+        <TopMenu />
+        <ToolSettings />
+        <Tools />
+        <Board />
+      </div>
     </ThemeProvider>
   )
 }
