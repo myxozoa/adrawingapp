@@ -75,9 +75,14 @@ export interface MouseState extends Location {
 export type Modifier = "ctrl" | "alt" | "shift" | "space"
 export type ModifierState = Set<Modifier>
 
+export interface WheelState {
+  wheel: number
+}
+
 export interface UIInteraction {
   mouseState: MouseState
   modifierState: ModifierState
+  wheelState: WheelState
 }
 
 export type ToolType = "STROKE" | "POINT"

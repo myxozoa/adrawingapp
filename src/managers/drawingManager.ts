@@ -6,10 +6,11 @@ import { tools } from "@/stores/ToolStore.ts"
 import { tool_types } from "@/constants.tsx"
 
 import {
-  getRelativeMousePos,
+  getRelativeMousePosition,
   getDistance,
   performanceSafeguard,
   toClipSpace,
+  lerp,
   // debugPoints,
   // redistributePoints,
 } from "@/utils.ts"
@@ -45,9 +46,15 @@ const positionFilter = new ExponentialSmoothingFilter(0.5)
 
 let startMoving = false
 const startCamPosition = { x: 0, y: 0 }
-const startPos = vec2.create()
+const startPos = { x: 0, y: 0 }
 const startInvViewProjMat: mat3 = mat3.create()
 const tempPos = vec2.create()
+let zoomTarget = 0
+
+enum pixelQuality {
+  nearest,
+  trilinear,
+}
 
 class _DrawingManager {
   gl: WebGL2RenderingContext
@@ -58,6 +65,7 @@ class _DrawingManager {
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
   canvasRef: MutableRefObject<HTMLCanvasElement>
+  pixelQuality: pixelQuality
 
   glInfo: {
     supportedType: number
@@ -113,6 +121,8 @@ class _DrawingManager {
   }
 
   private use = (relativeMouseState: MouseState) => {
+    if (this.waitUntilInteractionEnd) return
+
     const operation = this.currentOperation
 
     const prefs = usePreferenceStore.getState().prefs
@@ -124,8 +134,6 @@ class _DrawingManager {
       operation.tool = this.currentTool
       operation.readyToDraw = true
     }
-
-    if (this.waitUntilInteractionEnd) return
 
     let spacing =
       "size" in operation.tool.settings && "spacing" in operation.tool.settings
@@ -382,6 +390,7 @@ class _DrawingManager {
 
   private executeCurrentOperation = () => {
     if (!this.currentOperation) return
+
     const gl = this.gl
 
     gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
@@ -426,12 +435,75 @@ class _DrawingManager {
     //   }
     // }
 
-    Camera.updateViewProjectionMatrix(gl)
+    // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
+    if (Camera.zoom > 3.5) {
+      if (this.pixelQuality !== pixelQuality.nearest) {
+        gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
 
-    const relativeMouseState = getRelativeMousePos(
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
+
+        gl.bindTexture(gl.TEXTURE_2D, null)
+
+        this.pixelQuality = pixelQuality.nearest
+      }
+    } else {
+      if (this.pixelQuality !== pixelQuality.trilinear) {
+        gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedMinFilterType)
+
+        gl.bindTexture(gl.TEXTURE_2D, null)
+
+        this.pixelQuality = pixelQuality.trilinear
+      }
+    }
+
+    if (currentUIInteraction.current.modifierState.has("space")) {
+      if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
+        ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
+      }
+    } else {
+      if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor == "grab") {
+        ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
+      }
+    }
+
+    const relativeMouseState = getRelativeMousePosition(
       gl.canvas as HTMLCanvasElement,
       currentUIInteraction.current.mouseState,
     )
+
+    const clipSpaceMousePosition = toClipSpace(relativeMouseState, this.gl.canvas as HTMLCanvasElement)
+
+    if (currentUIInteraction.current.wheelState.wheel) {
+      zoomTarget = Camera.zoom * Math.pow(2, currentUIInteraction.current.wheelState.wheel * -0.002)
+      currentUIInteraction.current.wheelState.wheel = 0
+    }
+    if (zoomTarget) {
+      const mousePositionBeforeZoom = Camera.getWorldMousePosition(relativeMouseState, gl)
+
+      const zoomLerpAmount = 0.1
+
+      Camera.zoom = Math.max(0.1, Math.min(4, lerp(Camera.zoom, zoomTarget, zoomLerpAmount)))
+
+      const mousePositionAfterZoom = Camera.getWorldMousePosition(relativeMouseState, gl)
+
+      const zoomXOffset = mousePositionBeforeZoom[0] - mousePositionAfterZoom[0]
+
+      const zoomYOffset = mousePositionBeforeZoom[1] - mousePositionAfterZoom[1]
+
+      // Zoom Repositioning
+      Camera.x += zoomXOffset
+      Camera.y += zoomYOffset
+
+      if (Math.abs(Camera.zoom - zoomTarget) < 0.001) {
+        zoomTarget = 0
+      }
+    }
+
+    Camera.updateViewProjectionMatrix(gl)
 
     if (
       currentUIInteraction.current.modifierState.has("space") &&
@@ -439,30 +511,23 @@ class _DrawingManager {
       relativeMouseState.inbounds
     ) {
       if (startMoving) {
-        vec2.transformMat3(
-          tempPos,
-          toClipSpace(relativeMouseState, gl.canvas as HTMLCanvasElement),
-          startInvViewProjMat,
-        )
+        vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
 
-        Camera.x = startCamPosition.x + (startPos[0] - tempPos[0])
-        Camera.y = startCamPosition.y + (startPos[1] - tempPos[1])
+        const panLerpAmount = 0.6
+        Camera.x = lerp(Camera.x, startCamPosition.x + (startPos.x - tempPos[0]), panLerpAmount)
+        Camera.y = lerp(Camera.y, startCamPosition.y + (startPos.y - tempPos[1]), panLerpAmount)
       } else {
         startMoving = true
 
         mat3.copy(startInvViewProjMat, Camera.getInverseViewProjectionMatrix())
 
-        vec2.transformMat3(
-          tempPos,
-          toClipSpace(relativeMouseState, gl.canvas as HTMLCanvasElement),
-          startInvViewProjMat,
-        )
+        vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
 
         startCamPosition.x = Camera.x
         startCamPosition.y = Camera.y
 
-        startPos[0] = tempPos[0]
-        startPos[1] = tempPos[1]
+        startPos.x = tempPos[0]
+        startPos.y = tempPos[1]
       }
     } else if (relativeMouseState.leftMouseDown && relativeMouseState.inbounds) {
       const worldPosition = Camera.getWorldMousePosition(relativeMouseState, gl)
@@ -481,15 +546,18 @@ class _DrawingManager {
 
         startCamPosition.x = 0
         startCamPosition.y = 0
-        vec2.set(startPos, 0, 0)
+        startPos.x = 0
+        startPos.y = 0
         mat3.identity(startInvViewProjMat)
       }
     }
 
+    // Draw Canvas
     gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     this.executeCurrentOperation()
 
+    // Draw Screen
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
     TransparencyGrid.renderToScreen(gl)
@@ -497,8 +565,6 @@ class _DrawingManager {
     this.renderToScreen()
 
     checkfps(time, this.endInteraction)
-
-    gl.flush()
 
     requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
   }
@@ -549,13 +615,6 @@ class _DrawingManager {
   public init = () => {
     const gl = this.gl
 
-    mat3.translate(this.renderTextureMatrix, this.renderTextureMatrix, vec2.fromValues(0, 0))
-
-    // const dimensions = vec2.fromValues(20, 20)
-    // vec2.divide(dimensions, dimensions, vec2.fromValues(50, 50))
-
-    // mat3.scale(this.renderTextureMatrix, this.renderTextureMatrix, dimensions)
-
     gl.depthFunc(gl.LEQUAL)
     gl.disable(gl.DEPTH_TEST)
     gl.depthMask(false)
@@ -563,7 +622,8 @@ class _DrawingManager {
     // WebGL2 Float textures are supported by default
     const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
 
-    // Firefox will give an implicit enable warning if EXT_float_blend is enabled before EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it
+    // Firefox will give an implicit enable warning if EXT_float_blend is enabled before
+    // EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it.
     // this is not supported on iOS
     gl.getExtension("EXT_float_blend")
     gl.getExtension("OES_texture_float")
@@ -588,15 +648,33 @@ class _DrawingManager {
         ? gl.RGBA16F
         : gl.RGBA
 
-    this.glInfo.supportedMagFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
     this.glInfo.supportedMinFilterType =
       floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST
+    this.glInfo.supportedMagFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
     gl.hint(gl.GENERATE_MIPMAP_HINT, gl.NICEST)
+
+    mat3.translate(this.renderTextureMatrix, this.renderTextureMatrix, vec2.fromValues(0, 0))
 
     this.initRenderTexture()
     TransparencyGrid.init(gl)
 
+    Camera.init(gl)
+
+    // Initial Canvas Zoom and Positioning
+    const margin = 50
+
+    const prefs = usePreferenceStore.getState().prefs
+
+    const widthZoomTarget = gl.canvas.width - margin * 2
+    const heightZoomTarget = gl.canvas.height - margin * 2
+
+    Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
+
+    Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
+    Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
+
+    // Initialize tools
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
     })

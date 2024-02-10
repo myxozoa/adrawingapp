@@ -74,7 +74,7 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_matrix", "u_point", "u_size", "u_brush_color", "u_softness", "u_flow" /*, "u_random"*/]
+    const uniformNames = ["u_matrix", "u_point", "u_size", "u_brush_color", "u_softness", "u_flow", "u_random"]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -209,7 +209,7 @@ export class Brush extends Tool implements IBrush {
    * Interpret the points as a bezier curve and stamp along it
    */
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
-    const stampSpacing = this.settings.size * (this.settings.spacing / 100)
+    const stampSpacing = Math.max(0.5, this.settings.size * (this.settings.spacing / 100))
 
     // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
     const chord = getDistance(start, end)
@@ -222,6 +222,7 @@ export class Brush extends Tool implements IBrush {
     for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
       const x = cubicBezier(start.x, control.x, control2.x, end.x, t)
       const y = cubicBezier(start.y, control.y, control2.y, end.y, t)
+
       const pressure = pressureInterpolation(start, end, j / steps)
 
       this.interpolationPoint.x = x
@@ -238,7 +239,7 @@ export class Brush extends Tool implements IBrush {
    */
   private line = (gl: WebGL2RenderingContext, start: IPoint, end: IPoint) => {
     const distance = getDistance(start, end)
-    const stampSpacing = this.settings.size * (this.settings.spacing / 100)
+    const stampSpacing = Math.max(0.5, this.settings.size * (this.settings.spacing / 100))
 
     const steps = distance / stampSpacing
 
@@ -264,25 +265,27 @@ export class Brush extends Tool implements IBrush {
 
     mat3.fromTranslation(this.glInfo.matrix, point.location)
 
-    this.glInfo.sizeVector[0] = this.settings.size
+    let size = this.settings.size
 
     if (point.pointerType === "pen") {
       const pressureSensitivity = prefs.pressureSensitivity * 10
 
-      this.glInfo.sizeVector[0] =
-        this.glInfo.sizeVector[0] -
-        (this.glInfo.sizeVector[0] * pressureSensitivity * (1 - point.pressure)) / (1 + pressureSensitivity)
+      size = size - (size * pressureSensitivity * (1 - point.pressure)) / (1 + pressureSensitivity)
     }
+
+    // Give enough pixels around quad to account for decent smooth edges
+    this.glInfo.sizeVector[0] = size + 9
+    this.glInfo.sizeVector[1] = size + 9
 
     // Internals
     mat3.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
+    gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix || null, false, this.glInfo.matrix)
     // gl.uniform2f(this.programInfo.uniforms.u_size, this.glInfo.sizeVector[0], this.glInfo.sizeVector[0])
-    gl.uniform1f(this.programInfo.uniforms.u_size, this.glInfo.sizeVector[0])
 
-    gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, this.glInfo.matrix)
-    gl.uniform2f(this.programInfo.uniforms.u_point, point.x, prefs.canvasHeight - point.y)
+    gl.uniform2f(this.programInfo.uniforms.u_point || null, point.x, prefs.canvasHeight - point.y)
+    gl.uniform1f(this.programInfo.uniforms.u_size || null, size)
 
-    // gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
+    gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }

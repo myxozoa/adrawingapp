@@ -4,7 +4,7 @@ import { vec2 } from "gl-matrix"
 
 let rectCache: DOMRect | null = null
 // TODO: Type this function better
-export function getRelativeMousePos(
+export function getRelativeMousePosition(
   canvas: HTMLCanvasElement,
   mouseState: MouseState | { x: number; y: number },
 ): MouseState {
@@ -144,7 +144,7 @@ export function initializeCanvas(
     alpha: true,
     premultipliedAlpha: false,
     colorSpace: "srgb",
-    preserveDrawingBuffer: true,
+    preserveDrawingBuffer: false,
     antialias: false,
   }
 
@@ -425,14 +425,13 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
  * @returns number curve(t)
  */
 export function cubicBezier(start: number, control1: number, control2: number, end: number, t: number): number {
-  // B(t) = (1−t)^3 p1 + 3(1−t)^2 t p2 + 3(1−t) t^2 p3 + t^3 p4
+  const inv = 1 - t
+  const c0 = Math.pow(inv, 3) * start
+  const c1 = 3 * Math.pow(inv, 2) * t * control1
+  const c2 = 3 * inv * Math.pow(t, 2) * control2
+  const c3 = Math.pow(t, 3) * end
 
-  return (
-    Math.pow(1 - t, 3) * start +
-    3 * Math.pow(1 - t, 2) * t * control1 +
-    3 * (1 - t) * Math.pow(t, 2) * control2 +
-    Math.pow(t, 3) * end
-  )
+  return c0 + c1 + c2 + c3
 }
 
 export function pressureInterpolation(start: IPoint, end: IPoint, j: number): number {
@@ -459,6 +458,7 @@ export function redistributePoints(points: IPoints) {
       // halfway along cubicBezier curve defined by the 4 current points
       const x = cubicBezier(start.x, control.x, control2.x, end.x, 0.5)
       const y = cubicBezier(start.y, control.y, control2.y, end.y, 0.5)
+
       const pressure = pressureInterpolation(start, end, 0.5)
 
       start.x = x

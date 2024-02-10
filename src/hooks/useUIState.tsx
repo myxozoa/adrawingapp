@@ -2,24 +2,33 @@ import { useEffect, useRef } from "react"
 
 import { key_modifers } from "../constants"
 
-import { MouseState, Modifier, ModifierState, UIInteraction, PointerType } from "../types"
-import { Camera } from "@/objects/Camera"
-
-import { getRelativeMousePos, toClipSpace } from "@/utils"
-import { vec2 } from "gl-matrix"
+import { MouseState, Modifier, ModifierState, WheelState, UIInteraction, PointerType } from "../types"
 
 const defaultInteraction: UIInteraction = {
-  mouseState: {},
+  mouseState: {
+    x: 0,
+    y: 0,
+    leftMouseDown: false,
+    rightMouseDown: false,
+    middleMouseDown: false,
+    pressure: 0,
+    pointerType: "pen",
+  },
   modifierState: new Set(),
-} as unknown as UIInteraction
+  wheelState: {
+    wheel: 0,
+  },
+}
 
 function constructInteraction(
   mouseState: React.MutableRefObject<MouseState>,
   modifierState: React.MutableRefObject<ModifierState>,
+  wheelState: React.MutableRefObject<WheelState>,
 ): UIInteraction {
   return {
     mouseState: mouseState.current,
     modifierState: modifierState.current,
+    wheelState: wheelState.current,
   }
 }
 
@@ -32,10 +41,10 @@ function handleModifier(modifierState: React.MutableRefObject<ModifierState>, ad
 }
 
 function parseMouseButtons(event: PointerEvent) {
-  const flags = event.buttons !== undefined ? event.buttons : event.which
-  const leftMouseDown = flags === 1
-  const rightMouseDown = flags === 2
-  const middleMouseDown = flags === 4
+  const buttons = event.buttons !== undefined ? event.buttons : event.which
+  const leftMouseDown = (buttons & 0b001) > 0
+  const rightMouseDown = (buttons & 0b010) > 0
+  const middleMouseDown = (buttons & 0b100) > 0
 
   return { leftMouseDown, middleMouseDown, rightMouseDown }
 }
@@ -53,10 +62,10 @@ function isPointerEvent(event: Event): event is PointerEvent {
 }
 
 function useUIState(callbackUndo: (...args: any[]) => void) {
-  const mouseState = useRef({}) as React.MutableRefObject<MouseState>
-  const modifierState = useRef(new Set()) as React.MutableRefObject<ModifierState>
+  const mouseState = useRef(defaultInteraction.mouseState)
+  const wheelState = useRef(defaultInteraction.wheelState)
+  const modifierState = useRef(defaultInteraction.modifierState)
   // const commandState = useRef({ ctrlZ: false })
-  // const wheelDeltaY = useRef({}) as React.MutableRefObject<number>
 
   const currentUIInteraction = useRef({ ...defaultInteraction }) as React.MutableRefObject<UIInteraction>
   // const prevInteraction = useRef({...defaultInteraction})
@@ -75,7 +84,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
         pointerType: event.pointerType as unknown as PointerType,
       }
 
-      currentUIInteraction.current = constructInteraction(mouseState, modifierState)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelState)
     }
 
     const onPointerUp = (event: Event) => {
@@ -87,32 +96,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
     const updateWheelDeltaY = (event: Event) => {
       if (!isWheelEvent(event)) return
 
-      const relativeMouseState = getRelativeMousePos(
-        Camera.gl.canvas as HTMLCanvasElement,
-        currentUIInteraction.current.mouseState,
-      )
-
-      const before = vec2.create()
-
-      vec2.transformMat3(
-        before,
-        toClipSpace(relativeMouseState, Camera.gl.canvas as HTMLCanvasElement),
-        Camera.getInverseViewProjectionMatrix(),
-      )
-
-      const newZoom = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
-      Camera.zoom = Math.max(0.1, Math.min(4, newZoom))
-
-      const after = vec2.create()
-
-      vec2.transformMat3(
-        after,
-        toClipSpace(relativeMouseState, Camera.gl.canvas as HTMLCanvasElement),
-        Camera.getInverseViewProjectionMatrix(),
-      )
-
-      Camera.x += before[0] - after[0]
-      Camera.y += before[1] - after[1]
+      wheelState.current.wheel = event.deltaY
     }
 
     const updateKeyModifiers = (event: Event) => {
@@ -123,7 +107,7 @@ function useUIState(callbackUndo: (...args: any[]) => void) {
       handleModifier(modifierState, event.shiftKey, key_modifers.shift)
       handleModifier(modifierState, event.code === "Space" && event.type === "keydown", key_modifers.space)
 
-      currentUIInteraction.current = constructInteraction(mouseState, modifierState)
+      currentUIInteraction.current = constructInteraction(mouseState, modifierState, wheelState)
     }
 
     const updateKeys = (event: Event) => {

@@ -1,7 +1,7 @@
 import { useReducer, useRef, useEffect, MutableRefObject } from "react"
 
 import {
-  getRelativeMousePos,
+  getRelativeMousePosition,
   initializeCanvas,
   degreesToRadians,
   radiansToDegrees,
@@ -254,7 +254,7 @@ function ColorPicker({
   }, [hsvState])
 
   const selectHue = (event: PointerEvent | React.PointerEvent<HTMLCanvasElement>) => {
-    const { x: relativeX, y: relativeY } = getRelativeMousePos(indicatorRef.current, {
+    const { x: relativeX, y: relativeY } = getRelativeMousePosition(indicatorRef.current, {
       x: event.clientX,
       y: event.clientY,
     })
@@ -272,7 +272,7 @@ function ColorPicker({
   }
 
   const selectSaturationValue = (event: PointerEvent | React.PointerEvent<HTMLCanvasElement>) => {
-    const { x: relativeX, y: relativeY } = getRelativeMousePos(indicatorRef.current, {
+    const { x: relativeX, y: relativeY } = getRelativeMousePosition(indicatorRef.current, {
       x: event.clientX,
       y: event.clientY,
     })
@@ -303,7 +303,7 @@ function ColorPicker({
 
     const { circleTrackSelectorInnerWidth, radius } = getDimensions(indicatorContext, hsvState)
 
-    const { x, y } = getRelativeMousePos(indicatorRef.current, { x: event.clientX, y: event.clientY })
+    const { x, y } = getRelativeMousePosition(indicatorRef.current, { x: event.clientX, y: event.clientY })
 
     // Setting Saturation/Value if click landed on inside circle for more forgiving target
     if (getDistance({ x, y }, { x: radius, y: radius }) <= circleTrackSelectorInnerWidth) {
