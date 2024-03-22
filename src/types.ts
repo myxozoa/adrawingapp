@@ -1,4 +1,4 @@
-import { vec2 } from "gl-matrix"
+import { vec2, mat3 } from "gl-matrix"
 
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
@@ -189,4 +189,29 @@ export interface ILayer {
   // addElementToUndoSnapshotQueue(image: ImageData): void
   // replaceDrawingData(image: ImageData): void
   // fill(color?: ColorValueString): void
+}
+
+// Don't know if this can be done any other way but I cannot stand it
+// Guess I'll just add everything that might be needed in here
+export interface PossibleData {
+  matrix?: mat3
+}
+
+export interface ProgramInfo {
+  program: WebGLProgram
+  uniforms: Record<string, WebGLUniformLocation>
+  attributes: Record<string, GLint>
+  VBO: WebGLBuffer
+  VAO: WebGLBuffer
+}
+
+export interface BufferInfo {
+  texture: Nullable<WebGLTexture>
+  framebuffer: Nullable<WebGLFramebuffer>
+}
+
+export interface RenderInfo {
+  programInfo: ProgramInfo
+  bufferInfo: BufferInfo
+  data?: PossibleData
 }

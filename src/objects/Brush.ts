@@ -279,11 +279,15 @@ export class Brush extends Tool implements IBrush {
 
     // Internals
     mat3.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
-    gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix || null, false, this.glInfo.matrix)
-    // gl.uniform2f(this.programInfo.uniforms.u_size, this.glInfo.sizeVector[0], this.glInfo.sizeVector[0])
 
-    gl.uniform2f(this.programInfo.uniforms.u_point || null, point.x, prefs.canvasHeight - point.y)
-    gl.uniform1f(this.programInfo.uniforms.u_size || null, size)
+    // if (this.programInfo.uniforms.u_matrix)
+    gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, this.glInfo.matrix)
+
+    // if (this.programInfo.uniforms.u_point)
+    gl.uniform2f(this.programInfo.uniforms.u_point, point.x, prefs.canvasHeight - point.y)
+
+    // if (this.programInfo.uniforms.u_size)
+    gl.uniform1f(this.programInfo.uniforms.u_size, size)
 
     gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
 

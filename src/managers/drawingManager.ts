@@ -5,15 +5,7 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import {
-  getRelativeMousePosition,
-  getDistance,
-  performanceSafeguard,
-  toClipSpace,
-  lerp,
-  // debugPoints,
-  // redistributePoints,
-} from "@/utils.ts"
+import { getRelativeMousePosition, getDistance, performanceSafeguard, toClipSpace, lerp, debugPoints } from "@/utils.ts"
 
 import {
   ILayer,
@@ -25,19 +17,22 @@ import {
   IEraser,
   IEyedropper,
   IFill,
+  RenderInfo,
 } from "@/types.ts"
 import { Operation } from "@/objects/Operation.ts"
 
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 
-import rtFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
-import rtVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
-
-import * as glUtils from "@/glUtils.ts"
 import { mat3, vec2 } from "gl-matrix"
 
-import { TransparencyGrid } from "@/objects/TransparencyGrid"
 import { Camera } from "@/objects/Camera"
+import { ResourceManager } from "@/managers/resourceManager"
+import { createCanvasRenderTexture } from "@/resources/canvasRenderTexture"
+
+import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
+import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
+import { createTransparencyGrid } from "@/resources/transparencyGrid"
+import { createBackground } from "@/resources/background"
 
 const checkfps = performanceSafeguard()
 
@@ -66,6 +61,7 @@ class _DrawingManager {
   needRedraw: boolean
   canvasRef: MutableRefObject<HTMLCanvasElement>
   pixelQuality: pixelQuality
+  initialized: boolean
 
   glInfo: {
     supportedType: number
@@ -74,20 +70,7 @@ class _DrawingManager {
     supportedMinFilterType: number
   }
 
-  renderProgramInfo: {
-    program: WebGLProgram
-    uniforms: Record<string, WebGLUniformLocation>
-    attributes: Record<string, GLint>
-    VBO: WebGLBuffer
-    VAO: WebGLBuffer
-  }
-
-  renderTextureMatrix: mat3
-
-  renderBufferInfo: {
-    targetTexture: WebGLTexture
-    framebuffer: WebGLFramebuffer
-  }
+  currentState: RenderInfo & { framebuffer: WebGLFramebuffer }
 
   constructor() {
     this.gl = {} as WebGL2RenderingContext
@@ -98,10 +81,6 @@ class _DrawingManager {
     this.needRedraw = false
 
     this.glInfo = {} as unknown as typeof this.glInfo
-    this.renderBufferInfo = {} as unknown as typeof this.renderBufferInfo
-    this.renderProgramInfo = {} as unknown as typeof this.renderProgramInfo
-
-    this.renderTextureMatrix = mat3.create()
   }
 
   // TODO: This framework may not be generic enough to describe many non-drawing tools
@@ -118,6 +97,12 @@ class _DrawingManager {
 
     if (useIfPossible(operation.tool)) operation.tool.use(this.gl, operation)
     if (drawIfPossible(operation.tool)) operation.tool.draw(this.gl, operation)
+
+    // const format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
+    // const type = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+    // const data = new Float32Array(4)
+    // this.gl.readPixels(0, 0, 1, 1, format, type, data)
+    // console.log(data)
   }
 
   private use = (relativeMouseState: MouseState) => {
@@ -157,6 +142,7 @@ class _DrawingManager {
       case tool_types.STROKE:
         if (!prevPoint.active || (prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing)) {
           const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
+
           operation.points.currentPoint.x = filteredPositions[0]
           operation.points.currentPoint.y = filteredPositions[1]
           operation.points.currentPoint.pressure = relativeMouseState.pressure
@@ -194,207 +180,13 @@ class _DrawingManager {
     }
   }
 
-  /**
-   * @throws If unable to create texture or lacks support for some extensions
-   */
-  private createRenderTexture = (gl: WebGL2RenderingContext, width: number, height: number) => {
-    const texture = gl.createTexture()
-
-    if (!texture) {
-      throw new Error("Error creating render texture")
-    }
-
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      this.glInfo.supportedImageFormat,
-      width,
-      height,
-      0,
-      gl.RGBA,
-      this.glInfo.supportedType,
-      new Float32Array(width * height * 4).fill(1),
-    )
-    gl.generateMipmap(gl.TEXTURE_2D)
-
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedMinFilterType)
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
-
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-    // Unbind
-    gl.bindTexture(gl.TEXTURE_2D, null)
-
-    return texture
-  }
-
-  private setupRenderTextureProgramAttributesUniforms = (gl: WebGL2RenderingContext) => {
-    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, rtFragment)
-    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, rtVertex)
-
-    const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
-
-    const attributeNames = ["a_position", "a_tex_coord"]
-
-    const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
-
-    const uniformNames = ["u_matrix"]
-
-    const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
-
-    return { attributes, program, uniforms }
-  }
-
-  /**
-   * @throws If unable to create vertex buffer
-   */
-  private setupRenderTextureVBO = (gl: WebGL2RenderingContext) => {
-    const prefs = usePreferenceStore.getState().prefs
-
-    const buffer = gl.createBuffer()
-
-    if (!buffer) throw new Error("Unable to create WebGL vertex buffer")
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-
-    const positions = [
-      // Triangle 1
-      0.0,
-      0.0, // Top left
-      0.0,
-      prefs.canvasHeight, // Bottom left
-      prefs.canvasWidth,
-      0.0, // Top right
-
-      // Triangle 2
-      0.0,
-      prefs.canvasHeight, // Bottom left
-      prefs.canvasWidth,
-      prefs.canvasHeight, // Bottom right
-      prefs.canvasWidth,
-      0.0, // Top right
-    ]
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-
-    // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-
-    return buffer
-  }
-
-  private setupRenderTextureUVBuffer = (gl: WebGL2RenderingContext) => {
-    const buffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-
-    const textureCoordinates = [
-      // Triangle 1
-      0.0,
-      1.0, // Top left
-      0.0,
-      0.0, // Bottom left
-      1.0,
-      1.0, // Top right
-
-      // Triangle 2
-      0.0,
-      0.0, // Bottom left
-      1.0,
-      0.0, // Bottom right
-      1.0,
-      1.0, // Top right
-    ]
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW)
-
-    // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-
-    return buffer
-  }
-
-  /**
-   * @throws If unable to create vertex array
-   */
-  private setupRenderTextureVAO = (gl: WebGL2RenderingContext, attribute: number) => {
-    const vao = gl.createVertexArray()
-
-    if (!vao) throw new Error("Unable to create WebGL vertex array")
-
-    gl.bindVertexArray(vao)
-
-    gl.enableVertexAttribArray(attribute)
-
-    gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0)
-
-    // Unbind
-    gl.bindVertexArray(null)
-
-    return vao
-  }
-
-  /**
-   * @throws If unable to create framebuffer
-   */
-  private setupRenderTextureFramebuffer = (gl: WebGL2RenderingContext, texture: WebGLTexture) => {
-    const fb = gl.createFramebuffer()
-
-    if (!fb) throw new Error("Unable to create WebGL framebuffer")
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
-
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
-
-    // Unbind
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-
-    return fb
-  }
-
-  private initRenderTexture = () => {
-    const prefs = usePreferenceStore.getState().prefs
-
-    const gl = this.gl
-
-    this.renderBufferInfo.targetTexture = this.createRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight)
-    gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
-
-    this.renderBufferInfo.framebuffer = this.setupRenderTextureFramebuffer(gl, this.renderBufferInfo.targetTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderBufferInfo.framebuffer)
-
-    const { program, attributes, uniforms } = this.setupRenderTextureProgramAttributesUniforms(gl)
-    this.renderProgramInfo.program = program
-    this.renderProgramInfo.uniforms = uniforms
-
-    this.renderProgramInfo.VBO = this.setupRenderTextureVBO(gl)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.renderProgramInfo.VBO)
-
-    this.renderProgramInfo.VAO = this.setupRenderTextureVAO(gl, attributes.a_position)
-    gl.bindVertexArray(this.renderProgramInfo.VAO)
-
-    const uvBuffer = this.setupRenderTextureUVBuffer(gl)
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
-
-    gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
-    gl.enableVertexAttribArray(attributes.a_tex_coord)
-
-    // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindVertexArray(null)
-  }
-
   private executeCurrentOperation = () => {
     if (!this.currentOperation) return
 
     const gl = this.gl
 
-    gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderBufferInfo.framebuffer)
+    gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("CanvasRenderTexture").bufferInfo.framebuffer)
 
     const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
       return "switchTo" in tool
@@ -415,15 +207,12 @@ class _DrawingManager {
     const gl = this.gl
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    // gl.viewport(0, 0, canvasWidth, canvasHeight)
 
     // resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
 
     // if (this.currentLayer.noDraw) return
 
-    // this.clear()
     // if (this.needRedraw) {
-
     //   this.needRedraw = false
 
     //   if (this.currentLayer.undoSnapshotQueue.length > 0) {
@@ -438,7 +227,7 @@ class _DrawingManager {
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 3.5) {
       if (this.pixelQuality !== pixelQuality.nearest) {
-        gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
@@ -449,7 +238,7 @@ class _DrawingManager {
       }
     } else {
       if (this.pixelQuality !== pixelQuality.trilinear) {
-        gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedMinFilterType)
@@ -552,6 +341,13 @@ class _DrawingManager {
       }
     }
 
+    // debugPoints(
+    //   this.gl,
+    //   ResourceManager.get("CanvasRenderTexture").bufferInfo,
+    //   this.currentOperation.points,
+    //   "1., 0., 1., 1.",
+    // )
+
     // Draw Canvas
     gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
@@ -560,13 +356,33 @@ class _DrawingManager {
     // Draw Screen
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    TransparencyGrid.renderToScreen(gl)
+    this.clear()
 
-    this.renderToScreen()
+    this.renderToScreen(ResourceManager.get("Background"), false)
+
+    const transparencyGrid = ResourceManager.get("TransparencyGrid")
+
+    this.renderToScreen(transparencyGrid, false, () => {
+      gl.uniformMatrix3fv(
+        transparencyGrid.programInfo.uniforms.u_matrix,
+        false,
+        Camera.project(transparencyGrid.data!.matrix!),
+      )
+    })
+
+    const canvasRenderTexture = ResourceManager.get("CanvasRenderTexture")
+
+    this.renderToScreen(canvasRenderTexture, true, () => {
+      gl.uniformMatrix3fv(
+        canvasRenderTexture.programInfo.uniforms.u_matrix,
+        false,
+        Camera.project(canvasRenderTexture.data!.matrix!),
+      )
+    })
 
     checkfps(time, this.endInteraction)
 
-    requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
+    // requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
   }
 
   /**
@@ -592,6 +408,14 @@ class _DrawingManager {
   public endInteraction = (save = true) => {
     if (this.currentLayer.noDraw) return
 
+    // // TODO: Debug mode menu option so these don't need to be commented on and off
+    // debugPoints(
+    //   this.gl,
+    //   ResourceManager.get("CanvasRenderTexture").bufferInfo,
+    //   this.currentOperation.points,
+    //   "1., 0., 1., 1.",
+    // )
+
     this.waitUntilInteractionEnd = false
     this.needRedraw = true
     positionFilter.reset()
@@ -601,10 +425,6 @@ class _DrawingManager {
     if (save) {
       // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
     }
-
-    // TODO: Debug mode menu option so these don't need to be commented on and off
-    // debugPoints(this.gl, this.renderBufferInfo, this.currentOperation.points, "1., 0., 1., 1.")
-    // debugPoints(this.gl, this.renderBufferInfo, redistributePoints(this.currentOperation!.points), "1., 1., 0., 1.")
   }
 
   /**
@@ -613,6 +433,9 @@ class _DrawingManager {
    * This should be called before starting the render loop
    */
   public init = () => {
+    if (this.initialized) return
+
+    const prefs = usePreferenceStore.getState().prefs
     const gl = this.gl
 
     gl.depthFunc(gl.LEQUAL)
@@ -626,7 +449,7 @@ class _DrawingManager {
     // EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it.
     // this is not supported on iOS
     gl.getExtension("EXT_float_blend")
-    gl.getExtension("OES_texture_float")
+    gl.getExtension("OES_texture_float") // Only needed for 32bit?
     const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
     const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
     const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
@@ -636,41 +459,53 @@ class _DrawingManager {
     if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))
       throw new Error("This device does not support float buffers")
 
-    this.glInfo.supportedType = floatBufferExt
-      ? gl.FLOAT
-      : halfFloatTextureExt && halfFloatColorBufferExt
-        ? halfFloatTextureExt.HALF_FLOAT_OES
-        : gl.UNSIGNED_BYTE
+    // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
+    // Not sure what devices will need these then
 
-    this.glInfo.supportedImageFormat = floatBufferExt
-      ? gl.RGBA32F
-      : halfFloatTextureExt && halfFloatColorBufferExt
-        ? gl.RGBA16F
-        : gl.RGBA
+    // this.glInfo.supportedType = floatBufferExt
+    //   ? gl.FLOAT
+    //   : halfFloatTextureExt && halfFloatColorBufferExt
+    //     ? gl.HALF_FLOAT
+    //     : gl.UNSIGNED_BYTE
+
+    // this.glInfo.supportedImageFormat = floatBufferExt
+    //   ? gl.RGBA32F
+    //   : halfFloatTextureExt && halfFloatColorBufferExt
+    //     ? gl.RGBA16F
+    //     : gl.RGBA
+
+    this.glInfo.supportedType = gl.FLOAT
+    this.glInfo.supportedImageFormat = gl.RGBA32F
 
     this.glInfo.supportedMinFilterType =
       floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST
     this.glInfo.supportedMagFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
-    gl.hint(gl.GENERATE_MIPMAP_HINT, gl.NICEST)
+    gl.hint(gl.GENERATE_MIPMAP_HINT, gl.FASTEST)
 
-    mat3.translate(this.renderTextureMatrix, this.renderTextureMatrix, vec2.fromValues(0, 0))
+    ResourceManager.create(
+      "CanvasRenderTexture",
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+    )
 
-    this.initRenderTexture()
-    TransparencyGrid.init(gl)
+    ResourceManager.create("TransparencyGrid", createTransparencyGrid(gl, prefs.canvasWidth, prefs.canvasHeight))
+
+    ResourceManager.create("Background", createBackground(gl))
 
     Camera.init(gl)
 
     // Initial Canvas Zoom and Positioning
+
+    // Minimum space between canvas edges and screen edges
+    // Should be greater than the UI width (TODO: Automate)
     const margin = 50
 
-    const prefs = usePreferenceStore.getState().prefs
-
+    // Start with a zoom that allows the whole canvas to in view
     const widthZoomTarget = gl.canvas.width - margin * 2
     const heightZoomTarget = gl.canvas.height - margin * 2
-
     Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
 
+    // Start with a camera position that centers the canvas in view
     Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
     Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
 
@@ -680,30 +515,32 @@ class _DrawingManager {
     })
 
     this.currentOperation = new Operation(this.currentTool)
+
+    this.initialized = true
   }
 
   /**
-   * Draw render buffer texture to the canvas draw buffer
+   * Draw render texture to the canvas draw buffer
    */
-  public renderToScreen = () => {
+  public renderToScreen = (renderInfo: RenderInfo, mipmap: boolean, setUniforms?: () => void) => {
     const gl = this.gl
 
-    // this.clear()
-
-    gl.useProgram(this.renderProgramInfo.program)
+    if (renderInfo.programInfo.program) gl.useProgram(renderInfo.programInfo.program)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, this.renderBufferInfo.targetTexture)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.renderProgramInfo.VBO)
-    gl.bindVertexArray(this.renderProgramInfo.VAO)
+
+    if (renderInfo.bufferInfo.texture) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
+
+    if (mipmap) gl.generateMipmap(gl.TEXTURE_2D)
+
+    if (renderInfo.programInfo.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
+    if (renderInfo.programInfo.VAO) gl.bindVertexArray(renderInfo.programInfo.VAO)
 
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.BLEND)
     gl.blendEquation(gl.FUNC_ADD)
 
-    gl.generateMipmap(gl.TEXTURE_2D)
-
-    gl.uniformMatrix3fv(this.renderProgramInfo.uniforms.u_matrix, false, Camera.project(this.renderTextureMatrix))
+    if (setUniforms) setUniforms()
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -714,11 +551,11 @@ class _DrawingManager {
     gl.bindVertexArray(null)
   }
 
-  /** Fill white on whatever the current WebGL state is */
+  /** Fill black on whatever the current WebGL state is */
   public clear = () => {
     const gl = this.gl
 
-    gl.clearBufferfv(gl.COLOR, 0, new Float32Array([1, 1, 1, 1]))
+    gl.clearBufferfv(gl.COLOR, 0, new Float32Array([0, 0, 0, 1]))
   }
 
   // TODO: Reimplement undo

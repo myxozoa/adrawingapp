@@ -1,6 +1,7 @@
 import { Point } from "@/objects/Point"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec2 } from "gl-matrix"
+import { createShader, createProgram } from "@/glUtils"
 
 let rectCache: DOMRect | null = null
 // TODO: Type this function better
@@ -137,11 +138,11 @@ export function initializeCanvas(
   _options: Partial<Options> = {},
 ) {
   const defaultOptions: Options = {
-    desynchronized: true,
+    desynchronized: false,
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",
-    alpha: true,
+    alpha: true, // Setting this to false is known to have strange performance implications on some platforms (eg. intel iGPU macbooks)
     premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
@@ -481,83 +482,85 @@ export function toClipSpace(point: { x: number; y: number }, canvas: HTMLCanvasE
   return vec2.set(tempVec2, clipX, clipY)
 }
 
-// /**
-//  * @example
-//  * ```
-//  * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
-//  * ```
-//  */
-// export const debugPoints = (
-//   gl: WebGL2RenderingContext,
-//   renderBufferInfo: any,
-//   points: IPoints,
-//   color: string,
-// ): void => {
-//   // Bind to draw to render texture
+/**
+ * @example
+ * ```
+ * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
+ * ```
+ */
+export const debugPoints = (
+  gl: WebGL2RenderingContext,
+  renderBufferInfo: any,
+  points: IPoints,
+  color: string,
+): void => {
+  // Bind to draw to render texture
 
-//   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-//   gl.bindTexture(gl.TEXTURE_2D, renderBufferInfo.targetTexture)
-//   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
+  // // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+  // gl.bindTexture(gl.TEXTURE_2D, renderBufferInfo.targetTexture)
+  // // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+  // gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
 
-//   // Transform points to clip space
-//   const vertices = points.list.reduce((acc: number[], point: IPoint) => {
-//     const clipSpace = toClipSpace(point, gl.canvas)
-//     return [...acc, clipSpace.x, clipSpace.y]
-//   }, [] as number[])
+  // Transform points to clip space
+  // const vertices = points.list.reduce((acc: number[], point: IPoint) => {
+  //   const clipSpace = toClipSpace(point, gl.canvas)
+  //   return [...acc, clipSpace.x, clipSpace.y]
+  // }, [] as number[])
 
-//   const vertex_buffer = gl.createBuffer()
-//   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
-//   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+  const vertices = [100, 100, 200, 200, 300, 300, 400, 400]
 
-//   // Vert Shader
+  const vertex_buffer = gl.createBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
-//   const vertexShaderCode = `#version 300 es
-//   #pragma vscode_glsllint_stage : vert
-//   in vec2 a_Position;
-//   void main() {
-//     gl_Position = vec4(a_Position, 0., 1.);
-//     gl_PointSize = 5.0;
-//   }`
+  // Vert Shader
 
-//   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderCode)
+  const vertexShaderCode = `#version 300 es
+  #pragma vscode_glsllint_stage : vert
+  in vec2 a_Position;
+  void main() {
+    gl_Position = vec4(a_Position, 0., 1.);
+    gl_PointSize = 10.0;
+  }`
 
-//   // Frag Shader
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderCode)
 
-//   const fragmentShaderCode = `#version 300 es
-//   #pragma vscode_glsllint_stage : frag
-//   precision mediump float;
-//   out vec4 fragColor;
-//   void main() {
-//     fragColor = vec4(${color});
-//   }`
+  // Frag Shader
 
-//   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderCode)
+  const fragmentShaderCode = `#version 300 es
+  #pragma vscode_glsllint_stage : frag
+  precision mediump float;
+  out vec4 fragColor;
+  void main() {
+    fragColor = vec4(${color});
+  }`
 
-//   const shaderProgram = createProgram(gl, vertexShader, fragmentShader)
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderCode)
 
-//   gl.useProgram(shaderProgram)
+  const shaderProgram = createProgram(gl, vertexShader, fragmentShader)
 
-//   // VAO
+  gl.useProgram(shaderProgram)
 
-//   const vao = gl.createVertexArray()
-//   gl.bindVertexArray(vao)
+  // VAO
 
-//   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+  const vao = gl.createVertexArray()
+  gl.bindVertexArray(vao)
 
-//   const coord = gl.getAttribLocation(shaderProgram, "a_Position")
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
 
-//   gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0)
-//   gl.enableVertexAttribArray(coord)
+  const coord = gl.getAttribLocation(shaderProgram, "a_Position")
 
-//   // Draw
+  gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0)
+  gl.enableVertexAttribArray(coord)
 
-//   gl.drawArrays(gl.POINTS, 0, vertices.length / 2)
+  // Draw
 
-//   // Unbind
+  gl.drawArrays(gl.POINTS, 0, vertices.length / 2)
 
-//   gl.bindVertexArray(null)
-//   gl.bindBuffer(gl.ARRAY_BUFFER, null)
-//   gl.bindTexture(gl.TEXTURE_2D, null)
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-// }
+  // Unbind
+
+  gl.bindVertexArray(null)
+  gl.bindBuffer(gl.ARRAY_BUFFER, null)
+  gl.bindTexture(gl.TEXTURE_2D, null)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+}

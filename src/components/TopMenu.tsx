@@ -9,72 +9,73 @@ import {
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-import { DrawingManager } from "@/managers/drawingManager"
+// import { ResourceManager } from "@/managers/resourceManager"
+// import { DrawingManager } from "@/managers/drawingManager"
 import { Slider } from "@/components/ui/slider"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-const saveImage = async () => {
-  const prefs = usePreferenceStore.getState().prefs
-  const gl = DrawingManager.gl
+// const saveImage = async () => {
+//   const prefs = usePreferenceStore.getState().prefs
+//   const gl = DrawingManager.gl
 
-  DrawingManager.renderToScreen()
-  gl.bindFramebuffer(gl.FRAMEBUFFER, DrawingManager.renderBufferInfo.framebuffer)
+//   DrawingManager.renderToScreen()
+//   gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("CanvasRenderTexture").bufferInfo.framebuffer)
 
-  const downloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
+//   const downloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
 
-  const canvas = document.createElement("canvas")
-  canvas.width = prefs.canvasWidth
-  canvas.height = prefs.canvasHeight
-  const context = canvas.getContext("bitmaprenderer")!
+//   const canvas = document.createElement("canvas")
+//   canvas.width = prefs.canvasWidth
+//   canvas.height = prefs.canvasHeight
+//   const context = canvas.getContext("bitmaprenderer")!
 
-  const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
-  const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+//   const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
+//   const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
 
-  const data = new Float32Array(prefs.canvasWidth * prefs.canvasHeight * 4)
-  gl.readPixels(0, 0, prefs.canvasWidth, prefs.canvasHeight, format, type, data)
+//   const data = new Float32Array(prefs.canvasWidth * prefs.canvasHeight * 4)
+//   gl.readPixels(0, 0, prefs.canvasWidth, prefs.canvasHeight, format, type, data)
 
-  const data8Bit = Uint8ClampedArray.from(data)
+//   const data8Bit = Uint8ClampedArray.from(data)
 
-  const imageData = new ImageData(prefs.canvasWidth, prefs.canvasHeight)
-  imageData.data.set(data8Bit)
+//   const imageData = new ImageData(prefs.canvasWidth, prefs.canvasHeight)
+//   imageData.data.set(data8Bit)
 
-  const imageBitmap = await createImageBitmap(imageData)
-  context.transferFromImageBitmap(imageBitmap)
+//   const imageBitmap = await createImageBitmap(imageData)
+//   context.transferFromImageBitmap(imageBitmap)
 
-  console.log(imageData)
+//   console.log(imageData)
 
-  canvas.toBlob(
-    function (blob) {
-      if (!blob) {
-        console.error("Unable to create blob and save image")
-        return
-      }
+//   canvas.toBlob(
+//     function (blob) {
+//       if (!blob) {
+//         console.error("Unable to create blob and save image")
+//         return
+//       }
 
-      const data = new File([blob], "image.png", { type: "png" })
-      const url = URL.createObjectURL(data)
+//       const data = new File([blob], "image.png", { type: "png" })
+//       const url = URL.createObjectURL(data)
 
-      downloadLink.id = "local_filesaver"
-      downloadLink.download = "image.png"
-      downloadLink.target = "_blank"
-      downloadLink.rel = "noopener"
-      downloadLink.style.display = "none"
-      document.body.appendChild(downloadLink)
+//       downloadLink.id = "local_filesaver"
+//       downloadLink.download = "image.png"
+//       downloadLink.target = "_blank"
+//       downloadLink.rel = "noopener"
+//       downloadLink.style.display = "none"
+//       document.body.appendChild(downloadLink)
 
-      downloadLink.setAttribute("href", url)
+//       downloadLink.setAttribute("href", url)
 
-      downloadLink.click()
+//       downloadLink.click()
 
-      URL.revokeObjectURL(url)
-      document.body.removeChild(downloadLink)
-    },
-    "image/png",
-    1.0,
-  )
+//       URL.revokeObjectURL(url)
+//       document.body.removeChild(downloadLink)
+//     },
+//     "image/png",
+//     1.0,
+//   )
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  canvas.remove()
-  downloadLink.remove()
-}
+//   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+//   canvas.remove()
+//   downloadLink.remove()
+// }
 
 const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
   const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
@@ -103,7 +104,7 @@ function _TopMenu() {
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
               <MenubarItem disabled>New</MenubarItem>
-              <MenubarItem onClick={saveImage}>Save Image</MenubarItem>
+              {/* <MenubarItem onClick={() => void saveImage()}>Save Image</MenubarItem> */}
               <MenubarItem disabled>Exit</MenubarItem>
             </MenubarContent>
           </MenubarMenu>

@@ -24,8 +24,8 @@ float circle(vec2 point)
 
 void main()
 {
-    vec2 position = (gl_FragCoord.xy - u_point);
-    vec2 point = (position) * (1. / u_size);
+    vec2 position = gl_FragCoord.xy - u_point;
+    vec2 point = position * (1. / u_size);
     float dist = circle(point);
 
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);

@@ -68,11 +68,131 @@ export function getAttributeLocations(gl: WebGL2RenderingContext, program: WebGL
   return attributes
 }
 
-// export function createVAO(gl) {
+/**
+ * @throws If unable to create texture or lacks support for some extensions
+ */
+export function createTexture(
+  gl: WebGL2RenderingContext,
+  width: number,
+  height: number,
+  imageFormat: number,
+  type: number,
+  data: ArrayBufferView,
+  mipmap: boolean,
+  minFilterType?: number,
+  magFilterType?: number,
+): WebGLTexture {
+  const texture = gl.createTexture()
 
-//   return vao
-// }
+  if (!texture) {
+    throw new Error("Error creating render texture")
+  }
 
+  gl.bindTexture(gl.TEXTURE_2D, texture)
+
+  gl.texImage2D(gl.TEXTURE_2D, 0, imageFormat, width, height, 0, gl.RGBA, type, data)
+
+  if (mipmap) {
+    gl.generateMipmap(gl.TEXTURE_2D)
+
+    if (minFilterType) gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilterType)
+    if (magFilterType) gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magFilterType)
+  }
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+  // Unbind
+  gl.bindTexture(gl.TEXTURE_2D, null)
+
+  return texture
+}
+
+/**
+ * @throws If unable to create buffer
+ */
+export function createBuffer(
+  gl: WebGL2RenderingContext,
+  data: BufferSource,
+  usageHint: number = gl.STATIC_DRAW,
+  target: number = gl.ARRAY_BUFFER,
+): WebGLBuffer {
+  const buffer = gl.createBuffer()
+
+  if (!buffer) throw new Error("Unable to create WebGL buffer")
+
+  gl.bindBuffer(target, buffer)
+
+  gl.bufferData(target, data, usageHint)
+
+  // Unbind
+  gl.bindBuffer(target, null)
+
+  return buffer
+}
+
+/**
+ * @throws If unable to create vertex array
+ */
+export function createVAO(gl: WebGL2RenderingContext, attribute: number, size = 2): WebGLVertexArrayObject {
+  const vao = gl.createVertexArray()
+
+  if (!vao) throw new Error("Unable to create WebGL vertex array")
+
+  gl.bindVertexArray(vao)
+
+  gl.enableVertexAttribArray(attribute)
+
+  gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 0, 0)
+
+  // Unbind
+  gl.bindVertexArray(null)
+
+  return vao
+}
+
+/**
+ * @throws If unable to create framebuffer
+ */
+export function createFramebuffer(gl: WebGL2RenderingContext, texture: WebGLTexture): WebGLFramebuffer {
+  const fb = gl.createFramebuffer()
+
+  if (!fb) throw new Error("Unable to create WebGL framebuffer")
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+
+  const framebufferStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
+
+  if (framebufferStatus !== gl.FRAMEBUFFER_COMPLETE) {
+    throw new Error(`Framebuffer error: ${framebufferStatus}`)
+  }
+
+  // Unbind
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
+  return fb
+}
+
+export function setupProgramAttributesUniforms(
+  gl: WebGL2RenderingContext,
+  fragmentShaderString: string,
+  vertexShaderString: string,
+  attributeNames: string[],
+  uniformNames: string[],
+) {
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderString)
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderString)
+
+  const program = createProgram(gl, vertexShader, fragmentShader)
+
+  const attributes = getAttributeLocations(gl, program, attributeNames)
+
+  const uniforms = getUniformLocations(gl, program, uniformNames)
+
+  return { attributes, program, uniforms }
+}
 // grab pixel
 // const format1 = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT)
 // const type1 = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE)
@@ -80,10 +200,3 @@ export function getAttributeLocations(gl: WebGL2RenderingContext, program: WebGL
 // const pixelValues1 = new Uint16Array(4);
 
 // gl.readPixels(0, 0, 1, 1, format1, type1, pixelValues1);
-
-export default {
-  createShader,
-  createProgram,
-  getUniformLocations,
-  getAttributeLocations,
-}

@@ -124,6 +124,8 @@ export class Eyedropper extends Tool implements IEyedropper {
     // TODO: This is currently assuming 8bit color
     const color = Array.from(data).map((value) => Math.min(Math.floor(value * 255), 255))
 
+    console.log(color)
+
     setColor(color.slice(0, 3) as ColorArray)
   }
 }
