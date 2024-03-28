@@ -138,14 +138,14 @@ export function initializeCanvas(
   _options: Partial<Options> = {},
 ) {
   const defaultOptions: Options = {
-    desynchronized: false,
+    desynchronized: true,
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",
     alpha: true, // Setting this to false is known to have strange performance implications on some platforms (eg. intel iGPU macbooks)
     premultipliedAlpha: false,
     colorSpace: "srgb",
-    preserveDrawingBuffer: false,
+    preserveDrawingBuffer: true,
     antialias: false,
   }
 

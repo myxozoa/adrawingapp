@@ -5,7 +5,7 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import { getRelativeMousePosition, getDistance, performanceSafeguard, toClipSpace, lerp, debugPoints } from "@/utils.ts"
+import { getRelativeMousePosition, getDistance, performanceSafeguard, toClipSpace, lerp } from "@/utils.ts"
 
 import {
   ILayer,
@@ -70,7 +70,9 @@ class _DrawingManager {
     supportedMinFilterType: number
   }
 
-  currentState: RenderInfo & { framebuffer: WebGLFramebuffer }
+  state: {
+    renderInfo: RenderInfo
+  }
 
   constructor() {
     this.gl = {} as WebGL2RenderingContext
@@ -181,7 +183,7 @@ class _DrawingManager {
   }
 
   private executeCurrentOperation = () => {
-    if (!this.currentOperation) return
+    if (!this.currentOperation.readyToDraw) return
 
     const gl = this.gl
 
@@ -356,7 +358,9 @@ class _DrawingManager {
     // Draw Screen
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    this.clear()
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.BLEND)
+    gl.blendEquation(gl.FUNC_ADD)
 
     this.renderToScreen(ResourceManager.get("Background"), false)
 
@@ -382,7 +386,7 @@ class _DrawingManager {
 
     checkfps(time, this.endInteraction)
 
-    // requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
+    requestAnimationFrame((time) => this.loop(currentUIInteraction, time))
   }
 
   /**
@@ -475,13 +479,13 @@ class _DrawingManager {
     //     : gl.RGBA
 
     this.glInfo.supportedType = gl.FLOAT
-    this.glInfo.supportedImageFormat = gl.RGBA32F
+    this.glInfo.supportedImageFormat = gl.RGBA16F
 
     this.glInfo.supportedMinFilterType =
       floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST
     this.glInfo.supportedMagFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
-    gl.hint(gl.GENERATE_MIPMAP_HINT, gl.FASTEST)
+    gl.hint(gl.GENERATE_MIPMAP_HINT, gl.NICEST)
 
     ResourceManager.create(
       "CanvasRenderTexture",
@@ -536,10 +540,6 @@ class _DrawingManager {
     if (renderInfo.programInfo.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
     if (renderInfo.programInfo.VAO) gl.bindVertexArray(renderInfo.programInfo.VAO)
 
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
-    gl.blendEquation(gl.FUNC_ADD)
-
     if (setUniforms) setUniforms()
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
@@ -547,7 +547,6 @@ class _DrawingManager {
     // Unbind
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.bindVertexArray(null)
   }
 

@@ -1,7 +1,7 @@
 import { DrawingManager } from "@/managers/drawingManager"
 
 import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
-import { ProgramInfo, RenderInfo } from "@/types"
+import { ProgramInfo, RenderInfo, type BufferInfo } from "@/types"
 import { mat3, vec2 } from "gl-matrix"
 
 // Depending on DrawingManager for feature support info when thats
@@ -14,7 +14,7 @@ export function createCanvasRenderTexture(
   vertex: string,
 ) {
   const renderInfo: RenderInfo = {
-    bufferInfo: { texture: null, framebuffer: null },
+    bufferInfo: {} as BufferInfo,
     programInfo: {} as ProgramInfo,
     data: {
       matrix: mat3.create(),
@@ -50,9 +50,6 @@ export function createCanvasRenderTexture(
   renderInfo.programInfo.uniforms = uniforms
   renderInfo.programInfo.attributes = attributes
 
-  gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
-  gl.enableVertexAttribArray(attributes.a_tex_coord)
-
   renderInfo.programInfo.VBO = setupVBO(gl, width, height)
   gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
 
@@ -61,6 +58,9 @@ export function createCanvasRenderTexture(
 
   const uvBuffer = setupUVBuffer(gl)
   gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
+
+  gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
+  gl.enableVertexAttribArray(attributes.a_tex_coord)
 
   // Unbind
   gl.bindBuffer(gl.ARRAY_BUFFER, null)
