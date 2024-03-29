@@ -170,8 +170,6 @@ export class Brush extends Tool implements IBrush {
         operation.addDrawnPoints(4)
       }
     }
-
-    gl.flush()
   }
 
   /**

@@ -2,18 +2,15 @@ import { useEffect, useRef } from "react"
 
 import { DrawCanvas } from "@/components/DrawCanvas"
 
-import useUIState from "@/hooks/useUIState"
-
 import { useToolStore } from "@/stores/ToolStore"
 import { useLayerStore } from "@/stores/LayerStore"
 
-import { DrawingManager } from "@/managers/drawingManager"
+import { DrawingManager } from "@/managers/DrawingManager"
 
-import { throttle, initializeCanvas } from "@/utils"
+import { initializeCanvas } from "@/utils"
 
 function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
-  const { currentUIInteraction } = useUIState(throttle(DrawingManager.undo))
   const currentLayer = useLayerStore.use.currentLayer()
   const currentTool = useToolStore.use.currentTool()
 
@@ -32,7 +29,11 @@ function _Board() {
     DrawingManager.canvasRef = boardRef
 
     DrawingManager.init()
-    DrawingManager.start(currentUIInteraction)
+    DrawingManager.start()
+
+    return () => {
+      DrawingManager.destroy()
+    }
   }, [])
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { DrawingManager } from "@/managers/drawingManager"
+import { DrawingManager } from "@/managers/DrawingManager"
 
 import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
 import { ProgramInfo, RenderInfo, type BufferInfo } from "@/types"
