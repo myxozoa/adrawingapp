@@ -1,4 +1,4 @@
-import { vec2 } from "gl-matrix"
+import { vec2, mat3 } from "gl-matrix"
 
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
@@ -31,6 +31,7 @@ export interface IPoint extends Location {
   pressure: number
   pointerType: PointerType
   active: boolean
+  id: string
 
   reset: () => void
 }
@@ -71,13 +72,17 @@ export interface MouseState extends Location {
   inbounds?: boolean
 }
 
-export type Modifier = "ctrl" | "alt" | "shift"
+export type Modifier = "ctrl" | "alt" | "shift" | "space"
 export type ModifierState = Set<Modifier>
+
+export interface WheelState {
+  wheel: number
+}
 
 export interface UIInteraction {
   mouseState: MouseState
   modifierState: ModifierState
-  wheelDeltaY: number
+  wheelState: WheelState
 }
 
 export type ToolType = "STROKE" | "POINT"
@@ -184,4 +189,29 @@ export interface ILayer {
   // addElementToUndoSnapshotQueue(image: ImageData): void
   // replaceDrawingData(image: ImageData): void
   // fill(color?: ColorValueString): void
+}
+
+// Don't know if this can be done any other way but I cannot stand it
+// Guess I'll just add everything that might be needed in here
+export interface PossibleData {
+  matrix?: mat3
+}
+
+export interface ProgramInfo {
+  program: WebGLProgram
+  uniforms: Record<string, WebGLUniformLocation>
+  attributes: Record<string, GLint>
+  VBO: WebGLBuffer
+  VAO: WebGLBuffer
+}
+
+export interface BufferInfo {
+  texture: Nullable<WebGLTexture>
+  framebuffer: Nullable<WebGLFramebuffer>
+}
+
+export interface RenderInfo {
+  programInfo: ProgramInfo
+  bufferInfo: BufferInfo
+  data?: PossibleData
 }

@@ -18,6 +18,7 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "off",
     "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
     "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/consistent-indexed-object-style": "off",
     "no-extra-semi": "off",
   },
   parserOptions: {

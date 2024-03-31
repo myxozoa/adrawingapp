@@ -5,19 +5,23 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ES2020",
     "skipLibCheck": true,
+    "esModuleInterop": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
+    "moduleDetection": "force",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "sourceMap": true,
 
     /* Linting */
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": true,
+    // "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "strictPropertyInitialization": false,
     "strictNullChecks": true,

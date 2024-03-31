@@ -9,6 +9,8 @@ interface State {
     pressureFiltering: number
     mouseFiltering: number
     mouseSmoothing: number
+    canvasWidth: number
+    canvasHeight: number
   }
 }
 
@@ -21,9 +23,12 @@ const usePreferenceStoreBase = create<State & Action>()(
     (set) => ({
       prefs: {
         pressureSensitivity: 0.8,
-        pressureFiltering: 0.9,
-        mouseFiltering: 0.7,
-        mouseSmoothing: 0.7,
+        // These preferences are inverted (1-n)
+        pressureFiltering: 0.1,
+        mouseFiltering: 0.3,
+        mouseSmoothing: 0.3,
+        canvasWidth: 1000,
+        canvasHeight: 500,
       },
       setPrefs: (prefs: Partial<State["prefs"]>) =>
         set((prev) => ({

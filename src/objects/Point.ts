@@ -6,12 +6,14 @@ export class Point implements IPoint {
   pressure: number
   pointerType: PointerType
   active: boolean
+  id: string
 
   constructor(values?: Partial<IPoint>) {
     this.active = false
     this.pressure = 0.5
     this.location = vec2.create()
     this.pointerType = "mouse"
+    this.id = "str"
 
     if (values) {
       values.location = this.location
@@ -21,6 +23,8 @@ export class Point implements IPoint {
 
   set x(value: number) {
     vec2.set(this.location, value, this.location[1])
+
+    this.id = `str${this.location[0]},${this.location[1]}`
   }
 
   get x() {
@@ -29,6 +33,8 @@ export class Point implements IPoint {
 
   set y(value: number) {
     vec2.set(this.location, this.location[0], value)
+
+    this.id = `str${this.location[0]},${this.location[1]}`
   }
 
   get y() {
@@ -43,5 +49,6 @@ export class Point implements IPoint {
     this.pressure = 0.5
     this.pointerType = "mouse"
     this.active = false
+    this.id = "str"
   }
 }
