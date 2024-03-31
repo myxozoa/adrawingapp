@@ -5,15 +5,7 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import {
-  getRelativeMousePosition,
-  getDistance,
-  performanceSafeguard,
-  toClipSpace,
-  lerp,
-  debounceRAF,
-  throttleRAF,
-} from "@/utils.ts"
+import { getRelativeMousePosition, getDistance, performanceSafeguard, toClipSpace, lerp, throttleRAF } from "@/utils.ts"
 
 import {
   ILayer,
@@ -50,8 +42,9 @@ function isPointerEvent(event: Event): event is PointerEvent {
 
 const checkfps = performanceSafeguard()
 
-const throttle = throttleRAF()
-const debounce = debounceRAF()
+const startThrottle = throttleRAF()
+const wheelThrottle = throttleRAF()
+const renderThrottle = throttleRAF()
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
 const positionFilter = new ExponentialSmoothingFilter(0.5)
@@ -274,8 +267,6 @@ class _DrawingManager {
       gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
       this.executeCurrentOperation()
-
-      debounce(() => this.render(performance.now()))
     }
   }
 
@@ -510,7 +501,7 @@ class _DrawingManager {
 
     Camera.updateViewProjectionMatrix(gl)
 
-    debounce(() => this.render(performance.now()))
+    renderThrottle(() => this.render(performance.now()))
   }
 
   public pan = (event: Event) => {
@@ -548,7 +539,7 @@ class _DrawingManager {
 
     Camera.updateViewProjectionMatrix(gl)
 
-    debounce(() => this.render(performance.now()))
+    renderThrottle(() => this.render(performance.now()))
   }
 
   private beginDraw = (event: Event) => {
@@ -556,13 +547,24 @@ class _DrawingManager {
     ;(this.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
     this.loop(event)
+
+    renderThrottle(() => this.render(performance.now()))
   }
 
   private continueDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
 
     if ((this.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId)) {
-      this.loop(event)
+      if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
+        const coalesced = event.getCoalescedEvents()
+
+        for (const coalescedEvent of coalesced) {
+          this.loop(coalescedEvent)
+        }
+      } else {
+        this.loop(event)
+      }
+      renderThrottle(() => this.render(performance.now()))
     }
   }
 
@@ -575,15 +577,22 @@ class _DrawingManager {
 
       this.endInteraction()
     },
-    wheel: (e: Event) => throttle(() => this.zoom(e)),
+    wheel: (e: Event) => wheelThrottle(() => this.zoom(e)),
   }
 
   public start = () => {
-    throttle(() => this.render(performance.now()))
+    startThrottle(() => this.render(performance.now()))
 
     for (const [name, callback] of Object.entries(this.listeners)) {
       this.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
     }
+
+    function prevent(event: Event) {
+      event.preventDefault()
+    }
+
+    this.gl.canvas.addEventListener("touchstart", prevent, { passive: true })
+    this.gl.canvas.addEventListener("touchmove", prevent, { passive: true })
   }
 
   public destroy = () => {

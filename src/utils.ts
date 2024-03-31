@@ -1,7 +1,6 @@
 import { Point } from "@/objects/Point"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec2 } from "gl-matrix"
-import { createShader, createProgram } from "@/glUtils"
 
 let rectCache: DOMRect | null = null
 // TODO: Type this function better
