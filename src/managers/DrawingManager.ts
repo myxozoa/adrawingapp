@@ -587,12 +587,12 @@ class _DrawingManager {
       this.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
     }
 
-    function prevent(event: Event) {
-      event.preventDefault()
-    }
+    // function prevent(event: Event) {
+    //   event.preventDefault()
+    // }
 
-    this.gl.canvas.addEventListener("touchstart", prevent, { passive: true })
-    this.gl.canvas.addEventListener("touchmove", prevent, { passive: true })
+    // this.gl.canvas.addEventListener("touchstart", prevent, { passive: true })
+    // this.gl.canvas.addEventListener("touchmove", prevent, { passive: true })
   }
 
   public destroy = () => {
