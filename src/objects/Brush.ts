@@ -26,6 +26,7 @@ const baseSize = 100
 export class Brush extends Tool implements IBrush {
   interpolationPoint: IPoint
   previouslyDrawnPoint: IPoint
+  tempPoint: IPoint
 
   drawnPoints: Map<string, boolean>
 
@@ -70,6 +71,7 @@ export class Brush extends Tool implements IBrush {
 
     this.interpolationPoint = new Point()
     this.previouslyDrawnPoint = new Point()
+    this.tempPoint = new Point()
 
     this.drawnPoints = new Map()
   }
@@ -234,11 +236,19 @@ export class Brush extends Tool implements IBrush {
       this.interpolationPoint.pressure = pressureInterpolation(start, end, j / steps)
       this.interpolationPoint.pointerType = start.pointerType
 
-      const distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
+      this.tempPoint.copy(this.interpolationPoint)
 
-      maintainPointSpacing(this.previouslyDrawnPoint, this.interpolationPoint, distance, stampSpacing)
+      let distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
 
-      this.stamp(gl, this.interpolationPoint)
+      while (Math.round(distance) > stampSpacing) {
+        maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, distance, stampSpacing)
+
+        this.stamp(gl, this.tempPoint)
+
+        distance = getDistance(this.tempPoint, this.interpolationPoint)
+
+        this.tempPoint.copy(this.interpolationPoint)
+      }
     }
   }
 
@@ -252,8 +262,8 @@ export class Brush extends Tool implements IBrush {
     const steps = distance / stampSpacing
 
     // Stamp at evenly spaced intervals between the two points
-    for (let i = 0, j = 0; i < distance; i += stampSpacing, j++) {
-      const newPoint = calculatePointAlongDirection(start, end, i)
+    for (let t = 0, j = 0; t < 1; t += 1 / steps, j++) {
+      const newPoint = calculatePointAlongDirection(start, end, t)
 
       this.interpolationPoint.x = newPoint.x
       this.interpolationPoint.y = newPoint.y
@@ -262,7 +272,6 @@ export class Brush extends Tool implements IBrush {
 
       this.stamp(gl, this.interpolationPoint)
     }
-    this.stamp(gl, end)
   }
 
   /**
@@ -273,8 +282,7 @@ export class Brush extends Tool implements IBrush {
 
     mat3.fromTranslation(this.glInfo.matrix, point.location)
 
-    this.previouslyDrawnPoint.x = point.x
-    this.previouslyDrawnPoint.y = point.y
+    this.previouslyDrawnPoint.copy(point)
 
     let size = this.settings.size
 

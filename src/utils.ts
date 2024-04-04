@@ -417,7 +417,12 @@ export function calculatePointAlongDirection(
  * Moves `point1` to a `targetDistance` from `point0` in the direction of `point0 -> point1`
  */
 export function maintainPointSpacing(point0: IPoint, point1: IPoint, distance: number, targetDistance: number): void {
-  if (distance === 0 || targetDistance === 0) return
+  if (distance === 0 || distance === targetDistance || distance < targetDistance) return
+
+  if (targetDistance === 0) {
+    point1.x = point0.x
+    point1.y = point0.y
+  }
 
   const dx = point1.x - point0.x
   const dy = point1.y - point0.y

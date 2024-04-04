@@ -34,6 +34,7 @@ export interface IPoint extends Location {
   id: string
 
   reset: () => void
+  copy: (point: IPoint) => void
 }
 
 export interface IPoints {

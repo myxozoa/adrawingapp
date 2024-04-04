@@ -51,4 +51,13 @@ export class Point implements IPoint {
     this.active = false
     this.id = "str"
   }
+
+  public copy = (point: IPoint) => {
+    this.x = point.x
+    this.y = point.y
+
+    this.pressure = point.pressure
+    this.pointerType = point.pointerType
+    this.active = point.active
+  }
 }
