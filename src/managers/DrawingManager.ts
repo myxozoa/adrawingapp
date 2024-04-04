@@ -5,7 +5,7 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import { getRelativeMousePosition, getDistance, performanceSafeguard, toClipSpace, lerp, throttleRAF } from "@/utils.ts"
+import { getRelativeMousePosition, getDistance, toClipSpace, lerp, throttleRAF } from "@/utils.ts"
 
 import {
   ILayer,
@@ -40,7 +40,17 @@ function isPointerEvent(event: Event): event is PointerEvent {
   return event instanceof PointerEvent
 }
 
-const checkfps = performanceSafeguard()
+const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
+  return "switchTo" in tool
+}
+
+const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
+  return "use" in tool
+}
+
+const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
+  return "draw" in tool
+}
 
 const startThrottle = throttleRAF()
 const wheelThrottle = throttleRAF()
@@ -72,6 +82,7 @@ class _DrawingManager {
   canvasRef: MutableRefObject<HTMLCanvasElement>
   pixelQuality: pixelQuality
   initialized: boolean
+  drawing: boolean
 
   glInfo: {
     supportedType: number
@@ -93,19 +104,13 @@ class _DrawingManager {
     this.needRedraw = false
 
     this.glInfo = {} as unknown as typeof this.glInfo
+
+    this.drawing = false
   }
 
   // TODO: This framework may not be generic enough to describe many non-drawing tools
   private execute = (operation: IOperation) => {
     if (!operation.readyToDraw) return
-
-    const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
-      return "use" in tool
-    }
-
-    const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-      return "draw" in tool
-    }
 
     if (useIfPossible(operation.tool)) operation.tool.use(this.gl, operation)
     if (drawIfPossible(operation.tool)) operation.tool.draw(this.gl, operation)
@@ -200,10 +205,6 @@ class _DrawingManager {
     gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
     gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("CanvasRenderTexture").bufferInfo.framebuffer)
 
-    const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-      return "switchTo" in tool
-    }
-
     if (switchIfPossible(this.currentOperation.tool)) this.currentOperation.tool.switchTo(gl)
 
     this.execute(this.currentOperation)
@@ -270,7 +271,7 @@ class _DrawingManager {
     }
   }
 
-  public render = (time: number) => {
+  public render = () => {
     const gl = this.gl
 
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
@@ -326,8 +327,6 @@ class _DrawingManager {
         Camera.project(canvasRenderTexture.data!.matrix!),
       )
     })
-
-    checkfps(time, this.endInteraction)
   }
 
   public swapTool = (tool: AvailableTools) => {
@@ -351,6 +350,8 @@ class _DrawingManager {
     positionFilter.reset()
     pressureFilter.reset()
     this.currentOperation.reset()
+
+    this.currentTool.reset()
 
     if (startMoving) {
       startMoving = false
@@ -501,7 +502,7 @@ class _DrawingManager {
 
     Camera.updateViewProjectionMatrix(gl)
 
-    renderThrottle(() => this.render(performance.now()))
+    renderThrottle(this.render)
   }
 
   public pan = (event: Event) => {
@@ -539,22 +540,22 @@ class _DrawingManager {
 
     Camera.updateViewProjectionMatrix(gl)
 
-    renderThrottle(() => this.render(performance.now()))
+    renderThrottle(this.render)
   }
 
   private beginDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
-    ;(this.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
+    this.drawing = true
 
     this.loop(event)
 
-    renderThrottle(() => this.render(performance.now()))
+    renderThrottle(this.render)
   }
 
   private continueDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
 
-    if ((this.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId)) {
+    if (this.drawing) {
       if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
         const coalesced = event.getCoalescedEvents()
 
@@ -564,7 +565,7 @@ class _DrawingManager {
       } else {
         this.loop(event)
       }
-      renderThrottle(() => this.render(performance.now()))
+      renderThrottle(this.render)
     }
   }
 
@@ -573,7 +574,7 @@ class _DrawingManager {
     pointermove: this.continueDraw,
     pointerup: (event: Event) => {
       if (!isPointerEvent(event)) return
-      ;(this.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
+      this.drawing = false
 
       this.endInteraction()
     },
@@ -581,7 +582,7 @@ class _DrawingManager {
   }
 
   public start = () => {
-    startThrottle(() => this.render(performance.now()))
+    startThrottle(this.render)
 
     for (const [name, callback] of Object.entries(this.listeners)) {
       this.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })

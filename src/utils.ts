@@ -1,4 +1,3 @@
-import { Point } from "@/objects/Point"
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec2 } from "gl-matrix"
 
@@ -64,8 +63,6 @@ export function getDistance(
   point0: IPoint | { x: number; y: number },
   point1: IPoint | { x: number; y: number },
 ): number {
-  if (!point0 || !point1) return 0
-
   if (isPoint(point0) && isPoint(point1)) {
     return vec2.distance(point0.location, point1.location)
   }
@@ -395,21 +392,41 @@ export const performanceSafeguard = () => {
 }
 
 /**
- * Create new point a given distance from `point0` in the direction of `point0 -> point1`
+ * Calculate point a given distance from `point0` in the direction of `point0 -> point1`
  */
-export function newPointAlongDirection(point0: IPoint, point1: IPoint, distance: number): IPoint {
+export function calculatePointAlongDirection(
+  point0: IPoint,
+  point1: IPoint,
+  distance: number,
+): { x: number; y: number } {
   const dx = point1.x - point0.x
   const dy = point1.y - point0.y
 
-  const totalDistance = Math.sqrt(dx * dx + dy * dy)
+  const totalDistance = getDistance(point0, point1)
 
   const normalizedX = dx / totalDistance
   const normalizedY = dy / totalDistance
 
-  const newX = point0.x + normalizedX * distance
-  const newY = point0.y + normalizedY * distance
+  return {
+    x: point0.x + normalizedX * distance,
+    y: point0.y + normalizedY * distance,
+  }
+}
 
-  return new Point({ ...point0, x: newX, y: newY })
+/**
+ * Moves `point1` to a `targetDistance` from `point0` in the direction of `point0 -> point1`
+ */
+export function maintainPointSpacing(point0: IPoint, point1: IPoint, distance: number, targetDistance: number): void {
+  if (distance === 0 || targetDistance === 0) return
+
+  const dx = point1.x - point0.x
+  const dy = point1.y - point0.y
+
+  const normalizedX = dx / distance
+  const normalizedY = dy / distance
+
+  point1.x = point0.x + normalizedX * targetDistance
+  point1.y = point0.y + normalizedY * targetDistance
 }
 
 export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {

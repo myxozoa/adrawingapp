@@ -98,6 +98,7 @@ export interface ITool {
   numberOfPoints: number
 
   init: (gl: WebGL2RenderingContext) => void
+  reset: () => void
 }
 
 export interface IBrush extends ITool {
