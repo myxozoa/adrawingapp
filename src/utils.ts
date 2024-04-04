@@ -1,5 +1,6 @@
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec2 } from "gl-matrix"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 let rectCache: DOMRect | null = null
 // TODO: Type this function better
@@ -610,4 +611,18 @@ export function debounceRAF() {
 
     queued = requestAnimationFrame(callback)
   }
+}
+
+export function calculateSizeFromPressure(size: number, pressure: number, pressureSensitivity: boolean) {
+  const prefs = usePreferenceStore.getState().prefs
+
+  let result = size
+
+  if (pressureSensitivity) {
+    const pressureSensitivity = prefs.pressureSensitivity * 10
+
+    result = size - (size * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
+  }
+
+  return result
 }

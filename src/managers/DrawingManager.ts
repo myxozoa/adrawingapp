@@ -5,7 +5,14 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import { getRelativeMousePosition, getDistance, toClipSpace, lerp, throttleRAF } from "@/utils.ts"
+import {
+  getRelativeMousePosition,
+  getDistance,
+  toClipSpace,
+  lerp,
+  throttleRAF,
+  calculateSizeFromPressure,
+} from "@/utils.ts"
 
 import {
   ILayer,
@@ -137,27 +144,13 @@ class _DrawingManager {
       operation.readyToDraw = true
     }
 
-    let spacing =
-      "size" in operation.tool.settings && "spacing" in operation.tool.settings
-        ? operation.tool.settings.size * (operation.tool.settings.spacing / 100)
-        : 0
-
-    if (relativeMouseState.pointerType === "pen") {
-      const pressureSensitivity = prefs.pressureSensitivity * 10
-
-      if (relativeMouseState.pressure < 0.01) return
-
-      spacing =
-        spacing - (spacing * pressureSensitivity * (1 - relativeMouseState.pressure)) / (1 + pressureSensitivity)
-    }
-
     const prevPoint = operation.points.getPoint(-1).active
       ? operation.points.getPoint(-1)
       : operation.points.currentPoint
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing)) {
+        if (!prevPoint.active || prevPoint.active) {
           const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
 
           operation.points.currentPoint.x = filteredPositions[0]
@@ -546,6 +539,7 @@ class _DrawingManager {
   private beginDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
     this.drawing = true
+    ;(this.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
     this.loop(event)
 
@@ -555,7 +549,8 @@ class _DrawingManager {
   private continueDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
 
-    if (this.drawing) {
+    // if (this.drawing) {
+    if ((this.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId)) {
       if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
         const coalesced = event.getCoalescedEvents()
 
@@ -575,6 +570,7 @@ class _DrawingManager {
     pointerup: (event: Event) => {
       if (!isPointerEvent(event)) return
       this.drawing = false
+      ;(this.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
 
       this.endInteraction()
     },

@@ -15,6 +15,7 @@ import {
   cubicBezier,
   pressureInterpolation,
   maintainPointSpacing,
+  calculateSizeFromPressure,
 } from "@/utils"
 
 import { mat3, vec2 } from "gl-matrix"
@@ -219,7 +220,9 @@ export class Brush extends Tool implements IBrush {
    * Interpret the points as a bezier curve and stamp along it
    */
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
-    const stampSpacing = Math.max(0.5, this.settings.size * (this.settings.spacing / 100))
+    const size = calculateSizeFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
+
+    const stampSpacing = Math.max(0.5, size * (this.settings.spacing / 100))
 
     // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
     const chord = getDistance(start, end)
@@ -240,7 +243,7 @@ export class Brush extends Tool implements IBrush {
 
       let distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
 
-      while (Math.round(distance) > stampSpacing) {
+      do {
         maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, distance, stampSpacing)
 
         this.stamp(gl, this.tempPoint)
@@ -248,7 +251,7 @@ export class Brush extends Tool implements IBrush {
         distance = getDistance(this.tempPoint, this.interpolationPoint)
 
         this.tempPoint.copy(this.interpolationPoint)
-      }
+      } while (distance > stampSpacing)
     }
   }
 
@@ -284,13 +287,7 @@ export class Brush extends Tool implements IBrush {
 
     this.previouslyDrawnPoint.copy(point)
 
-    let size = this.settings.size
-
-    if (point.pointerType === "pen") {
-      const pressureSensitivity = prefs.pressureSensitivity * 10
-
-      size = size - (size * pressureSensitivity * (1 - point.pressure)) / (1 + pressureSensitivity)
-    }
+    const size = calculateSizeFromPressure(this.settings.size, point.pressure, point.pointerType === "pen")
 
     // Give enough pixels around quad to account for decent smooth edges
     this.glInfo.sizeVector[0] = size + 9
