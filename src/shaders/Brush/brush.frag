@@ -24,25 +24,26 @@ float circle(vec2 point)
 
 void main()
 {
+    float size = 1. / u_size;
     vec2 position = gl_FragCoord.xy - u_point;
-    vec2 point = position * (1. / u_size);
+    vec2 point = position * size;
     float dist = circle(point);
 
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);
     vec4 transparent = vec4(u_brush_color.rgb, 0.);
 
     float edge = 1. - (4. - (u_softness * 4.));
-    vec4 color = mix(main_color, transparent, smoothstep(edge - fwidth(dist), 1., dist));
+    vec4 color = mix(main_color, transparent, smoothstep(edge - (size * 2.), 1., dist));
 
     if (color.a == 0.)
         discard;
 
     // Add a small amount of noise to the alpha channel
-    vec2 st = (gl_FragCoord.xy * (1. / u_size)) + u_random;
+    vec2 st = (gl_FragCoord.xy * size) + u_random;
 
     float randomNumber = random(st);
 
-    float amount = 0.005;
+    float amount = 0.002;
 
     float alpha = (randomNumber * (amount)) - (amount - 0.01);
 

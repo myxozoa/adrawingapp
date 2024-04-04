@@ -9,7 +9,13 @@ import { Point } from "@/objects/Point"
 import brushFragment from "@/shaders/Brush/brush.frag?raw"
 import brushVertex from "@/shaders/Brush/brush.vert?raw"
 
-import { getDistance, lerp, newPointAlongDirection, cubicBezier, pressureInterpolation } from "@/utils"
+import {
+  getDistance,
+  calculatePointAlongDirection,
+  cubicBezier,
+  pressureInterpolation,
+  maintainPointSpacing,
+} from "@/utils"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -17,11 +23,12 @@ import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
 const baseSize = 100
-
-const drawnPoints = new Map<string, boolean>()
-
 export class Brush extends Tool implements IBrush {
   interpolationPoint: IPoint
+  previouslyDrawnPoint: IPoint
+
+  drawnPoints: Map<string, boolean>
+
   settings: {
     size: number
     flow: number
@@ -62,6 +69,9 @@ export class Brush extends Tool implements IBrush {
     }
 
     this.interpolationPoint = new Point()
+    this.previouslyDrawnPoint = new Point()
+
+    this.drawnPoints = new Map()
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -132,22 +142,23 @@ export class Brush extends Tool implements IBrush {
   }
 
   private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    // redistributePoints(operation.points)
     const prevPrevPrevPoint = operation.points.getPoint(-4)
     const prevPrevPoint = operation.points.getPoint(-3)
     const prevPoint = operation.points.getPoint(-2)
     const currentPoint = operation.points.getPoint(-1)
 
     if (currentPoint.active && !prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
-      if (!drawnPoints.get(currentPoint.id)) {
+      if (!this.drawnPoints.get(currentPoint.id)) {
         this.stamp(gl, currentPoint)
-        drawnPoints.set(currentPoint.id, true)
+
+        this.drawnPoints.set(currentPoint.id, true)
         operation.addDrawnPoints(1)
       }
     } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
-      if (!drawnPoints.get(currentPoint.id)) {
+      if (!this.drawnPoints.get(currentPoint.id)) {
         this.line(gl, prevPoint, currentPoint)
-        drawnPoints.set(currentPoint.id, true)
+
+        this.drawnPoints.set(currentPoint.id, true)
         operation.addDrawnPoints(2)
       }
     } else {
@@ -156,16 +167,15 @@ export class Brush extends Tool implements IBrush {
         prevPoint.active &&
         prevPrevPoint.active &&
         prevPrevPrevPoint.active &&
-        !drawnPoints.get(currentPoint.id) &&
-        !drawnPoints.get(prevPoint.id) &&
-        !drawnPoints.get(prevPrevPoint.id)
+        !this.drawnPoints.get(currentPoint.id) &&
+        !this.drawnPoints.get(prevPoint.id) &&
+        !this.drawnPoints.get(prevPrevPoint.id)
       ) {
         this.splineProcess(gl, operation)
 
-        drawnPoints.set(currentPoint.id, true)
-        drawnPoints.set(prevPoint.id, true)
-        drawnPoints.set(prevPrevPoint.id, true)
-        drawnPoints.set(prevPrevPrevPoint.id, true)
+        this.drawnPoints.set(currentPoint.id, true)
+        this.drawnPoints.set(prevPoint.id, true)
+        this.drawnPoints.set(prevPrevPoint.id, true)
 
         operation.addDrawnPoints(4)
       }
@@ -217,16 +227,16 @@ export class Brush extends Tool implements IBrush {
     const steps = estimatedArcLength / stampSpacing
 
     // Stamp points along cubic bezier
-    for (let t = 0, j = 0; t <= 1; t += 1 / steps, j++) {
-      const x = cubicBezier(start.x, control.x, control2.x, end.x, t)
-      const y = cubicBezier(start.y, control.y, control2.y, end.y, t)
+    for (let t = 1 / steps, j = 0; t < 1; t += 1 / steps, j++) {
+      this.interpolationPoint.x = cubicBezier(start.x, control.x, control2.x, end.x, t)
+      this.interpolationPoint.y = cubicBezier(start.y, control.y, control2.y, end.y, t)
 
-      const pressure = pressureInterpolation(start, end, j / steps)
-
-      this.interpolationPoint.x = x
-      this.interpolationPoint.y = y
-      this.interpolationPoint.pressure = pressure
+      this.interpolationPoint.pressure = pressureInterpolation(start, end, j / steps)
       this.interpolationPoint.pointerType = start.pointerType
+
+      const distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
+
+      maintainPointSpacing(this.previouslyDrawnPoint, this.interpolationPoint, distance, stampSpacing)
 
       this.stamp(gl, this.interpolationPoint)
     }
@@ -242,12 +252,12 @@ export class Brush extends Tool implements IBrush {
     const steps = distance / stampSpacing
 
     // Stamp at evenly spaced intervals between the two points
-    for (let i = stampSpacing, j = 0; i < distance; i += stampSpacing, j++) {
-      const newPoint = newPointAlongDirection(start, end, i)
+    for (let i = 0, j = 0; i < distance; i += stampSpacing, j++) {
+      const newPoint = calculatePointAlongDirection(start, end, i)
 
       this.interpolationPoint.x = newPoint.x
       this.interpolationPoint.y = newPoint.y
-      this.interpolationPoint.pressure = lerp(start.pressure, end.pressure, j / steps)
+      this.interpolationPoint.pressure = pressureInterpolation(start, end, j / steps)
       this.interpolationPoint.pointerType = start.pointerType
 
       this.stamp(gl, this.interpolationPoint)
@@ -262,6 +272,9 @@ export class Brush extends Tool implements IBrush {
     const prefs = usePreferenceStore.getState().prefs
 
     mat3.fromTranslation(this.glInfo.matrix, point.location)
+
+    this.previouslyDrawnPoint.x = point.x
+    this.previouslyDrawnPoint.y = point.y
 
     let size = this.settings.size
 
@@ -350,5 +363,13 @@ export class Brush extends Tool implements IBrush {
     gl.enable(gl.BLEND)
 
     gl.blendEquation(gl.FUNC_ADD)
+  }
+
+  public reset = () => {
+    this.previouslyDrawnPoint = new Point()
+
+    this.interpolationPoint = new Point()
+
+    this.drawnPoints = new Map()
   }
 }

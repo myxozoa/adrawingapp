@@ -95,4 +95,9 @@ export class Tool implements ITool {
     console.log(gl)
     return
   }
+
+  /** @virtual */
+  reset = () => {
+    return
+  }
 }

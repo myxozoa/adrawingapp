@@ -116,7 +116,7 @@ function _ToolSettings() {
     size:
       toolState.size !== undefined
         ? SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), {
-            min: 2,
+            min: 1,
             max: 100,
           })
         : null,

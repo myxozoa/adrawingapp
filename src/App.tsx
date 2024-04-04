@@ -4,6 +4,7 @@ import { TopMenu } from "@/components/TopMenu"
 // import { Layers } from "@/components/LayerSelection/Layers"
 import { Tools } from "@/components/ToolSelection/Tools"
 import { ToolSettings } from "@/components/ToolSettings"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 import { ThemeProvider } from "@/components/ThemeProvider"
 
@@ -17,7 +18,9 @@ function App() {
         <TopMenu />
         <ToolSettings />
         <Tools />
-        <Board />
+        <ErrorBoundary fallback={<div>unfortunate!</div>}>
+          <Board />
+        </ErrorBoundary>
       </div>
     </ThemeProvider>
   )
