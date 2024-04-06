@@ -25,11 +25,6 @@ export function getRelativeMousePosition(
   }
 
   return {
-    inbounds:
-      relativePosition.x >= 0 &&
-      relativePosition.y >= 0 &&
-      relativePosition.x <= rect.width * dpr &&
-      relativePosition.y <= rect.height * dpr,
     ...mouseState,
     ...relativePosition,
   } as MouseState
@@ -625,4 +620,13 @@ export function calculateSizeFromPressure(size: number, pressure: number, pressu
   }
 
   return result
+}
+
+export function calculateCurveLength(start: IPoint, control: IPoint, control2: IPoint, end: IPoint): number {
+  // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
+  const chord = getDistance(start, end)
+  const totalDistance = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
+  const estimatedArcLength = (totalDistance + chord) / 2
+
+  return estimatedArcLength
 }

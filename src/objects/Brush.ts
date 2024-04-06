@@ -16,6 +16,7 @@ import {
   pressureInterpolation,
   maintainPointSpacing,
   calculateSizeFromPressure,
+  calculateCurveLength,
 } from "@/utils"
 
 import { mat3, vec2 } from "gl-matrix"
@@ -224,12 +225,11 @@ export class Brush extends Tool implements IBrush {
 
     const stampSpacing = Math.max(0.5, size * (this.settings.spacing / 100))
 
-    // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
-    const chord = getDistance(start, end)
-    const totalDistance = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
-    const estimatedArcLength = (totalDistance + chord) / 2
+    const estimatedArcLength = calculateCurveLength(start, control, control2, end)
 
     const steps = estimatedArcLength / stampSpacing
+
+    console.log(steps, estimatedArcLength, stampSpacing, size)
 
     // Stamp points along cubic bezier
     for (let t = 1 / steps, j = 0; t < 1; t += 1 / steps, j++) {

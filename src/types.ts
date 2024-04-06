@@ -70,7 +70,6 @@ export interface MouseState extends Location {
   middleMouseDown: boolean
   pressure: number
   pointerType: PointerType
-  inbounds?: boolean
 }
 
 export type Modifier = "ctrl" | "alt" | "shift" | "space"
