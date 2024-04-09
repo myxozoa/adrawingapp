@@ -157,42 +157,28 @@ class _DrawingManager {
     const size = calculateSizeFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
 
     const stampSpacing = Math.max(0.5, size * spacing)
-    const dist = getDistance(prevPoint, relativeMouseState)
+
+    const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
+
+    operation.points.currentPoint.x = filteredPositions[0]
+    operation.points.currentPoint.y = filteredPositions[1]
+    operation.points.currentPoint.pointerType = relativeMouseState.pointerType
+
+    const filteredPressure = pressureFilter.filter([relativeMouseState.pressure])
+    operation.points.currentPoint.pressure = filteredPressure[0]
+
+    vec2.lerp(
+      operation.points.currentPoint.location,
+      prevPoint.location,
+      operation.points.currentPoint.location,
+      prefs.mouseSmoothing,
+    )
+
+    const dist = getDistance(prevPoint, operation.points.currentPoint)
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (!prevPoint.active || prevPoint.active) {
-          console.log("dist", dist, stampSpacing)
-          // if (dist < stampSpacing) {
-          //   const dx = relativeMouseState.x - prevPoint.x
-          //   const dy = relativeMouseState.y - prevPoint.y
-
-          //   const normalizedX = dx / dist
-          //   const normalizedY = dy / dist
-
-          //   relativeMouseState.x = prevPoint.x + normalizedX * (stampSpacing + 1)
-          //   relativeMouseState.y = prevPoint.y + normalizedY * (stampSpacing + 1)
-
-          //   console.log("test")
-          // }
-
-          const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
-
-          operation.points.currentPoint.x = filteredPositions[0]
-          operation.points.currentPoint.y = filteredPositions[1]
-          operation.points.currentPoint.pressure = relativeMouseState.pressure
-          operation.points.currentPoint.pointerType = relativeMouseState.pointerType
-
-          vec2.lerp(
-            operation.points.currentPoint.location,
-            prevPoint.location,
-            operation.points.currentPoint.location,
-            prefs.mouseSmoothing,
-          )
-
-          const filteredPressure = pressureFilter.filter([operation.points.currentPoint.pressure])
-          operation.points.currentPoint.pressure = filteredPressure[0]
-
+        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 2)) {
           operation.points.currentPoint.active = true
 
           operation.points.nextPoint()

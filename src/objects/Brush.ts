@@ -229,8 +229,6 @@ export class Brush extends Tool implements IBrush {
 
     const steps = estimatedArcLength / stampSpacing
 
-    console.log(steps, estimatedArcLength, stampSpacing, size)
-
     // Stamp points along cubic bezier
     for (let t = 1 / steps, j = 0; t < 1; t += 1 / steps, j++) {
       this.interpolationPoint.x = cubicBezier(start.x, control.x, control2.x, end.x, t)
@@ -243,7 +241,7 @@ export class Brush extends Tool implements IBrush {
 
       let distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
 
-      do {
+      while (distance > stampSpacing) {
         maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, distance, stampSpacing)
 
         this.stamp(gl, this.tempPoint)
@@ -251,7 +249,7 @@ export class Brush extends Tool implements IBrush {
         distance = getDistance(this.tempPoint, this.interpolationPoint)
 
         this.tempPoint.copy(this.interpolationPoint)
-      } while (distance > stampSpacing)
+      }
     }
   }
 
