@@ -178,7 +178,7 @@ class _DrawingManager {
 
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 2)) {
+        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
           operation.points.currentPoint.active = true
 
           operation.points.nextPoint()
@@ -490,7 +490,7 @@ class _DrawingManager {
 
       const zoomLerpAmount = 0.1
 
-      Camera.zoom = Math.max(0.1, Math.min(4, lerp(Camera.zoom, zoomTarget, zoomLerpAmount)))
+      Camera.zoom = Math.max(0.001, Math.min(30, lerp(Camera.zoom, zoomTarget, zoomLerpAmount)))
 
       const mousePositionAfterZoom = Camera.getWorldMousePosition(relativeMouseState, gl)
 
