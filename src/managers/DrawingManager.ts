@@ -12,6 +12,7 @@ import {
   lerp,
   throttleRAF,
   calculateFromPressure,
+  resizeCanvasToDisplaySize,
 } from "@/utils.ts"
 
 import {
@@ -61,6 +62,7 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
 
 const startThrottle = throttleRAF()
 const wheelThrottle = throttleRAF()
+const resizeThrottle = throttleRAF()
 const renderThrottle = throttleRAF()
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
@@ -227,9 +229,9 @@ class _DrawingManager {
     const gl = this.gl
     const prefs = usePreferenceStore.getState().prefs
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
 
-    // resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
     // if (this.currentLayer.noDraw) return
 
@@ -439,6 +441,8 @@ class _DrawingManager {
 
     ResourceManager.create("Background", createBackground(gl))
 
+    resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
+
     Camera.init(gl)
 
     // Initial Canvas Zoom and Positioning
@@ -447,7 +451,7 @@ class _DrawingManager {
     // Should be greater than the UI width (TODO: Automate)
     const margin = 50
 
-    // Start with a zoom that allows the whole canvas to in view
+    // Start with a zoom that allows the whole canvas to be in view
     const widthZoomTarget = gl.canvas.width - margin * 2
     const heightZoomTarget = gl.canvas.height - margin * 2
     Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
@@ -590,12 +594,30 @@ class _DrawingManager {
     wheel: (e: Event) => wheelThrottle(() => this.zoom(e)),
   }
 
+  private windowResize = () =>
+    resizeThrottle(() => {
+      const resize = () => {
+        resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
+
+        Camera.updateViewProjectionMatrix(this.gl)
+        this.render()
+      }
+
+      resize()
+
+      // Device rotation hack
+      setTimeout(resize, 1)
+    })
+
   public start = () => {
     startThrottle(this.render)
 
     for (const [name, callback] of Object.entries(this.listeners)) {
       this.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
     }
+
+    window.addEventListener("resize", this.windowResize)
+    screen.orientation.addEventListener("change", this.windowResize)
 
     // function prevent(event: Event) {
     //   event.preventDefault()
@@ -609,6 +631,9 @@ class _DrawingManager {
     for (const [name, callback] of Object.entries(this.listeners)) {
       this.gl.canvas.removeEventListener(name, callback)
     }
+
+    window.removeEventListener("resize", this.windowResize)
+    screen.orientation.removeEventListener("change", this.windowResize)
   }
 
   /**
