@@ -27,8 +27,8 @@ const usePreferenceStoreBase = create<State & Action>()(
         pressureFiltering: 0.1,
         mouseFiltering: 0.3,
         mouseSmoothing: 0.3,
-        canvasWidth: 1000,
-        canvasHeight: 500,
+        canvasWidth: 1920,
+        canvasHeight: 1080,
       },
       setPrefs: (prefs: Partial<State["prefs"]>) =>
         set((prev) => ({

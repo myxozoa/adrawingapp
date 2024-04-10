@@ -2,6 +2,7 @@
 
 precision mediump float;
 
+in vec2 v_position;
 out vec4 fragColor;
 
 uniform float u_size;
@@ -9,6 +10,7 @@ uniform vec2 u_point;
 uniform vec3 u_brush_color;
 uniform float u_softness;
 uniform float u_flow;
+uniform float u_roughness;
 uniform float u_random;
 
 // book of shaders
@@ -24,7 +26,15 @@ float circle(vec2 point)
 
 void main()
 {
-    float size = 1. / u_size;
+    vec2 st = ((gl_FragCoord.xy * (1./u_size)) + u_random);
+
+    float size_random_amount = u_roughness;
+    float size_random = random(st);
+
+    float size_adjustment = (size_random * (size_random_amount)) - (size_random_amount - 0.01);
+
+    float size = 1. / clamp(u_size + size_adjustment, 1., 100.);
+
     vec2 position = gl_FragCoord.xy - u_point;
     vec2 point = position * size;
     float dist = circle(point);
@@ -39,13 +49,12 @@ void main()
         discard;
 
     // Add a small amount of noise to the alpha channel
-    vec2 st = (gl_FragCoord.xy * size) + u_random;
 
-    float randomNumber = random(st);
+    float alpha_random = random(st);
 
-    float amount = 0.002;
+    float noise_amount = 0.005;
 
-    float alpha = (randomNumber * (amount)) - (amount - 0.01);
+    float alpha = (alpha_random * (noise_amount)) - (noise_amount - 0.01);
 
     color.a = clamp(color.a - alpha, 0., 1.);
     

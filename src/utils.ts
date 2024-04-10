@@ -1,5 +1,6 @@
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec2 } from "gl-matrix"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 let rectCache: DOMRect | null = null
 // TODO: Type this function better
@@ -24,11 +25,6 @@ export function getRelativeMousePosition(
   }
 
   return {
-    inbounds:
-      relativePosition.x >= 0 &&
-      relativePosition.y >= 0 &&
-      relativePosition.x <= rect.width * dpr &&
-      relativePosition.y <= rect.height * dpr,
     ...mouseState,
     ...relativePosition,
   } as MouseState
@@ -417,7 +413,12 @@ export function calculatePointAlongDirection(
  * Moves `point1` to a `targetDistance` from `point0` in the direction of `point0 -> point1`
  */
 export function maintainPointSpacing(point0: IPoint, point1: IPoint, distance: number, targetDistance: number): void {
-  if (distance === 0 || targetDistance === 0) return
+  if (distance === 0 || distance === targetDistance || distance < targetDistance) return
+
+  if (targetDistance === 0) {
+    point1.x = point0.x
+    point1.y = point0.y
+  }
 
   const dx = point1.x - point0.x
   const dy = point1.y - point0.y
@@ -605,4 +606,27 @@ export function debounceRAF() {
 
     queued = requestAnimationFrame(callback)
   }
+}
+
+export function calculateFromPressure(value: number, pressure: number, usePressureSensitivity: boolean) {
+  const prefs = usePreferenceStore.getState().prefs
+
+  let result = value
+
+  if (usePressureSensitivity) {
+    const pressureSensitivity = prefs.pressureSensitivity * 10
+
+    result = value - (value * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
+  }
+
+  return result
+}
+
+export function calculateCurveLength(start: IPoint, control: IPoint, control2: IPoint, end: IPoint): number {
+  // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
+  const chord = getDistance(start, end)
+  const totalDistance = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
+  const estimatedArcLength = (totalDistance + chord) / 2
+
+  return estimatedArcLength
 }

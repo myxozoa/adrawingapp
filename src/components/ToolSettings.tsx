@@ -138,7 +138,7 @@ function _ToolSettings() {
       toolState.spacing !== undefined
         ? SliderSetting("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), {
             min: 1,
-            max: 50,
+            max: 100,
           })
         : null,
   }

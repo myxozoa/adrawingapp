@@ -5,7 +5,14 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import { getRelativeMousePosition, getDistance, toClipSpace, lerp, throttleRAF } from "@/utils.ts"
+import {
+  getRelativeMousePosition,
+  getDistance,
+  toClipSpace,
+  lerp,
+  throttleRAF,
+  calculateFromPressure,
+} from "@/utils.ts"
 
 import {
   ILayer,
@@ -70,6 +77,8 @@ enum pixelQuality {
   nearest,
   trilinear,
 }
+
+const previousEvent = { x: 0, y: 0 }
 
 class _DrawingManager {
   gl: WebGL2RenderingContext
@@ -137,49 +146,47 @@ class _DrawingManager {
       operation.readyToDraw = true
     }
 
-    let spacing =
-      "size" in operation.tool.settings && "spacing" in operation.tool.settings
-        ? operation.tool.settings.size * (operation.tool.settings.spacing / 100)
-        : 0
-
-    if (relativeMouseState.pointerType === "pen") {
-      const pressureSensitivity = prefs.pressureSensitivity * 10
-
-      if (relativeMouseState.pressure < 0.01) return
-
-      spacing =
-        spacing - (spacing * pressureSensitivity * (1 - relativeMouseState.pressure)) / (1 + pressureSensitivity)
-    }
-
     const prevPoint = operation.points.getPoint(-1).active
       ? operation.points.getPoint(-1)
       : operation.points.currentPoint
 
+    const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
+
+    const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing / 100 : 0
+
+    const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
+
+    const stampSpacing = Math.max(0.5, size * spacing)
+
+    const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
+
+    operation.points.currentPoint.x = filteredPositions[0]
+    operation.points.currentPoint.y = filteredPositions[1]
+    operation.points.currentPoint.pointerType = relativeMouseState.pointerType
+
+    const filteredPressure = pressureFilter.filter([relativeMouseState.pressure])
+    operation.points.currentPoint.pressure = filteredPressure[0]
+
+    vec2.lerp(
+      operation.points.currentPoint.location,
+      prevPoint.location,
+      operation.points.currentPoint.location,
+      prefs.mouseSmoothing,
+    )
+
+    const dist = getDistance(prevPoint, operation.points.currentPoint)
+
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && getDistance(prevPoint, relativeMouseState) >= spacing)) {
-          const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
-
-          operation.points.currentPoint.x = filteredPositions[0]
-          operation.points.currentPoint.y = filteredPositions[1]
-          operation.points.currentPoint.pressure = relativeMouseState.pressure
-          operation.points.currentPoint.pointerType = relativeMouseState.pointerType
-
-          vec2.lerp(
-            operation.points.currentPoint.location,
-            prevPoint.location,
-            operation.points.currentPoint.location,
-            prefs.mouseSmoothing,
-          )
-
-          const filteredPressure = pressureFilter.filter([operation.points.currentPoint.pressure])
-          operation.points.currentPoint.pressure = filteredPressure[0]
-
+        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
           operation.points.currentPoint.active = true
 
           operation.points.nextPoint()
 
           operation.readyToDraw = true
+
+          previousEvent.x = relativeMouseState.x
+          previousEvent.y = relativeMouseState.y
         }
         break
 
@@ -256,7 +263,7 @@ class _DrawingManager {
 
     const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
 
-    if (relativeMouseState.leftMouseDown && relativeMouseState.inbounds) {
+    if (relativeMouseState.leftMouseDown) {
       const worldPosition = Camera.getWorldMousePosition(relativeMouseState, gl)
 
       relativeMouseState.x = worldPosition[0]
@@ -483,7 +490,7 @@ class _DrawingManager {
 
       const zoomLerpAmount = 0.1
 
-      Camera.zoom = Math.max(0.1, Math.min(4, lerp(Camera.zoom, zoomTarget, zoomLerpAmount)))
+      Camera.zoom = Math.max(0.001, Math.min(30, lerp(Camera.zoom, zoomTarget, zoomLerpAmount)))
 
       const mousePositionAfterZoom = Camera.getWorldMousePosition(relativeMouseState, gl)
 
@@ -516,7 +523,7 @@ class _DrawingManager {
 
     const clipSpaceMousePosition = toClipSpace(relativeMouseState, this.gl.canvas as HTMLCanvasElement)
 
-    if (relativeMouseState.leftMouseDown && relativeMouseState.inbounds) {
+    if (relativeMouseState.leftMouseDown) {
       if (startMoving) {
         vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
 
@@ -546,6 +553,7 @@ class _DrawingManager {
   private beginDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
     this.drawing = true
+    ;(this.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
     this.loop(event)
 
@@ -555,7 +563,7 @@ class _DrawingManager {
   private continueDraw = (event: Event) => {
     if (!isPointerEvent(event)) return
 
-    if (this.drawing) {
+    if (this.drawing && (this.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId)) {
       if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
         const coalesced = event.getCoalescedEvents()
 
@@ -575,6 +583,7 @@ class _DrawingManager {
     pointerup: (event: Event) => {
       if (!isPointerEvent(event)) return
       this.drawing = false
+      ;(this.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
 
       this.endInteraction()
     },

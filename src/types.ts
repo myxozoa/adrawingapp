@@ -34,6 +34,7 @@ export interface IPoint extends Location {
   id: string
 
   reset: () => void
+  copy: (point: IPoint) => void
 }
 
 export interface IPoints {
@@ -69,7 +70,6 @@ export interface MouseState extends Location {
   middleMouseDown: boolean
   pressure: number
   pointerType: PointerType
-  inbounds?: boolean
 }
 
 export type Modifier = "ctrl" | "alt" | "shift" | "space"

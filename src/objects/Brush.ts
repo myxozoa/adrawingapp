@@ -15,6 +15,8 @@ import {
   cubicBezier,
   pressureInterpolation,
   maintainPointSpacing,
+  calculateFromPressure,
+  calculateCurveLength,
 } from "@/utils"
 
 import { mat3, vec2 } from "gl-matrix"
@@ -26,6 +28,7 @@ const baseSize = 100
 export class Brush extends Tool implements IBrush {
   interpolationPoint: IPoint
   previouslyDrawnPoint: IPoint
+  tempPoint: IPoint
 
   drawnPoints: Map<string, boolean>
 
@@ -70,6 +73,7 @@ export class Brush extends Tool implements IBrush {
 
     this.interpolationPoint = new Point()
     this.previouslyDrawnPoint = new Point()
+    this.tempPoint = new Point()
 
     this.drawnPoints = new Map()
   }
@@ -84,7 +88,16 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_matrix", "u_point", "u_size", "u_brush_color", "u_softness", "u_flow", "u_random"]
+    const uniformNames = [
+      "u_matrix",
+      "u_point",
+      "u_size",
+      "u_brush_color",
+      "u_softness",
+      "u_flow",
+      "u_random",
+      "u_roughness",
+    ]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -217,12 +230,11 @@ export class Brush extends Tool implements IBrush {
    * Interpret the points as a bezier curve and stamp along it
    */
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
-    const stampSpacing = Math.max(0.5, this.settings.size * (this.settings.spacing / 100))
+    const size = calculateFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
 
-    // https://stackoverflow.com/questions/29438398/cheap-way-of-calculating-cubic-bezier-length
-    const chord = getDistance(start, end)
-    const totalDistance = getDistance(end, control2) + getDistance(control2, control) + getDistance(control, start)
-    const estimatedArcLength = (totalDistance + chord) / 2
+    const stampSpacing = Math.max(0.5, size * (this.settings.spacing / 100))
+
+    const estimatedArcLength = calculateCurveLength(start, control, control2, end)
 
     const steps = estimatedArcLength / stampSpacing
 
@@ -234,11 +246,19 @@ export class Brush extends Tool implements IBrush {
       this.interpolationPoint.pressure = pressureInterpolation(start, end, j / steps)
       this.interpolationPoint.pointerType = start.pointerType
 
-      const distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
+      this.tempPoint.copy(this.interpolationPoint)
 
-      maintainPointSpacing(this.previouslyDrawnPoint, this.interpolationPoint, distance, stampSpacing)
+      let distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
 
-      this.stamp(gl, this.interpolationPoint)
+      while (distance > stampSpacing) {
+        maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, distance, stampSpacing)
+
+        this.stamp(gl, this.tempPoint)
+
+        distance = getDistance(this.tempPoint, this.interpolationPoint)
+
+        this.tempPoint.copy(this.interpolationPoint)
+      }
     }
   }
 
@@ -252,8 +272,8 @@ export class Brush extends Tool implements IBrush {
     const steps = distance / stampSpacing
 
     // Stamp at evenly spaced intervals between the two points
-    for (let i = 0, j = 0; i < distance; i += stampSpacing, j++) {
-      const newPoint = calculatePointAlongDirection(start, end, i)
+    for (let t = 0, j = 0; t < 1; t += 1 / steps, j++) {
+      const newPoint = calculatePointAlongDirection(start, end, t)
 
       this.interpolationPoint.x = newPoint.x
       this.interpolationPoint.y = newPoint.y
@@ -262,7 +282,6 @@ export class Brush extends Tool implements IBrush {
 
       this.stamp(gl, this.interpolationPoint)
     }
-    this.stamp(gl, end)
   }
 
   /**
@@ -273,16 +292,15 @@ export class Brush extends Tool implements IBrush {
 
     mat3.fromTranslation(this.glInfo.matrix, point.location)
 
-    this.previouslyDrawnPoint.x = point.x
-    this.previouslyDrawnPoint.y = point.y
+    this.previouslyDrawnPoint.copy(point)
 
-    let size = this.settings.size
+    const size = calculateFromPressure(this.settings.size, point.pressure, point.pointerType === "pen")
+    const flow = calculateFromPressure(this.settings.flow / 100, point.pressure, point.pointerType === "pen")
+    const hardness = calculateFromPressure(this.settings.hardness / 100, point.pressure, false)
 
-    if (point.pointerType === "pen") {
-      const pressureSensitivity = prefs.pressureSensitivity * 10
+    const base_roughness = 2
 
-      size = size - (size * pressureSensitivity * (1 - point.pressure)) / (1 + pressureSensitivity)
-    }
+    const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
     // Give enough pixels around quad to account for decent smooth edges
     this.glInfo.sizeVector[0] = size + 9
@@ -290,6 +308,12 @@ export class Brush extends Tool implements IBrush {
 
     // Internals
     mat3.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
+
+    gl.uniform1f(this.programInfo.uniforms.u_flow, flow)
+
+    gl.uniform1f(this.programInfo.uniforms.u_softness, hardness)
+
+    gl.uniform1f(this.programInfo.uniforms.u_roughness, base_roughness - roughness)
 
     // if (this.programInfo.uniforms.u_matrix)
     gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, this.glInfo.matrix)
@@ -343,8 +367,6 @@ export class Brush extends Tool implements IBrush {
 
     const colors = color.map((c) => c / 255)
     gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
-    gl.uniform1f(this.programInfo.uniforms.u_softness, this.settings.hardness / 100)
-    gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
 
     this.base(gl, operation)
   }
