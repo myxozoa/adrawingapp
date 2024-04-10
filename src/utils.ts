@@ -608,15 +608,15 @@ export function debounceRAF() {
   }
 }
 
-export function calculateSizeFromPressure(size: number, pressure: number, pressureSensitivity: boolean) {
+export function calculateFromPressure(value: number, pressure: number, usePressureSensitivity: boolean) {
   const prefs = usePreferenceStore.getState().prefs
 
-  let result = size
+  let result = value
 
-  if (pressureSensitivity) {
+  if (usePressureSensitivity) {
     const pressureSensitivity = prefs.pressureSensitivity * 10
 
-    result = size - (size * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
+    result = value - (value * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
   }
 
   return result

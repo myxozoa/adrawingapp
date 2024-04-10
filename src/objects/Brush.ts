@@ -15,7 +15,7 @@ import {
   cubicBezier,
   pressureInterpolation,
   maintainPointSpacing,
-  calculateSizeFromPressure,
+  calculateFromPressure,
   calculateCurveLength,
 } from "@/utils"
 
@@ -88,7 +88,16 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_matrix", "u_point", "u_size", "u_brush_color", "u_softness", "u_flow", "u_random"]
+    const uniformNames = [
+      "u_matrix",
+      "u_point",
+      "u_size",
+      "u_brush_color",
+      "u_softness",
+      "u_flow",
+      "u_random",
+      "u_roughness",
+    ]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -221,7 +230,7 @@ export class Brush extends Tool implements IBrush {
    * Interpret the points as a bezier curve and stamp along it
    */
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
-    const size = calculateSizeFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
+    const size = calculateFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
 
     const stampSpacing = Math.max(0.5, size * (this.settings.spacing / 100))
 
@@ -285,7 +294,13 @@ export class Brush extends Tool implements IBrush {
 
     this.previouslyDrawnPoint.copy(point)
 
-    const size = calculateSizeFromPressure(this.settings.size, point.pressure, point.pointerType === "pen")
+    const size = calculateFromPressure(this.settings.size, point.pressure, point.pointerType === "pen")
+    const flow = calculateFromPressure(this.settings.flow / 100, point.pressure, point.pointerType === "pen")
+    const hardness = calculateFromPressure(this.settings.hardness / 100, point.pressure, false)
+
+    const base_roughness = 2
+
+    const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
     // Give enough pixels around quad to account for decent smooth edges
     this.glInfo.sizeVector[0] = size + 9
@@ -293,6 +308,12 @@ export class Brush extends Tool implements IBrush {
 
     // Internals
     mat3.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
+
+    gl.uniform1f(this.programInfo.uniforms.u_flow, flow)
+
+    gl.uniform1f(this.programInfo.uniforms.u_softness, hardness)
+
+    gl.uniform1f(this.programInfo.uniforms.u_roughness, base_roughness - roughness)
 
     // if (this.programInfo.uniforms.u_matrix)
     gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, this.glInfo.matrix)
@@ -346,8 +367,6 @@ export class Brush extends Tool implements IBrush {
 
     const colors = color.map((c) => c / 255)
     gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
-    gl.uniform1f(this.programInfo.uniforms.u_softness, this.settings.hardness / 100)
-    gl.uniform1f(this.programInfo.uniforms.u_flow, this.settings.flow / 100)
 
     this.base(gl, operation)
   }

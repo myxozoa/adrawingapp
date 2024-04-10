@@ -11,7 +11,7 @@ import {
   toClipSpace,
   lerp,
   throttleRAF,
-  calculateSizeFromPressure,
+  calculateFromPressure,
 } from "@/utils.ts"
 
 import {
@@ -154,7 +154,7 @@ class _DrawingManager {
 
     const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing / 100 : 0
 
-    const size = calculateSizeFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
+    const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
 
     const stampSpacing = Math.max(0.5, size * spacing)
 
