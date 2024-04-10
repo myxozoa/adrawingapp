@@ -8,6 +8,7 @@ import { useLayerStore } from "@/stores/LayerStore"
 import { DrawingManager } from "@/managers/DrawingManager"
 
 import { initializeCanvas } from "@/utils"
+import { InteractionManager } from "@/managers/InteractionManager"
 
 function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
@@ -29,10 +30,11 @@ function _Board() {
     DrawingManager.canvasRef = boardRef
 
     DrawingManager.init()
+    InteractionManager.init()
     DrawingManager.start()
 
     return () => {
-      DrawingManager.destroy()
+      InteractionManager.destroy()
     }
   }, [])
 

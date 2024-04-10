@@ -630,3 +630,15 @@ export function calculateCurveLength(start: IPoint, control: IPoint, control2: I
 
   return estimatedArcLength
 }
+
+export function isPointerEvent(event: Event): event is PointerEvent {
+  return event instanceof PointerEvent
+}
+
+export function isKeyboardEvent(event: Event): event is KeyboardEvent {
+  return event instanceof KeyboardEvent
+}
+
+export function isTouchEvent(event: Event): event is TouchEvent {
+  return event instanceof TouchEvent
+}

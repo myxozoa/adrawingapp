@@ -8,8 +8,6 @@ import { tool_types } from "@/constants.tsx"
 import {
   getRelativeMousePosition,
   getDistance,
-  toClipSpace,
-  lerp,
   throttleRAF,
   calculateFromPressure,
   resizeCanvasToDisplaySize,
@@ -30,7 +28,7 @@ import { Operation } from "@/objects/Operation.ts"
 
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 
-import { mat3, vec2 } from "gl-matrix"
+import { vec2 } from "gl-matrix"
 
 import { Camera } from "@/objects/Camera"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -40,13 +38,6 @@ import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createBackground } from "@/resources/background"
-
-import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
-import { updatePointer } from "@/managers/PointerManager"
-
-function isPointerEvent(event: Event): event is PointerEvent {
-  return event instanceof PointerEvent
-}
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
@@ -61,19 +52,10 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
 }
 
 const startThrottle = throttleRAF()
-const wheelThrottle = throttleRAF()
-const resizeThrottle = throttleRAF()
 const renderThrottle = throttleRAF()
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
 const positionFilter = new ExponentialSmoothingFilter(0.5)
-
-let startMoving = false
-const startCamPosition = { x: 0, y: 0 }
-const startPos = { x: 0, y: 0 }
-const startInvViewProjMat: mat3 = mat3.create()
-const tempPos = vec2.create()
-let zoomTarget = 0
 
 enum pixelQuality {
   nearest,
@@ -223,45 +205,13 @@ class _DrawingManager {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  private loop = (event: Event) => {
-    if (!isPointerEvent(event) || (event.target as HTMLElement).nodeName !== "CANVAS") return
-
+  private loop = (pointerState: MouseState) => {
     const gl = this.gl
     const prefs = usePreferenceStore.getState().prefs
 
     resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
-    // if (this.currentLayer.noDraw) return
-
-    // if (this.needRedraw) {
-    //   this.needRedraw = false
-
-    //   if (this.currentLayer.undoSnapshotQueue.length > 0) {
-    //     this.gl.putImageData(this.currentLayer.undoSnapshotQueue.at(-1), 0, 0)
-    //   } else {
-    //     if (this.currentLayer.drawingData) {
-    //       this.gl.putImageData(this.currentLayer.drawingData, 0, 0)
-    //     }
-    //   }
-    // }
-
-    if (ModifierKeyManager.has("space")) {
-      if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
-        ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
-      }
-
-      this.pan(event)
-
-      return
-    }
-
-    if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor == "grab") {
-      ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
-    }
-
-    const pointerState = updatePointer(event)
 
     const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
 
@@ -280,7 +230,7 @@ class _DrawingManager {
     }
   }
 
-  public render = () => {
+  public swapPixelInterpolation = () => {
     const gl = this.gl
 
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
@@ -307,6 +257,10 @@ class _DrawingManager {
         this.pixelQuality = pixelQuality.trilinear
       }
     }
+  }
+
+  public render = () => {
+    const gl = this.gl
 
     // Draw Screen
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
@@ -362,18 +316,33 @@ class _DrawingManager {
 
     this.currentTool.reset()
 
-    if (startMoving) {
-      startMoving = false
-      startCamPosition.x = 0
-      startCamPosition.y = 0
-      startPos.x = 0
-      startPos.y = 0
-      mat3.identity(startInvViewProjMat)
-    }
-
     if (save) {
       // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
     }
+  }
+
+  public resetCam = () => {
+    const prefs = usePreferenceStore.getState().prefs
+
+    const gl = this.gl
+    // Initial Canvas Zoom and Positioning
+
+    // Minimum space between canvas edges and screen edges
+    // Should be greater than the UI width (TODO: Automate)
+    const margin = 50
+
+    // Start with a zoom that allows the whole canvas to be in view
+    const widthZoomTarget = gl.canvas.width - margin * 2
+    const heightZoomTarget = gl.canvas.height - margin * 2
+    Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
+
+    // Start with a camera position that centers the canvas in view
+    Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
+    Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
+
+    Camera.updateViewProjectionMatrix(gl)
+
+    this.swapPixelInterpolation()
   }
 
   /**
@@ -411,18 +380,6 @@ class _DrawingManager {
     // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
     // Not sure what devices will need these then
 
-    // this.glInfo.supportedType = floatBufferExt
-    //   ? gl.FLOAT
-    //   : halfFloatTextureExt && halfFloatColorBufferExt
-    //     ? gl.HALF_FLOAT
-    //     : gl.UNSIGNED_BYTE
-
-    // this.glInfo.supportedImageFormat = floatBufferExt
-    //   ? gl.RGBA32F
-    //   : halfFloatTextureExt && halfFloatColorBufferExt
-    //     ? gl.RGBA16F
-    //     : gl.RGBA
-
     this.glInfo.supportedType = gl.FLOAT
     this.glInfo.supportedImageFormat = gl.RGBA16F
 
@@ -445,22 +402,7 @@ class _DrawingManager {
 
     Camera.init(gl)
 
-    // Initial Canvas Zoom and Positioning
-
-    // Minimum space between canvas edges and screen edges
-    // Should be greater than the UI width (TODO: Automate)
-    const margin = 50
-
-    // Start with a zoom that allows the whole canvas to be in view
-    const widthZoomTarget = gl.canvas.width - margin * 2
-    const heightZoomTarget = gl.canvas.height - margin * 2
-    Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
-
-    // Start with a camera position that centers the canvas in view
-    Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
-    Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
-
-    Camera.updateViewProjectionMatrix(gl)
+    this.resetCam()
 
     // Initialize tools
     Object.values(tools).forEach((tool) => {
@@ -472,168 +414,24 @@ class _DrawingManager {
     this.initialized = true
   }
 
-  public zoom = (event: Event) => {
-    function isWheelEvent(event: Event): event is WheelEvent {
-      return event instanceof WheelEvent
-    }
-
-    if (!isWheelEvent(event)) return
-
-    const gl = this.gl
-
-    const pointerState = updatePointer(event)
-
-    const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
-
-    if (event.deltaY) {
-      zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.006)
-    }
-
-    if (zoomTarget) {
-      const mousePositionBeforeZoom = Camera.getWorldMousePosition(relativeMouseState, gl)
-
-      const zoomLerpAmount = 0.1
-
-      Camera.zoom = Math.max(0.001, Math.min(30, lerp(Camera.zoom, zoomTarget, zoomLerpAmount)))
-
-      const mousePositionAfterZoom = Camera.getWorldMousePosition(relativeMouseState, gl)
-
-      const zoomXOffset = mousePositionBeforeZoom[0] - mousePositionAfterZoom[0]
-
-      const zoomYOffset = mousePositionBeforeZoom[1] - mousePositionAfterZoom[1]
-
-      // Zoom Repositioning
-      Camera.x += zoomXOffset
-      Camera.y += zoomYOffset
-
-      if (Math.abs(Camera.zoom - zoomTarget) < 0.001) {
-        zoomTarget = 0
-      }
-    }
-
-    Camera.updateViewProjectionMatrix(gl)
-
-    renderThrottle(this.render)
-  }
-
-  public pan = (event: Event) => {
-    if (!isPointerEvent(event)) return
-
-    const gl = this.gl
-
-    const pointerState = updatePointer(event)
-
-    const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
-
-    const clipSpaceMousePosition = toClipSpace(relativeMouseState, this.gl.canvas as HTMLCanvasElement)
-
-    if (relativeMouseState.leftMouseDown) {
-      if (startMoving) {
-        vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
-
-        const panLerpAmount = 0.6
-        Camera.x = lerp(Camera.x, startCamPosition.x + (startPos.x - tempPos[0]), panLerpAmount)
-        Camera.y = lerp(Camera.y, startCamPosition.y + (startPos.y - tempPos[1]), panLerpAmount)
-      } else {
-        startMoving = true
-
-        mat3.copy(startInvViewProjMat, Camera.getInverseViewProjectionMatrix())
-
-        vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
-
-        startCamPosition.x = Camera.x
-        startCamPosition.y = Camera.y
-
-        startPos.x = tempPos[0]
-        startPos.y = tempPos[1]
-      }
-    }
-
-    Camera.updateViewProjectionMatrix(gl)
-
-    renderThrottle(this.render)
-  }
-
-  private beginDraw = (event: Event) => {
-    if (!isPointerEvent(event)) return
+  public beginDraw = (pointerState: MouseState) => {
     this.drawing = true
-    ;(this.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
-    this.loop(event)
+    this.loop(pointerState)
 
     renderThrottle(this.render)
   }
 
-  private continueDraw = (event: Event) => {
-    if (!isPointerEvent(event)) return
+  public continueDraw = (pointerState: MouseState) => {
+    if (this.drawing) {
+      this.loop(pointerState)
 
-    if (this.drawing && (this.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId)) {
-      if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-        const coalesced = event.getCoalescedEvents()
-
-        for (const coalescedEvent of coalesced) {
-          this.loop(coalescedEvent)
-        }
-      } else {
-        this.loop(event)
-      }
       renderThrottle(this.render)
     }
   }
 
-  private listeners = {
-    pointerdown: this.beginDraw,
-    pointermove: this.continueDraw,
-    pointerup: (event: Event) => {
-      if (!isPointerEvent(event)) return
-      this.drawing = false
-      ;(this.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
-
-      this.endInteraction()
-    },
-    wheel: (e: Event) => wheelThrottle(() => this.zoom(e)),
-  }
-
-  private windowResize = () =>
-    resizeThrottle(() => {
-      const resize = () => {
-        resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
-
-        Camera.updateViewProjectionMatrix(this.gl)
-        this.render()
-      }
-
-      resize()
-
-      // Device rotation hack
-      setTimeout(resize, 1)
-    })
-
   public start = () => {
     startThrottle(this.render)
-
-    for (const [name, callback] of Object.entries(this.listeners)) {
-      this.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
-    }
-
-    window.addEventListener("resize", this.windowResize)
-    screen.orientation.addEventListener("change", this.windowResize)
-
-    // function prevent(event: Event) {
-    //   event.preventDefault()
-    // }
-
-    // this.gl.canvas.addEventListener("touchstart", prevent, { passive: true })
-    // this.gl.canvas.addEventListener("touchmove", prevent, { passive: true })
-  }
-
-  public destroy = () => {
-    for (const [name, callback] of Object.entries(this.listeners)) {
-      this.gl.canvas.removeEventListener(name, callback)
-    }
-
-    window.removeEventListener("resize", this.windowResize)
-    screen.orientation.removeEventListener("change", this.windowResize)
   }
 
   /**
