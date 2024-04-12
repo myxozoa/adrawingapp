@@ -136,15 +136,12 @@ function pointermove(event: Event) {
 
   if (touches.length === 2) {
     touchThrottle(() => {
-      const touch1 = { x: touches[0].x, y: touches[0].y }
-      const touch2 = { x: touches[1].x, y: touches[1].y }
-
       const midPoint = {
-        x: (touch1.x + touch2.x) / 2,
-        y: (touch1.y + touch2.y) / 2,
+        x: (touches[0].x + touches[1].x) / 2,
+        y: (touches[1].y + touches[1].y) / 2,
       }
 
-      const distance = getDistance(touch1, touch2) * window.devicePixelRatio
+      const distance = getDistance(touches[0], touches[1]) * window.devicePixelRatio
 
       pan(midPoint)
       pinchZoom(midPoint, distance)
