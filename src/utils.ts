@@ -635,6 +635,10 @@ export function isPointerEvent(event: Event): event is PointerEvent {
   return event instanceof PointerEvent
 }
 
+export function isPointerEventOrLocation(event: PointerEvent | { x: number; y: number }): event is PointerEvent {
+  return event instanceof PointerEvent
+}
+
 export function isKeyboardEvent(event: Event): event is KeyboardEvent {
   return event instanceof KeyboardEvent
 }

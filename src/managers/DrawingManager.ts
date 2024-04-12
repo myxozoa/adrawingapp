@@ -5,13 +5,7 @@ import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import {
-  getRelativeMousePosition,
-  getDistance,
-  throttleRAF,
-  calculateFromPressure,
-  resizeCanvasToDisplaySize,
-} from "@/utils.ts"
+import { getDistance, throttleRAF, calculateFromPressure, resizeCanvasToDisplaySize } from "@/utils.ts"
 
 import {
   ILayer,
@@ -213,15 +207,8 @@ class _DrawingManager {
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
-
-    if (relativeMouseState.leftMouseDown) {
-      const worldPosition = Camera.getWorldMousePosition(relativeMouseState, gl)
-
-      relativeMouseState.x = worldPosition[0]
-      relativeMouseState.y = worldPosition[1]
-
-      this.use(relativeMouseState)
+    if (pointerState.leftMouseDown) {
+      this.use(pointerState)
 
       // Draw to Canvas
       gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)

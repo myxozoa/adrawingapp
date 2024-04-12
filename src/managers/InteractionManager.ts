@@ -3,36 +3,46 @@ import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import {
   isPointerEvent,
+  isPointerEventOrLocation,
   throttleRAF,
   resizeCanvasToDisplaySize,
   getRelativeMousePosition,
-  lerp,
-  toClipSpace,
   getDistance,
 } from "@/utils"
 import { isKeyboardEvent } from "@/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
-import { vec2, mat3 } from "gl-matrix"
+import type { MouseState } from "@/types"
 
 const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
 const renderThrottle = throttleRAF()
+const touchThrottle = throttleRAF()
 
-let touchCache: PointerEvent[] = []
+let touches: PointerEvent[] = []
 let prevTouchDistance = -1
 
 const startCamPosition = { x: 0, y: 0 }
-const startPos = { x: 0, y: 0 }
-const startInvViewProjMat: mat3 = mat3.create()
-const tempPos = vec2.create()
-let zoomTarget = 0
-let startMoving = false
+const startPosition = { x: 0, y: 0 }
+const lastPosition = { x: 0, y: 0 }
+
+function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
+  const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
+
+  const relativeMouseState = getRelativeMousePosition(DrawingManager.gl.canvas as HTMLCanvasElement, pointerState)
+
+  const worldPosition = Camera.getWorldMousePosition(relativeMouseState, DrawingManager.gl)
+
+  relativeMouseState.x = worldPosition[0]
+  relativeMouseState.y = worldPosition[1]
+
+  return relativeMouseState
+}
 
 function removeEvent(event: PointerEvent) {
-  const index = touchCache.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
-  touchCache.splice(index, 1)
+  const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+  touches.splice(index, 1)
 }
 
 function wheelZoom(event: Event) {
@@ -42,162 +52,145 @@ function wheelZoom(event: Event) {
 
   if (!isWheelEvent(event)) return
 
-  const gl = DrawingManager.gl
-
   const pointerState = updatePointer(event)
 
-  const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
+  const zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
 
-  if (event.deltaY) {
-    zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.006)
-  }
-
-  zoom(relativeMouseState, 0.1)
+  zoom(pointerState, zoomTarget)
 }
 
-function pinchZoom(
-  touch1: { x: number; y: number },
-  touch2: { x: number; y: number },
-  midPoint: { x: number; y: number },
-) {
-  const distance = getDistance(touch1, touch2) / window.devicePixelRatio
-
+function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
+  // TODO: Change this
   if (prevTouchDistance !== -1) {
-    // zoomTarget = Camera.zoom / (prevTouchDistance / distance)
-    zoomTarget = Camera.zoom * (distance / prevTouchDistance)
+    const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
 
-    zoom(midPoint, 0.6)
+    zoom(midPoint, zoomTarget)
   }
-
-  prevTouchDistance = distance
-
-  return
 }
 
-function zoom(pointerPosition: { x: number; y: number }, lerpAmount: number) {
-  const gl = DrawingManager.gl
+function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
+  const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
 
-  const mousePositionBeforeZoom = Camera.getWorldMousePosition(pointerPosition, gl)
+  Camera.zoom = Math.max(0.001, Math.min(30, zoomTarget))
 
-  let tempZoom = zoomTarget
+  const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
 
-  const zoomLerpAmount = lerpAmount
+  // Repositioning to make the pointer closer to the world space position it had before the zoom
+  const dx = mousePositionAfterZoom.x - mousePositionBeforeZoom.x
+  const dy = mousePositionAfterZoom.y - mousePositionBeforeZoom.y
 
-  tempZoom = lerp(Camera.zoom, zoomTarget, zoomLerpAmount)
+  Camera.x -= dx
+  Camera.y -= dy
 
-  Camera.zoom = Math.max(0.001, Math.min(30, tempZoom))
-
-  const mousePositionAfterZoom = Camera.getWorldMousePosition(pointerPosition, gl)
-
-  const zoomXOffset = mousePositionBeforeZoom[0] - mousePositionAfterZoom[0]
-
-  const zoomYOffset = mousePositionBeforeZoom[1] - mousePositionAfterZoom[1]
-
-  // Zoom Repositioning
-  Camera.x += zoomXOffset
-  Camera.y += zoomYOffset
-
-  if (Math.abs(Camera.zoom - zoomTarget) < 0.001) {
-    zoomTarget = 0
-  }
-
-  Camera.updateViewProjectionMatrix(gl)
-
-  DrawingManager.swapPixelInterpolation()
-
-  renderThrottle(DrawingManager.render)
+  Camera.updateViewProjectionMatrix(DrawingManager.gl)
 }
 
-function pan(pointerPosition: { x: number; y: number }, lerpAmount: number) {
-  const gl = DrawingManager.gl
+function pan(pointerPosition: { x: number; y: number }) {
+  const dx = (pointerPosition.x - lastPosition.x) * window.devicePixelRatio
+  const dy = (pointerPosition.y - lastPosition.y) * window.devicePixelRatio
 
-  const clipSpaceMousePosition = toClipSpace(pointerPosition, DrawingManager.gl.canvas as HTMLCanvasElement)
+  Camera.x -= dx / Camera.zoom
+  Camera.y -= dy / Camera.zoom
 
-  if (startMoving) {
-    vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
+  Camera.updateViewProjectionMatrix(DrawingManager.gl)
 
-    const panLerpAmount = lerpAmount
-    Camera.x = lerp(Camera.x, startCamPosition.x + (startPos.x - tempPos[0]), panLerpAmount)
-    Camera.y = lerp(Camera.y, startCamPosition.y + (startPos.y - tempPos[1]), panLerpAmount)
-  } else {
-    startMoving = true
-
-    mat3.copy(startInvViewProjMat, Camera.getInverseViewProjectionMatrix())
-
-    vec2.transformMat3(tempPos, clipSpaceMousePosition, startInvViewProjMat)
-
-    startCamPosition.x = Camera.x
-    startCamPosition.y = Camera.y
-
-    startPos.x = tempPos[0]
-    startPos.y = tempPos[1]
-  }
-
-  Camera.updateViewProjectionMatrix(gl)
-
-  renderThrottle(DrawingManager.render)
+  lastPosition.x = pointerPosition.x
+  lastPosition.y = pointerPosition.y
 }
 
 function pointerdown(event: Event) {
   if (!isPointerEvent(event)) return
   ;(DrawingManager.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
-  touchCache.push(event)
+  touches.push(event)
 
-  const pointerState = updatePointer(event)
+  if (touches.length > 2) {
+    touches = []
 
-  if (ModifierKeyManager.has("space")) pan(event, 0.6)
-  else DrawingManager.beginDraw(pointerState)
+    return
+  }
+
+  const position = calculateWorldPosition(event)
+
+  if (ModifierKeyManager.has("space") || touches.length === 2) {
+    startCamPosition.x = Camera.x
+    startCamPosition.y = Camera.y
+
+    startPosition.x = event.x
+    startPosition.y = event.y
+
+    lastPosition.x = event.x
+    lastPosition.y = event.y
+
+    pan(event)
+
+    renderThrottle(DrawingManager.render)
+  } else DrawingManager.beginDraw(position)
 }
 
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
 
-  const pointerState = updatePointer(event)
+  const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+  touches[index] = event
 
-  const relativeMouseState = getRelativeMousePosition(DrawingManager.gl.canvas as HTMLCanvasElement, pointerState)
+  if (touches.length === 2) {
+    touchThrottle(() => {
+      const touch1 = { x: touches[0].x, y: touches[0].y }
+      const touch2 = { x: touches[1].x, y: touches[1].y }
 
-  const index = touchCache.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
-  touchCache[index] = event
+      const midPoint = {
+        x: (touch1.x + touch2.x) / 2,
+        y: (touch1.y + touch2.y) / 2,
+      }
 
-  if (touchCache.length === 2) {
-    const touch1 = { x: touchCache[0].clientX, y: touchCache[0].clientY }
-    const touch2 = { x: touchCache[1].clientX, y: touchCache[1].clientY }
+      const distance = getDistance(touch1, touch2) * window.devicePixelRatio
 
-    const midPoint = getRelativeMousePosition(DrawingManager.gl.canvas as HTMLCanvasElement, {
-      x: (touch1.x + touch2.x) / 2,
-      y: (touch1.y + touch2.y) / 2,
+      pan(midPoint)
+      pinchZoom(midPoint, distance)
+
+      prevTouchDistance = distance
+
+      DrawingManager.swapPixelInterpolation()
+
+      DrawingManager.render()
     })
 
-    pinchZoom(touch1, touch2, midPoint)
-    pan(midPoint, 0.8)
-
     return
   }
 
-  if (ModifierKeyManager.has("space")) {
-    if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
-      ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
+  if (
+    (DrawingManager.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId) &&
+    touches[0].pointerId === event.pointerId
+  ) {
+    const position = calculateWorldPosition(event)
+
+    if (ModifierKeyManager.has("space")) {
+      if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
+        ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
+      }
+
+      pan(event)
+
+      renderThrottle(DrawingManager.render)
+
+      return
     }
 
-    pan(relativeMouseState, 0.6)
-
-    return
-  }
-
-  if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor == "grab") {
-    ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
-  }
-
-  if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-    const coalesced = event.getCoalescedEvents()
-
-    for (const coalescedEvent of coalesced) {
-      const coalescedEventPointerState = updatePointer(coalescedEvent)
-      DrawingManager.continueDraw(coalescedEventPointerState)
+    if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor == "grab") {
+      ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
     }
-  } else {
-    DrawingManager.continueDraw(pointerState)
+
+    if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
+      const coalesced = event.getCoalescedEvents()
+
+      for (const coalescedEvent of coalesced) {
+        const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent)
+        DrawingManager.continueDraw(coalescedRelativeMouseState)
+      }
+    } else {
+      DrawingManager.continueDraw(position)
+    }
   }
 }
 
@@ -209,7 +202,7 @@ function pointerup(event: Event) {
 
   removeEvent(event)
 
-  if (touchCache.length < 2) {
+  if (touches.length < 2) {
     prevTouchDistance = -1
   }
 
@@ -218,7 +211,12 @@ function pointerup(event: Event) {
 }
 
 function wheel(event: Event) {
-  wheelThrottle(() => wheelZoom(event))
+  wheelThrottle(() => {
+    wheelZoom(event)
+    DrawingManager.swapPixelInterpolation()
+
+    DrawingManager.render()
+  })
 }
 
 function keyup(event: Event) {
@@ -265,14 +263,12 @@ function init() {
 }
 
 function reset() {
-  startMoving = false
   startCamPosition.x = 0
   startCamPosition.y = 0
-  startPos.x = 0
-  startPos.y = 0
-  touchCache = []
+  startPosition.x = 0
+  startPosition.y = 0
+  touches = []
   prevTouchDistance = -1
-  mat3.identity(startInvViewProjMat)
 }
 
 function destroy() {
