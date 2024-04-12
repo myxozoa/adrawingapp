@@ -28,6 +28,7 @@ void main()
 {
     vec2 st = ((gl_FragCoord.xy * (1./u_size)) + u_random);
 
+    // Vary the size for rougher brush edges
     float size_random_amount = u_roughness;
     float size_random = random(st);
 
@@ -35,16 +36,19 @@ void main()
 
     float size = 1. / clamp(u_size + size_adjustment, 1., 100.);
 
+    // Calculate brush circle
     vec2 position = gl_FragCoord.xy - u_point;
     vec2 point = position * size;
     float dist = circle(point);
 
+    // Color brush circle with transparent falloff
     vec4 main_color = vec4(u_brush_color.rgb, u_flow);
     vec4 transparent = vec4(u_brush_color.rgb, 0.);
 
     float edge = 1. - (4. - (u_softness * 4.));
     vec4 color = mix(main_color, transparent, smoothstep(edge - (size * 2.), 1., dist));
 
+    // Discarding here appears to be faster
     if (color.a == 0.)
         discard;
 
