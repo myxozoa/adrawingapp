@@ -26,11 +26,11 @@ import { tool_list } from "@/constants"
 
 const baseSize = 100
 export class Brush extends Tool implements IBrush {
-  interpolationPoint: IPoint
-  previouslyDrawnPoint: IPoint
-  tempPoint: IPoint
+  interpolationPoint: Point
+  previouslyDrawnPoint: Point
+  tempPoint: Point
 
-  drawnPoints: Map<string, boolean>
+  drawnPoints: Map<number, boolean>
 
   settings: {
     size: number

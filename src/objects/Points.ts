@@ -2,7 +2,7 @@ import { Point } from "@/objects/Point"
 import { IPoint, IPoints } from "@/types"
 
 export class Points implements IPoints {
-  list: IPoint[]
+  list: Point[]
   currentPointIndex: number // always % points.length
 
   constructor(amount: number) {
