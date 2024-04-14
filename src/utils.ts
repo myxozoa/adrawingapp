@@ -128,7 +128,7 @@ export function initializeCanvas(
   _options: Partial<Options> = {},
 ) {
   const defaultOptions: Options = {
-    desynchronized: false,
+    desynchronized: true,
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",

@@ -93,7 +93,7 @@ class _Camera {
       this.getInverseViewProjectionMatrix(),
     )
 
-    return [this.tempVec2[0], this.tempVec2[1]]
+    return this.tempVec2
   }
 }
 

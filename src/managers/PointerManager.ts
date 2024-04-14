@@ -16,21 +16,15 @@ function isPointerEvent(event: Event): event is PointerEvent {
 
 function parseMouseButtons(event: PointerEvent | WheelEvent) {
   const buttons = event.buttons !== undefined ? event.buttons : event.which
-  const leftMouseDown = (buttons & 0b001) > 0
-  const rightMouseDown = (buttons & 0b010) > 0
-  const middleMouseDown = (buttons & 0b100) > 0
 
-  return { leftMouseDown, middleMouseDown, rightMouseDown }
+  PointerManager.leftMouseDown = (buttons & 0b001) > 0
+  PointerManager.rightMouseDown = (buttons & 0b010) > 0
+  PointerManager.middleMouseDown = (buttons & 0b100) > 0
 }
 
 export const updatePointer = (event: PointerEvent | WheelEvent): MouseState => {
-  const mouseButtons = parseMouseButtons(event)
-
-  ;(PointerManager.x = event.clientX),
-    (PointerManager.y = event.clientY),
-    (PointerManager.leftMouseDown = mouseButtons.leftMouseDown),
-    (PointerManager.middleMouseDown = mouseButtons.middleMouseDown),
-    (PointerManager.rightMouseDown = mouseButtons.rightMouseDown)
+  parseMouseButtons(event)
+  ;(PointerManager.x = event.clientX), (PointerManager.y = event.clientY)
 
   if (isPointerEvent(event)) {
     ;(PointerManager.pressure = event.pressure),
