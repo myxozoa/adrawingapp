@@ -144,9 +144,9 @@ export function initializeCanvas(
   // TODO: Add hiDPI setting on project creation
   const targetDpi = window.devicePixelRatio
 
+  canvas.width = Math.round(width * targetDpi)
+  canvas.height = Math.round(height * targetDpi)
   if (!options.resize) {
-    canvas.width = Math.floor(width * targetDpi)
-    canvas.height = Math.floor(height * targetDpi)
     canvas.style.width = `${width.toString()}px`
     canvas.style.height = `${height.toString()}px`
   }
@@ -202,7 +202,7 @@ function onResize(entries: ResizeObserverEntry[]) {
   }
 }
 
-export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback: () => void) {
+export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: () => void) {
   // Get the size the browser is displaying the canvas in device pixels.
   const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)!
   // Check if the canvas is not the same size.
@@ -211,7 +211,7 @@ export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback: (
     // Make the canvas the same size
     canvas.width = displayWidth
     canvas.height = displayHeight
-    callback()
+    if (callback) callback()
   }
   return needResize
 }

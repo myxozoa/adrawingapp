@@ -202,8 +202,6 @@ class _DrawingManager {
     const gl = this.gl
     const prefs = usePreferenceStore.getState().prefs
 
-    resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
-
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
     if (pointerState.leftMouseDown) {
@@ -342,9 +340,9 @@ class _DrawingManager {
     // this is not supported on iOS
     gl.getExtension("EXT_float_blend")
     gl.getExtension("OES_texture_float") // Only needed for 32bit?
-    const floatTextureLinearExt = gl.getExtension("OES_texture_float_linear")
+    /*const floatTextureLinearExt = */ gl.getExtension("OES_texture_float_linear")
     const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
-    const halfFloatTextureLinearExt = gl.getExtension("OES_texture_half_float_linear")
+    /* const halfFloatTextureLinearExt = */ gl.getExtension("OES_texture_half_float_linear")
     const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
 
     // TODO: 8bit fallback shouldn't be too hard now
@@ -357,6 +355,8 @@ class _DrawingManager {
     this.glInfo.supportedType = gl.FLOAT
     this.glInfo.supportedImageFormat = gl.RGBA16F
 
+    // Feature detecting  float texture linear filtering on iOS / iPadOS seems to not work at all
+    // TODO: Figure out what to do
     this.glInfo.supportedMinFilterType = gl.LINEAR_MIPMAP_LINEAR
     this.glInfo.supportedMagFilterType = gl.LINEAR
     // this.glInfo.supportedMinFilterType =
@@ -374,8 +374,6 @@ class _DrawingManager {
 
     ResourceManager.create("Background", createBackground(gl))
 
-    resizeCanvasToDisplaySize(this.canvasRef.current, () => (this.needRedraw = true))
-
     Camera.init(gl)
 
     this.resetCam()
@@ -388,6 +386,8 @@ class _DrawingManager {
     this.currentOperation = new Operation(this.currentTool)
 
     this.initialized = true
+
+    resizeCanvasToDisplaySize(gl.canvas)
   }
 
   public beginDraw = (pointerState: MouseState) => {

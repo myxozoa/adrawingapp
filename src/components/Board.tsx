@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef } from "react"
 
 import { DrawCanvas } from "@/components/DrawCanvas"
 
@@ -15,11 +15,7 @@ function _Board() {
   const currentLayer = useLayerStore.use.currentLayer()
   const currentTool = useToolStore.use.currentTool()
 
-  useEffect(() => {
-    DrawingManager.currentLayer = currentLayer
-  }, [currentLayer])
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
     const context = initializeCanvas(boardRef.current, rect.width, rect.height, {
@@ -28,7 +24,9 @@ function _Board() {
 
     DrawingManager.gl = context
     DrawingManager.canvasRef = boardRef
+  }, [])
 
+  useEffect(() => {
     DrawingManager.init()
     InteractionManager.init()
     DrawingManager.start()
@@ -37,6 +35,10 @@ function _Board() {
       InteractionManager.destroy()
     }
   }, [])
+
+  useEffect(() => {
+    DrawingManager.currentLayer = currentLayer
+  }, [currentLayer])
 
   useEffect(() => {
     DrawingManager.swapTool(currentTool)

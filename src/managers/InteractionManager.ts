@@ -23,9 +23,8 @@ const touchThrottle = throttleRAF()
 let touches: PointerEvent[] = []
 let prevTouchDistance = -1
 
-const startCamPosition = { x: 0, y: 0 }
-const startPosition = { x: 0, y: 0 }
-const lastPosition = { x: 0, y: 0 }
+const startMidPosition = { x: 0, y: 0 }
+const lastMidPosition = { x: 0, y: 0 }
 const midPoint = { x: 0, y: 0 }
 
 function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
@@ -74,6 +73,8 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   Camera.zoom = Math.max(0.001, Math.min(30, zoomTarget))
 
+  Camera.updateViewProjectionMatrix(DrawingManager.gl)
+
   const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
 
   // Repositioning to make the pointer closer to the world space position it had before the zoom
@@ -86,17 +87,35 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   Camera.updateViewProjectionMatrix(DrawingManager.gl)
 }
 
-function pan(pointerPosition: { x: number; y: number }) {
-  const dx = (pointerPosition.x - lastPosition.x) * window.devicePixelRatio
-  const dy = (pointerPosition.y - lastPosition.y) * window.devicePixelRatio
+function pan(midPosition: { x: number; y: number }) {
+  if (midPosition.x !== lastMidPosition.x && midPosition.y !== lastMidPosition.y) {
+    const dx = (midPosition.x - lastMidPosition.x) * window.devicePixelRatio
+    const dy = (midPosition.y - lastMidPosition.y) * window.devicePixelRatio
 
-  Camera.x -= dx / Camera.zoom
-  Camera.y -= dy / Camera.zoom
+    Camera.x -= dx / Camera.zoom
+    Camera.y -= dy / Camera.zoom
 
-  Camera.updateViewProjectionMatrix(DrawingManager.gl)
+    Camera.updateViewProjectionMatrix(DrawingManager.gl)
+  }
 
-  lastPosition.x = pointerPosition.x
-  lastPosition.y = pointerPosition.y
+  lastMidPosition.x = midPosition.x
+  lastMidPosition.y = midPosition.y
+}
+
+function touchPan() {
+  midPoint.x = (touches[0].x + touches[1].x) / 2
+  midPoint.y = (touches[1].y + touches[1].y) / 2
+
+  const distance = getDistance(touches[0], touches[1])
+
+  pan(midPoint)
+  pinchZoom(midPoint, distance)
+
+  prevTouchDistance = distance
+
+  DrawingManager.swapPixelInterpolation()
+
+  DrawingManager.render()
 }
 
 function pointerdown(event: Event) {
@@ -111,46 +130,34 @@ function pointerdown(event: Event) {
     return
   }
 
-  const position = calculateWorldPosition(event)
-
   if (ModifierKeyManager.has("space") || touches.length === 2) {
-    startCamPosition.x = Camera.x
-    startCamPosition.y = Camera.y
+    // Some (?) trackpads report event type as 'touch' regardless of if they supply multiple touch events
+    if (touches.length === 2) {
+      startMidPosition.x = (touches[0].x + touches[1].x) / 2
+      startMidPosition.y = (touches[1].y + touches[1].y) / 2
+      lastMidPosition.x = startMidPosition.x
+      lastMidPosition.y = startMidPosition.y
+    } else {
+      startMidPosition.x = event.x
+      startMidPosition.y = event.y
+      lastMidPosition.x = event.x
+      lastMidPosition.y = event.y
+    }
+  } else {
+    const position = calculateWorldPosition(event)
 
-    startPosition.x = event.x
-    startPosition.y = event.y
-
-    lastPosition.x = event.x
-    lastPosition.y = event.y
-
-    pan(event)
-
-    renderThrottle(DrawingManager.render)
-  } else DrawingManager.beginDraw(position)
+    DrawingManager.beginDraw(position)
+  }
 }
 
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
 
-  const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+  const index = touches.findIndex((cachedEvent) => cachedEvent.pointerId === event.pointerId)
   touches[index] = event
 
   if (touches.length === 2) {
-    touchThrottle(() => {
-      midPoint.x = (touches[0].x + touches[1].x) / 2
-      midPoint.y = (touches[1].y + touches[1].y) / 2
-
-      const distance = getDistance(touches[0], touches[1]) * window.devicePixelRatio
-
-      pan(midPoint)
-      pinchZoom(midPoint, distance)
-
-      prevTouchDistance = distance
-
-      DrawingManager.swapPixelInterpolation()
-
-      DrawingManager.render()
-    })
+    touchThrottle(touchPan)
 
     return
   }
@@ -159,8 +166,6 @@ function pointermove(event: Event) {
     (DrawingManager.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId) &&
     touches[0].pointerId === event.pointerId
   ) {
-    const position = calculateWorldPosition(event)
-
     if (ModifierKeyManager.has("space")) {
       if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
         ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
@@ -185,6 +190,8 @@ function pointermove(event: Event) {
         DrawingManager.continueDraw(coalescedRelativeMouseState)
       }
     } else {
+      const position = calculateWorldPosition(event)
+
       DrawingManager.continueDraw(position)
     }
   }
@@ -246,15 +253,15 @@ const touch_listeners = {
   touchmove,
 }
 
+function resize() {
+  resizeCanvasToDisplaySize(DrawingManager.canvasRef.current)
+
+  Camera.updateViewProjectionMatrix(DrawingManager.gl)
+  DrawingManager.render()
+}
+
 function windowResize() {
   resizeThrottle(() => {
-    const resize = () => {
-      resizeCanvasToDisplaySize(DrawingManager.canvasRef.current, () => (DrawingManager.needRedraw = true))
-
-      Camera.updateViewProjectionMatrix(DrawingManager.gl)
-      DrawingManager.render()
-    }
-
     resize()
 
     // Device rotation hack
@@ -276,10 +283,8 @@ function init() {
 }
 
 function reset() {
-  startCamPosition.x = 0
-  startCamPosition.y = 0
-  startPosition.x = 0
-  startPosition.y = 0
+  startMidPosition.x = 0
+  startMidPosition.y = 0
   touches = []
   prevTouchDistance = -1
 }
