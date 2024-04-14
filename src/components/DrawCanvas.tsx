@@ -8,7 +8,7 @@ function _DrawCanvas(_: any, ref: React.ForwardedRef<HTMLCanvasElement>) {
         event.preventDefault()
         return false
       }}
-      className="h-full w-full cursor-crosshair touch-none select-none outline-none"
+      className="noselect h-full w-full cursor-crosshair touch-none select-none outline-none"
       tabIndex={0}
     />
   )

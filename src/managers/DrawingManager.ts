@@ -370,9 +370,11 @@ class _DrawingManager {
     this.glInfo.supportedType = gl.FLOAT
     this.glInfo.supportedImageFormat = gl.RGBA16F
 
-    this.glInfo.supportedMinFilterType =
-      floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST
-    this.glInfo.supportedMagFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
+    this.glInfo.supportedMinFilterType = gl.LINEAR_MIPMAP_LINEAR
+    this.glInfo.supportedMagFilterType = gl.LINEAR
+    // this.glInfo.supportedMinFilterType =
+    //   floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST
+    // this.glInfo.supportedMagFilterType = floatTextureLinearExt || halfFloatTextureLinearExt ? gl.LINEAR : gl.NEAREST
 
     gl.hint(gl.GENERATE_MIPMAP_HINT, gl.NICEST)
 

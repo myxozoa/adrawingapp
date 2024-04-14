@@ -106,6 +106,15 @@
   min-height: 0;
 }
 
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
 html,
 body {
   height: 100%;

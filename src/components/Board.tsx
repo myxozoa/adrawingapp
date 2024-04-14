@@ -43,7 +43,7 @@ function _Board() {
   }, [currentTool])
 
   return (
-    <div className="flex flex-1">
+    <div className="noselect flex flex-1">
       <DrawCanvas ref={boardRef} />
     </div>
   )

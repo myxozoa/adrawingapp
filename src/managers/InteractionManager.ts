@@ -234,6 +234,19 @@ const listeners = {
   keyup,
 }
 
+function touchdown(event: Event) {
+  event.preventDefault()
+}
+
+function touchmove(event: Event) {
+  event.preventDefault()
+}
+
+const touch_listeners = {
+  touchdown,
+  touchmove,
+}
+
 function windowResize() {
   resizeThrottle(() => {
     const resize = () => {
@@ -255,6 +268,10 @@ function init() {
     DrawingManager.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
   }
 
+  for (const [name, callback] of Object.entries(touch_listeners)) {
+    DrawingManager.gl.canvas.addEventListener(name, callback, { capture: true })
+  }
+
   window.addEventListener("resize", windowResize)
   screen.orientation.addEventListener("change", windowResize)
 }
@@ -270,6 +287,10 @@ function reset() {
 
 function destroy() {
   for (const [name, callback] of Object.entries(listeners)) {
+    DrawingManager.gl.canvas.removeEventListener(name, callback)
+  }
+
+  for (const [name, callback] of Object.entries(touch_listeners)) {
     DrawingManager.gl.canvas.removeEventListener(name, callback)
   }
 
