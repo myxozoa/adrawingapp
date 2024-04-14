@@ -11,7 +11,6 @@ class _Camera {
   private tempMat3: mat3
   private tempVec2: vec2
   private invZoom: vec2
-  private gl: WebGL2RenderingContext
   public info: {
     position: vec2
     zoom: vec2
@@ -38,8 +37,6 @@ class _Camera {
 
   set zoom(value: number) {
     vec2.set(this.info.zoom, value, value)
-
-    this.updateViewProjectionMatrix(this.gl)
   }
 
   get x() {
@@ -59,7 +56,6 @@ class _Camera {
   }
 
   public init = (gl: WebGL2RenderingContext) => {
-    this.gl = gl
     this.updateViewProjectionMatrix(gl)
   }
 
@@ -86,14 +82,14 @@ class _Camera {
     return this.inverseViewProjectionMatrix
   }
 
-  public getWorldMousePosition = (position: { x: number; y: number }, gl: WebGL2RenderingContext): [number, number] => {
+  public getWorldMousePosition = (position: { x: number; y: number }, gl: WebGL2RenderingContext): vec2 => {
     vec2.transformMat3(
       this.tempVec2,
       toClipSpace(position, gl.canvas as HTMLCanvasElement),
       this.getInverseViewProjectionMatrix(),
     )
 
-    return [this.tempVec2[0], this.tempVec2[1]]
+    return this.tempVec2
   }
 }
 

@@ -27,9 +27,10 @@ export class ExponentialSmoothingFilter {
   public filter(newValues: number[]): number[] {
     if (this.smoothedValue.length !== newValues.length) this.smoothedValue = newValues
 
-    this.smoothedValue = this.smoothedValue.map((value, index) => {
-      return this.smoothAmount * newValues[index] + (1 - this.smoothAmount) * value
-    })
+    for (let index = 0; index < this.smoothedValue.length; index++) {
+      this.smoothedValue[index] =
+        this.smoothAmount * newValues[index] + (1 - this.smoothAmount) * this.smoothedValue[index]
+    }
 
     return this.smoothedValue
   }
