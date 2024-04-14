@@ -26,6 +26,7 @@ let prevTouchDistance = -1
 const startCamPosition = { x: 0, y: 0 }
 const startPosition = { x: 0, y: 0 }
 const lastPosition = { x: 0, y: 0 }
+const midPoint = { x: 0, y: 0 }
 
 function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
   const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
@@ -136,10 +137,8 @@ function pointermove(event: Event) {
 
   if (touches.length === 2) {
     touchThrottle(() => {
-      const midPoint = {
-        x: (touches[0].x + touches[1].x) / 2,
-        y: (touches[1].y + touches[1].y) / 2,
-      }
+      midPoint.x = (touches[0].x + touches[1].x) / 2
+      midPoint.y = (touches[1].y + touches[1].y) / 2
 
       const distance = getDistance(touches[0], touches[1]) * window.devicePixelRatio
 

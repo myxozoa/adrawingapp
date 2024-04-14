@@ -45,6 +45,10 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "draw" in tool
 }
 
+export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
+  gl.uniformMatrix3fv(reference.programInfo.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
+}
+
 const startThrottle = throttleRAF()
 const renderThrottle = throttleRAF()
 
@@ -118,11 +122,6 @@ class _DrawingManager {
 
     if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.smoothAmount = prefs.pressureFiltering
     if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.smoothAmount = prefs.mouseFiltering
-
-    if (!operation.tool || Object.keys(operation.tool).length === 0) {
-      operation.tool = this.currentTool
-      operation.readyToDraw = true
-    }
 
     const prevPoint = operation.points.getPoint(-1).active
       ? operation.points.getPoint(-1)
@@ -260,23 +259,11 @@ class _DrawingManager {
 
     const transparencyGrid = ResourceManager.get("TransparencyGrid")
 
-    this.renderToScreen(transparencyGrid, false, () => {
-      gl.uniformMatrix3fv(
-        transparencyGrid.programInfo.uniforms.u_matrix,
-        false,
-        Camera.project(transparencyGrid.data!.matrix!),
-      )
-    })
+    this.renderToScreen(transparencyGrid, false, renderUniforms)
 
     const canvasRenderTexture = ResourceManager.get("CanvasRenderTexture")
 
-    this.renderToScreen(canvasRenderTexture, true, () => {
-      gl.uniformMatrix3fv(
-        canvasRenderTexture.programInfo.uniforms.u_matrix,
-        false,
-        Camera.project(canvasRenderTexture.data!.matrix!),
-      )
-    })
+    this.renderToScreen(canvasRenderTexture, true, renderUniforms)
   }
 
   public swapTool = (tool: AvailableTools) => {
@@ -440,7 +427,7 @@ class _DrawingManager {
     if (renderInfo.programInfo.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
     if (renderInfo.programInfo.VAO) gl.bindVertexArray(renderInfo.programInfo.VAO)
 
-    if (setUniforms) setUniforms()
+    if (setUniforms) setUniforms(gl, renderInfo)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 

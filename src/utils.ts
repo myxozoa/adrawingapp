@@ -20,14 +20,12 @@ export function getRelativeMousePosition(
   const dpr = window.devicePixelRatio
 
   const relativePosition = {
+    ...mouseState,
     x: (mouseState.x - rect.left) * dpr,
     y: (mouseState.y - rect.top) * dpr,
   }
 
-  return {
-    ...mouseState,
-    ...relativePosition,
-  } as MouseState
+  return relativePosition
 }
 
 export function throttle(func: (...args: any[]) => void, delay = 250): () => void {
@@ -130,7 +128,7 @@ export function initializeCanvas(
   _options: Partial<Options> = {},
 ) {
   const defaultOptions: Options = {
-    desynchronized: true,
+    desynchronized: false,
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",

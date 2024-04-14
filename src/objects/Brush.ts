@@ -365,8 +365,7 @@ export class Brush extends Tool implements IBrush {
 
     const color = useMainStore.getState().color
 
-    const colors = color.map((c) => c / 255)
-    gl.uniform3f(this.programInfo.uniforms.u_brush_color, colors[0], colors[1], colors[2])
+    gl.uniform3f(this.programInfo.uniforms.u_brush_color, color[0] / 255, color[1] / 255, color[2] / 255)
 
     this.base(gl, operation)
   }
