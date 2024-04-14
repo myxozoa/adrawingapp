@@ -31,7 +31,7 @@ export interface IPoint extends Location {
   pressure: number
   pointerType: PointerType
   active: boolean
-  id: string
+  id: number
 
   reset: () => void
   copy: (point: IPoint) => void

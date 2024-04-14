@@ -25,7 +25,7 @@ export function getRelativeMousePosition(
     y: (mouseState.y - rect.top) * dpr,
   }
 
-  return relativePosition
+  return relativePosition as MouseState
 }
 
 export function throttle(func: (...args: any[]) => void, delay = 250): () => void {

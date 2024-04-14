@@ -317,6 +317,24 @@ class _DrawingManager {
     this.swapPixelInterpolation()
   }
 
+  private getExtensions(gl: WebGL2RenderingContext) {
+    // WebGL2 Float textures are supported by default
+    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
+
+    // Firefox will give an implicit enable warning if EXT_float_blend is enabled before
+    // EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it.
+    // this is not supported on iOS
+    gl.getExtension("EXT_float_blend")
+    gl.getExtension("OES_texture_float") // Only needed for 32bit?
+    /*const floatTextureLinearExt = */ gl.getExtension("OES_texture_float_linear")
+    const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
+    /* const halfFloatTextureLinearExt = */ gl.getExtension("OES_texture_half_float_linear")
+    const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
+
+    if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))
+      throw new Error("This device does not support float buffers")
+  }
+
   /**
    * Set up everything we need
    *
@@ -332,22 +350,7 @@ class _DrawingManager {
     gl.disable(gl.DEPTH_TEST)
     gl.depthMask(false)
 
-    // WebGL2 Float textures are supported by default
-    const floatBufferExt = gl.getExtension("EXT_color_buffer_float")
-
-    // Firefox will give an implicit enable warning if EXT_float_blend is enabled before
-    // EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it.
-    // this is not supported on iOS
-    gl.getExtension("EXT_float_blend")
-    gl.getExtension("OES_texture_float") // Only needed for 32bit?
-    /*const floatTextureLinearExt = */ gl.getExtension("OES_texture_float_linear")
-    const halfFloatTextureExt = gl.getExtension("OES_texture_half_float")
-    /* const halfFloatTextureLinearExt = */ gl.getExtension("OES_texture_half_float_linear")
-    const halfFloatColorBufferExt = gl.getExtension("EXT_color_buffer_half_float")
-
-    // TODO: 8bit fallback shouldn't be too hard now
-    if (!floatBufferExt && (!halfFloatTextureExt || !halfFloatColorBufferExt))
-      throw new Error("This device does not support float buffers")
+    this.getExtensions(gl)
 
     // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
     // Not sure what devices will need these then
@@ -387,7 +390,7 @@ class _DrawingManager {
 
     this.initialized = true
 
-    resizeCanvasToDisplaySize(gl.canvas)
+    resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement)
   }
 
   public beginDraw = (pointerState: MouseState) => {
@@ -413,7 +416,11 @@ class _DrawingManager {
   /**
    * Draw render texture to the canvas draw buffer
    */
-  public renderToScreen = (renderInfo: RenderInfo, mipmap: boolean, setUniforms?: () => void) => {
+  public renderToScreen = (
+    renderInfo: RenderInfo,
+    mipmap: boolean,
+    setUniforms?: (gl: WebGL2RenderingContext, reference: RenderInfo) => void,
+  ) => {
     const gl = this.gl
 
     if (renderInfo.programInfo.program) gl.useProgram(renderInfo.programInfo.program)
