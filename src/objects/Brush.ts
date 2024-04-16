@@ -25,6 +25,7 @@ import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
 const baseSize = 100
+
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
   previouslyDrawnPoint: Point
