@@ -57,16 +57,18 @@ export function getDistance(
   point0: IPoint | { x: number; y: number },
   point1: IPoint | { x: number; y: number },
 ): number {
+  let a = 0
+  let b = 0
+
   if (isPoint(point0) && isPoint(point1)) {
-    return vec2.distance(point0.location, point1.location)
+    a = point1.location[0] - point0.location[0]
+    b = point1.location[1] - point0.location[1]
+  } else {
+    a = point1.x - point0.x
+    b = point1.y - point0.y
   }
 
-  const a = point0.x - point1.x
-  const b = point0.y - point1.y
-
-  const distance = Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2))
-
-  return distance
+  return (a * a + b * b) ** 0.5
 }
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb

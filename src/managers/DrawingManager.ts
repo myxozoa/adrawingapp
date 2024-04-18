@@ -135,13 +135,13 @@ class _DrawingManager {
 
     const stampSpacing = Math.max(0.5, size * spacing)
 
-    const filteredPositions = positionFilter.filter([relativeMouseState.x, relativeMouseState.y])
+    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
     operation.points.currentPoint.x = filteredPositions[0]
     operation.points.currentPoint.y = filteredPositions[1]
     operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-    const filteredPressure = pressureFilter.filter([relativeMouseState.pressure])
+    const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
     operation.points.currentPoint.pressure = filteredPressure[0]
 
     vec2.lerp(

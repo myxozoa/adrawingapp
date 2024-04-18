@@ -17,8 +17,7 @@ import type { MouseState } from "@/types"
 
 const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
-const renderThrottle = throttleRAF()
-const touchThrottle = throttleRAF()
+const panThrottle = throttleRAF()
 
 let touches: PointerEvent[] = []
 let prevTouchDistance = -1
@@ -88,15 +87,13 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 }
 
 function pan(midPosition: { x: number; y: number }) {
-  if (midPosition.x !== lastMidPosition.x && midPosition.y !== lastMidPosition.y) {
-    const dx = (midPosition.x - lastMidPosition.x) * window.devicePixelRatio
-    const dy = (midPosition.y - lastMidPosition.y) * window.devicePixelRatio
+  const dx = (midPosition.x - lastMidPosition.x) * window.devicePixelRatio
+  const dy = (midPosition.y - lastMidPosition.y) * window.devicePixelRatio
 
-    Camera.x -= dx / Camera.zoom
-    Camera.y -= dy / Camera.zoom
+  Camera.x -= dx / Camera.zoom
+  Camera.y -= dy / Camera.zoom
 
-    Camera.updateViewProjectionMatrix(DrawingManager.gl)
-  }
+  Camera.updateViewProjectionMatrix(DrawingManager.gl)
 
   lastMidPosition.x = midPosition.x
   lastMidPosition.y = midPosition.y
@@ -157,7 +154,7 @@ function pointermove(event: Event) {
   touches[index] = event
 
   if (touches.length === 2) {
-    touchThrottle(touchPan)
+    panThrottle(touchPan)
 
     return
   }
@@ -171,9 +168,10 @@ function pointermove(event: Event) {
         ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
       }
 
-      pan(event)
-
-      renderThrottle(DrawingManager.render)
+      panThrottle(() => {
+        pan(event)
+        DrawingManager.render()
+      })
 
       return
     }

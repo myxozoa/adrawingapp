@@ -21,10 +21,10 @@ export class ExponentialSmoothingFilter {
    *
    * @example
    * ```
-   * const [smoothed] = pressureFilter.filter([interpolatedPoint.pressure])
+   * const [smoothed] = pressureFilter.filter(interpolatedPoint.pressure)
    * ```
    * */
-  public filter(newValues: number[]): number[] {
+  public filter(...newValues: number[]): number[] {
     if (this.smoothedValue.length !== newValues.length) this.smoothedValue = newValues
 
     for (let index = 0; index < this.smoothedValue.length; index++) {

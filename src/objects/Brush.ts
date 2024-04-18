@@ -25,6 +25,7 @@ import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
 
 const baseSize = 100
+
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
   previouslyDrawnPoint: Point
@@ -88,16 +89,7 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = [
-      "u_matrix",
-      "u_point",
-      "u_size",
-      "u_brush_color",
-      "u_softness",
-      "u_flow",
-      "u_random",
-      "u_roughness",
-    ]
+    const uniformNames = ["u_point", "u_size", "u_brush_color", "u_softness", "u_flow", "u_random", "u_roughness"]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -290,8 +282,6 @@ export class Brush extends Tool implements IBrush {
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
     const prefs = usePreferenceStore.getState().prefs
 
-    mat3.fromTranslation(this.glInfo.matrix, point.location)
-
     this.previouslyDrawnPoint.copy(point)
 
     const size = calculateFromPressure(this.settings.size, point.pressure, point.pointerType === "pen")
@@ -302,12 +292,7 @@ export class Brush extends Tool implements IBrush {
 
     const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
-    // Give enough pixels around quad to account for decent smooth edges
-    this.glInfo.sizeVector[0] = size + 9
-    this.glInfo.sizeVector[1] = size + 9
-
     // Internals
-    mat3.scale(this.glInfo.matrix, this.glInfo.matrix, this.glInfo.sizeVector)
 
     gl.uniform1f(this.programInfo.uniforms.u_flow, flow)
 
@@ -315,13 +300,8 @@ export class Brush extends Tool implements IBrush {
 
     gl.uniform1f(this.programInfo.uniforms.u_roughness, base_roughness - roughness)
 
-    // if (this.programInfo.uniforms.u_matrix)
-    gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, this.glInfo.matrix)
-
-    // if (this.programInfo.uniforms.u_point)
     gl.uniform2f(this.programInfo.uniforms.u_point, point.x, prefs.canvasHeight - point.y)
 
-    // if (this.programInfo.uniforms.u_size)
     gl.uniform1f(this.programInfo.uniforms.u_size, size)
 
     gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
