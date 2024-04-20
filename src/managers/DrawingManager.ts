@@ -203,12 +203,14 @@ class _DrawingManager {
     const prefs = usePreferenceStore.getState().prefs
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
 
     if (pointerState.leftMouseDown) {
       this.use(pointerState)
 
       // Draw to Canvas
       gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+      gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
       this.executeCurrentOperation()
     }
@@ -248,6 +250,7 @@ class _DrawingManager {
 
     // Draw Screen
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
 
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.BLEND)
@@ -347,7 +350,13 @@ class _DrawingManager {
     const gl = this.gl
 
     gl.depthFunc(gl.LEQUAL)
+    gl.enable(gl.SCISSOR_TEST)
     gl.disable(gl.DEPTH_TEST)
+    gl.disable(gl.CULL_FACE)
+    gl.disable(gl.RASTERIZER_DISCARD)
+    gl.disable(gl.DITHER)
+    gl.disable(gl.STENCIL_TEST)
+    gl.disable(gl.POLYGON_OFFSET_FILL)
     gl.depthMask(false)
 
     this.getExtensions(gl)
