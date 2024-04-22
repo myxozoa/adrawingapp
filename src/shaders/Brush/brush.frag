@@ -34,7 +34,7 @@ void main()
 
     float size_adjustment = (size_random * (size_random_amount)) - (size_random_amount - 0.01);
 
-    float size = 1. / clamp(u_size + size_adjustment, 1., 100.);
+    float size = 1. / clamp(u_size + size_adjustment, 1., 1000.);
 
     // Calculate brush circle
     vec2 position = gl_FragCoord.xy - u_point;
