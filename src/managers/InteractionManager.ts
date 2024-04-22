@@ -127,8 +127,7 @@ function pointerdown(event: Event) {
     return
   }
 
-  if (ModifierKeyManager.has("space") || touches.length === 2) {
-    // Some (?) trackpads report event type as 'touch' regardless of if they supply multiple touch events
+  if (ModifierKeyManager.has("space") || (event.pointerType === "touch" && touches.length === 2)) {
     if (touches.length === 2) {
       startMidPosition.x = (touches[0].x + touches[1].x) / 2
       startMidPosition.y = (touches[1].y + touches[1].y) / 2
@@ -246,9 +245,14 @@ function touchmove(event: Event) {
   event.preventDefault()
 }
 
+function touchend(event: Event) {
+  event.preventDefault()
+}
+
 const touch_listeners = {
   touchdown,
   touchmove,
+  touchend,
 }
 
 function resize() {
@@ -283,6 +287,8 @@ function init() {
 function reset() {
   startMidPosition.x = 0
   startMidPosition.y = 0
+  lastMidPosition.x = 0
+  lastMidPosition.y = 0
   touches = []
   prevTouchDistance = -1
 }
