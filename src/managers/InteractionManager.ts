@@ -1,19 +1,13 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import {
-  isPointerEvent,
-  isPointerEventOrLocation,
-  throttleRAF,
-  resizeCanvasToDisplaySize,
-  getRelativeMousePosition,
-  getDistance,
-} from "@/utils"
+import { isPointerEvent, isPointerEventOrLocation, throttleRAF, getRelativeMousePosition, getDistance } from "@/utils"
 import { isKeyboardEvent } from "@/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import type { MouseState } from "@/types"
+import { Application } from "@/managers/ApplicationManager"
 
 const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
@@ -202,10 +196,6 @@ function pointerup(event: Event) {
 
   removeEvent(event)
 
-  if (touches.length < 2) {
-    prevTouchDistance = -1
-  }
-
   reset()
   DrawingManager.endInteraction()
 }
@@ -256,7 +246,7 @@ const touch_listeners = {
 }
 
 function resize() {
-  resizeCanvasToDisplaySize(DrawingManager.canvasRef.current)
+  Application.resize()
 
   Camera.updateViewProjectionMatrix(DrawingManager.gl)
   DrawingManager.render()

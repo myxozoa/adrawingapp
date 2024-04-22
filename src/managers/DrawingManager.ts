@@ -1,11 +1,9 @@
-import { MutableRefObject } from "react"
-
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { tools } from "@/stores/ToolStore.ts"
 
 import { tool_types } from "@/constants.tsx"
 
-import { getDistance, throttleRAF, calculateFromPressure, resizeCanvasToDisplaySize } from "@/utils.ts"
+import { getDistance, throttleRAF, calculateFromPressure } from "@/utils.ts"
 
 import {
   ILayer,
@@ -32,6 +30,7 @@ import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createBackground } from "@/resources/background"
+import { Application } from "@/managers/ApplicationManager"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
@@ -70,7 +69,6 @@ class _DrawingManager {
   toolBelt: Record<string, (operation: IOperation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
-  canvasRef: MutableRefObject<HTMLCanvasElement>
   pixelQuality: pixelQuality
   initialized: boolean
   drawing: boolean
@@ -399,7 +397,7 @@ class _DrawingManager {
 
     this.initialized = true
 
-    resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement)
+    Application.resize()
   }
 
   public beginDraw = (pointerState: MouseState) => {

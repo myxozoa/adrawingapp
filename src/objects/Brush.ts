@@ -19,12 +19,8 @@ import {
   calculateCurveLength,
 } from "@/utils"
 
-import { mat3, vec2 } from "gl-matrix"
-
 import * as glUtils from "@/glUtils"
 import { tool_list } from "@/constants"
-
-const baseSize = 100
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
@@ -39,12 +35,6 @@ export class Brush extends Tool implements IBrush {
     opacity: number
     hardness: number
     spacing: number
-  }
-
-  glInfo: {
-    matrix: mat3
-    scaleVector: vec2
-    sizeVector: vec2
   }
 
   programInfo: {
@@ -65,12 +55,6 @@ export class Brush extends Tool implements IBrush {
     Object.assign(this.settings, settings)
 
     this.programInfo = {} as unknown as typeof this.programInfo
-
-    this.glInfo = {
-      matrix: mat3.create(),
-      scaleVector: vec2.fromValues(baseSize, baseSize),
-      sizeVector: vec2.fromValues(1, 1),
-    }
 
     this.interpolationPoint = new Point()
     this.previouslyDrawnPoint = new Point()
@@ -147,8 +131,6 @@ export class Brush extends Tool implements IBrush {
   }
 
   private base = (gl: WebGL2RenderingContext, operation: IOperation) => {
-    const prefs = usePreferenceStore.getState().prefs
-
     const prevPrevPrevPoint = operation.points.getPoint(-4)
     const prevPrevPoint = operation.points.getPoint(-3)
     const prevPoint = operation.points.getPoint(-2)
@@ -156,16 +138,6 @@ export class Brush extends Tool implements IBrush {
 
     if (currentPoint.active && !prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!this.drawnPoints.get(currentPoint.id)) {
-        const startScissorX = currentPoint.x - this.settings.size
-        const startScissorY = currentPoint.y
-
-        gl.scissor(
-          startScissorX,
-          prefs.canvasHeight - this.settings.size - startScissorY,
-          this.settings.size * 2,
-          this.settings.size * 2,
-        )
-
         this.stamp(gl, currentPoint)
 
         this.drawnPoints.set(currentPoint.id, true)
@@ -173,23 +145,6 @@ export class Brush extends Tool implements IBrush {
       }
     } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!this.drawnPoints.get(currentPoint.id)) {
-        const topLeftX = Math.min(prevPoint.x, currentPoint.x)
-        const topLeftY = Math.min(prevPoint.y, currentPoint.y)
-
-        const bottomRightX = Math.max(prevPoint.x, currentPoint.x)
-        const bottomRightY = Math.max(prevPoint.y, currentPoint.y)
-
-        const startScissorX = topLeftX - this.settings.size * 2
-        const startScissorY = topLeftY - this.settings.size * 2
-
-        const endScissorX = bottomRightX + this.settings.size * 2
-        const endScissorY = bottomRightY + this.settings.size * 2
-
-        const boxWidth = endScissorX - startScissorX
-        const boxHeight = endScissorY - startScissorY
-
-        gl.scissor(startScissorX, prefs.canvasHeight - boxHeight - startScissorY, boxWidth, boxHeight)
-
         this.line(gl, prevPoint, currentPoint)
 
         this.drawnPoints.set(currentPoint.id, true)
@@ -205,23 +160,6 @@ export class Brush extends Tool implements IBrush {
         !this.drawnPoints.get(prevPoint.id) &&
         !this.drawnPoints.get(prevPrevPoint.id)
       ) {
-        const topLeftX = Math.min(prevPrevPrevPoint.x, prevPrevPoint.x, prevPoint.x, currentPoint.x)
-        const topLeftY = Math.min(prevPrevPrevPoint.y, prevPrevPoint.y, prevPoint.y, currentPoint.y)
-
-        const bottomRightX = Math.max(prevPrevPrevPoint.x, prevPrevPoint.x, prevPoint.x, currentPoint.x)
-        const bottomRightY = Math.max(prevPrevPrevPoint.y, prevPrevPoint.y, prevPoint.y, currentPoint.y)
-
-        const startScissorX = topLeftX - this.settings.size * 2
-        const startScissorY = topLeftY - this.settings.size * 2
-
-        const endScissorX = bottomRightX + this.settings.size * 2
-        const endScissorY = bottomRightY + this.settings.size * 2
-
-        const boxWidth = endScissorX - startScissorX
-        const boxHeight = endScissorY - startScissorY
-
-        gl.scissor(startScissorX, prefs.canvasHeight - boxHeight - startScissorY, boxWidth, boxHeight)
-
         this.splineProcess(gl, operation)
 
         this.drawnPoints.set(currentPoint.id, true)
@@ -340,7 +278,11 @@ export class Brush extends Tool implements IBrush {
 
     const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
+    const startScissorX = point.x - this.settings.size
+    const startScissorY = point.y
+
     // Internals
+    gl.scissor(startScissorX, prefs.canvasHeight - size - startScissorY, size * 2 + 10, size * 2 + 10)
 
     gl.uniform1f(this.programInfo.uniforms.u_flow, flow)
 
