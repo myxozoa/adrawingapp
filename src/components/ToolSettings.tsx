@@ -117,7 +117,7 @@ function _ToolSettings() {
       toolState.size !== undefined
         ? SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), {
             min: 1,
-            max: 100,
+            max: 500,
           })
         : null,
     hardness:
