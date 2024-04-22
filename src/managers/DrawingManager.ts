@@ -133,7 +133,7 @@ class _DrawingManager {
 
     const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
 
-    const stampSpacing = Math.max(0.5, size * spacing)
+    const stampSpacing = Math.max(0.5, size * 2 * spacing)
 
     const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
