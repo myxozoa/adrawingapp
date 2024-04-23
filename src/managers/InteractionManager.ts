@@ -13,6 +13,15 @@ const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
 const panThrottle = throttleRAF()
 
+enum InteractionState {
+  none,
+  pan,
+  zoom,
+  touchPanZoom,
+  useTool,
+}
+
+let currentInteractionState: InteractionState = InteractionState.none
 let touches: PointerEvent[] = []
 let prevTouchDistance = -1
 
@@ -93,7 +102,7 @@ function pan(midPosition: { x: number; y: number }) {
   lastMidPosition.y = midPosition.y
 }
 
-function touchPan() {
+function touchPanZoom() {
   midPoint.x = (touches[0].x + touches[1].x) / 2
   midPoint.y = (touches[1].y + touches[1].y) / 2
 
@@ -113,27 +122,32 @@ function pointerdown(event: Event) {
   if (!isPointerEvent(event)) return
   ;(DrawingManager.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
-  touches.push(event)
+  if (event.pointerType === "touch") {
+    touches.push(event)
 
-  if (touches.length > 2) {
-    touches = []
+    if (touches.length > 2) {
+      touches = []
 
-    return
-  }
-
-  if (ModifierKeyManager.has("space") || (event.pointerType === "touch" && touches.length === 2)) {
+      return
+    }
     if (touches.length === 2) {
+      currentInteractionState = InteractionState.touchPanZoom
+
       startMidPosition.x = (touches[0].x + touches[1].x) / 2
       startMidPosition.y = (touches[1].y + touches[1].y) / 2
       lastMidPosition.x = startMidPosition.x
       lastMidPosition.y = startMidPosition.y
-    } else {
-      startMidPosition.x = event.x
-      startMidPosition.y = event.y
-      lastMidPosition.x = event.x
-      lastMidPosition.y = event.y
     }
+  } else if (ModifierKeyManager.has("space")) {
+    currentInteractionState = InteractionState.pan
+
+    startMidPosition.x = event.x
+    startMidPosition.y = event.y
+    lastMidPosition.x = event.x
+    lastMidPosition.y = event.y
   } else {
+    currentInteractionState = InteractionState.useTool
+
     const position = calculateWorldPosition(event)
 
     DrawingManager.beginDraw(position)
@@ -143,20 +157,22 @@ function pointerdown(event: Event) {
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
 
-  const index = touches.findIndex((cachedEvent) => cachedEvent.pointerId === event.pointerId)
-  touches[index] = event
+  if (event.pointerType === "touch") {
+    const index = touches.findIndex((cachedEvent) => cachedEvent.pointerId === event.pointerId)
+    touches[index] = event
 
-  if (touches.length === 2) {
-    panThrottle(touchPan)
+    if (currentInteractionState === InteractionState.touchPanZoom) {
+      panThrottle(touchPanZoom)
 
-    return
+      return
+    }
   }
 
   if (
-    (DrawingManager.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId) &&
-    touches[0].pointerId === event.pointerId
+    ((DrawingManager.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId) && !touches[0]) ||
+    (touches[0] && touches[0].pointerId === event.pointerId)
   ) {
-    if (ModifierKeyManager.has("space")) {
+    if (currentInteractionState === InteractionState.pan) {
       if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
         ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
       }
@@ -173,34 +189,40 @@ function pointermove(event: Event) {
       ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
     }
 
-    if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-      const coalesced = event.getCoalescedEvents()
+    if (currentInteractionState === InteractionState.useTool) {
+      if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
+        const coalesced = event.getCoalescedEvents()
 
-      for (const coalescedEvent of coalesced) {
-        const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent)
-        DrawingManager.continueDraw(coalescedRelativeMouseState)
+        for (const coalescedEvent of coalesced) {
+          const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent)
+          DrawingManager.continueDraw(coalescedRelativeMouseState)
+        }
+      } else {
+        const position = calculateWorldPosition(event)
+
+        DrawingManager.continueDraw(position)
       }
-    } else {
-      const position = calculateWorldPosition(event)
-
-      DrawingManager.continueDraw(position)
     }
   }
 }
 
 function pointerup(event: Event) {
   if (!isPointerEvent(event)) return
-
-  DrawingManager.drawing = false
   ;(DrawingManager.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
 
   removeEvent(event)
 
+  if (currentInteractionState === InteractionState.useTool) {
+    DrawingManager.drawing = false
+    DrawingManager.endInteraction()
+  }
+
   reset()
-  DrawingManager.endInteraction()
 }
 
 function wheel(event: Event) {
+  currentInteractionState = InteractionState.zoom
+
   wheelThrottle(() => {
     wheelZoom(event)
     DrawingManager.swapPixelInterpolation()
@@ -281,6 +303,8 @@ function reset() {
   lastMidPosition.y = 0
   touches = []
   prevTouchDistance = -1
+
+  currentInteractionState = InteractionState.none
 }
 
 function destroy() {

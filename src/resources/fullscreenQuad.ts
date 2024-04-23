@@ -4,7 +4,7 @@ import vertex from "@/shaders/Background/background.vert?raw"
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
 import { ProgramInfo, RenderInfo } from "@/types"
 
-export function createBackground(gl: WebGL2RenderingContext) {
+export function createFullscreenQuad(gl: WebGL2RenderingContext) {
   const renderInfo: RenderInfo = {
     bufferInfo: {
       framebuffer: null,
@@ -21,7 +21,7 @@ export function createBackground(gl: WebGL2RenderingContext) {
   gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
   gl.enableVertexAttribArray(attributes.a_tex_coord)
 
-  renderInfo.programInfo.VBO = setupVBO(gl)
+  renderInfo.programInfo.VBO = FullscreenQuad.setupVBO(gl)
   gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
 
   renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
@@ -55,4 +55,8 @@ function setupVBO(gl: WebGL2RenderingContext) {
   ])
 
   return createBuffer(gl, positions)
+}
+
+export const FullscreenQuad = {
+  setupVBO,
 }

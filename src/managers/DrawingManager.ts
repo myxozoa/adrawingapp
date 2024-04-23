@@ -29,7 +29,7 @@ import { createCanvasRenderTexture } from "@/resources/canvasRenderTexture"
 import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
-import { createBackground } from "@/resources/background"
+import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
@@ -318,6 +318,7 @@ class _DrawingManager {
     Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
 
     // Start with a camera position that centers the canvas in view
+    // TODO: Fix alg
     Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
     Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
 
@@ -390,11 +391,9 @@ class _DrawingManager {
 
     ResourceManager.create("TransparencyGrid", createTransparencyGrid(gl, prefs.canvasWidth, prefs.canvasHeight))
 
-    ResourceManager.create("Background", createBackground(gl))
+    ResourceManager.create("Background", createFullscreenQuad(gl))
 
     Camera.init(gl)
-
-    this.resetCam()
 
     // Initialize tools
     Object.values(tools).forEach((tool) => {
@@ -406,6 +405,8 @@ class _DrawingManager {
     this.initialized = true
 
     Application.resize()
+
+    this.resetCam()
   }
 
   public beginDraw = (pointerState: MouseState) => {
