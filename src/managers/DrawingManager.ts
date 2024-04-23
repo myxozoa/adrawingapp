@@ -48,6 +48,15 @@ export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo
   gl.uniformMatrix3fv(reference.programInfo.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
 }
 
+export function gridRenderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
+  const prefs = usePreferenceStore.getState().prefs
+  const size = prefs.canvasWidth * 0.01
+
+  console.log(size)
+  gl.uniform1f(reference.programInfo.uniforms.u_size, size)
+  renderUniforms(gl, reference)
+}
+
 const startThrottle = throttleRAF()
 const renderThrottle = throttleRAF()
 
@@ -258,7 +267,7 @@ class _DrawingManager {
 
     const transparencyGrid = ResourceManager.get("TransparencyGrid")
 
-    this.renderToScreen(transparencyGrid, false, renderUniforms)
+    this.renderToScreen(transparencyGrid, false, gridRenderUniforms)
 
     const canvasRenderTexture = ResourceManager.get("CanvasRenderTexture")
 

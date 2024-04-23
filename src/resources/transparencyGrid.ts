@@ -24,7 +24,7 @@ export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number
     fragment,
     vertex,
     ["a_position"],
-    ["u_matrix"],
+    ["u_matrix", "u_size"],
   )
   renderInfo.programInfo.program = program
   renderInfo.programInfo.uniforms = uniforms
