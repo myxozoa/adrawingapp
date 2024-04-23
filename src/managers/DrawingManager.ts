@@ -52,7 +52,6 @@ export function gridRenderUniforms(gl: WebGL2RenderingContext, reference: Render
   const prefs = usePreferenceStore.getState().prefs
   const size = prefs.canvasWidth * 0.01
 
-  console.log(size)
   gl.uniform1f(reference.programInfo.uniforms.u_size, size)
   renderUniforms(gl, reference)
 }
