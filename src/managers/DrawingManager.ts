@@ -62,7 +62,7 @@ const renderThrottle = throttleRAF()
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
 const positionFilter = new ExponentialSmoothingFilter(0.5)
 
-enum pixelQuality {
+enum pixelInterpolation {
   nearest,
   trilinear,
 }
@@ -77,7 +77,7 @@ class _DrawingManager {
   toolBelt: Record<string, (operation: IOperation) => void>
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
-  pixelQuality: pixelQuality
+  pixelInterpolation: pixelInterpolation
   initialized: boolean
   drawing: boolean
 
@@ -227,7 +227,7 @@ class _DrawingManager {
 
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 3.5) {
-      if (this.pixelQuality !== pixelQuality.nearest) {
+      if (this.pixelInterpolation !== pixelInterpolation.nearest) {
         gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
@@ -235,10 +235,10 @@ class _DrawingManager {
 
         gl.bindTexture(gl.TEXTURE_2D, null)
 
-        this.pixelQuality = pixelQuality.nearest
+        this.pixelInterpolation = pixelInterpolation.nearest
       }
     } else {
-      if (this.pixelQuality !== pixelQuality.trilinear) {
+      if (this.pixelInterpolation !== pixelInterpolation.trilinear) {
         gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
@@ -246,7 +246,7 @@ class _DrawingManager {
 
         gl.bindTexture(gl.TEXTURE_2D, null)
 
-        this.pixelQuality = pixelQuality.trilinear
+        this.pixelInterpolation = pixelInterpolation.trilinear
       }
     }
   }
@@ -356,9 +356,10 @@ class _DrawingManager {
     const prefs = usePreferenceStore.getState().prefs
     const gl = this.gl
 
-    gl.depthFunc(gl.LEQUAL)
     gl.enable(gl.SCISSOR_TEST)
-    gl.disable(gl.DEPTH_TEST)
+    gl.depthFunc(gl.LESS)
+    gl.enable(gl.DEPTH_TEST)
+
     gl.disable(gl.CULL_FACE)
     gl.disable(gl.RASTERIZER_DISCARD)
     gl.disable(gl.DITHER)

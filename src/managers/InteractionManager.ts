@@ -1,12 +1,11 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import { isPointerEvent, isPointerEventOrLocation, throttleRAF, getRelativeMousePosition, getDistance } from "@/utils"
-import { isKeyboardEvent } from "@/utils"
+import { isPointerEvent, throttleRAF, getDistance } from "@/utils"
+import { isKeyboardEvent, calculateWorldPosition } from "@/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
-import type { MouseState } from "@/types"
 import { Application } from "@/managers/ApplicationManager"
 
 const wheelThrottle = throttleRAF()
@@ -28,19 +27,6 @@ let prevTouchDistance = -1
 const startMidPosition = { x: 0, y: 0 }
 const lastMidPosition = { x: 0, y: 0 }
 const midPoint = { x: 0, y: 0 }
-
-function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
-  const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
-
-  const relativeMouseState = getRelativeMousePosition(DrawingManager.gl.canvas as HTMLCanvasElement, pointerState)
-
-  const worldPosition = Camera.getWorldMousePosition(relativeMouseState, DrawingManager.gl)
-
-  relativeMouseState.x = worldPosition[0]
-  relativeMouseState.y = worldPosition[1]
-
-  return relativeMouseState
-}
 
 function removeEvent(event: PointerEvent) {
   const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
