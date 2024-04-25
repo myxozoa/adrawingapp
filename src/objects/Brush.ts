@@ -278,7 +278,7 @@ export class Brush extends Tool implements IBrush {
 
     const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
-    const startScissorX = point.x - this.settings.size
+    const startScissorX = point.x - size
     const startScissorY = point.y
 
     // Internals
