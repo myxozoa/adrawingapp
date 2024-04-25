@@ -607,6 +607,16 @@ class _DrawingManager {
     gl.clearBufferfv(gl.COLOR, 0, color)
   }
 
+  public clearAll = () => {
+    for (const resource of Object.values(ResourceManager.resources)) {
+      if (resource.bufferInfo?.framebuffer) {
+        this.clearSpecific(resource)
+      }
+    }
+
+    this.render()
+  }
+
   // TODO: Reimplement undo
   public undo = () => {
     //   if (this.currentLayer.undoSnapshotQueue.length > 0 && this.currentOperation.points.length === 0) {
