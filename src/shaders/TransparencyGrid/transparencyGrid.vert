@@ -1,5 +1,7 @@
 #version 300 es
 
+precision mediump float;
+
 in vec2 a_position;
 out vec2 v_position;
 
