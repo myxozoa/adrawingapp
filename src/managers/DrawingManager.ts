@@ -199,7 +199,7 @@ class _DrawingManager {
 
     // TODO: More elegant solution here
     if (this.currentOperation.tool.name === "ERASER" || this.currentOperation.tool.name === "EYEDROPPER") {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("BaseLayer").bufferInfo.framebuffer)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("DisplayLayer").bufferInfo.framebuffer)
     } else {
       gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("ScratchLayer").bufferInfo.framebuffer)
     }
@@ -236,7 +236,7 @@ class _DrawingManager {
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 3.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("BaseLayer").bufferInfo.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("DisplayLayer").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
@@ -252,7 +252,7 @@ class _DrawingManager {
       }
     } else {
       if (this.pixelInterpolation !== pixelInterpolation.trilinear) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("BaseLayer").bufferInfo.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("DisplayLayer").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedMinFilterType)
@@ -288,9 +288,9 @@ class _DrawingManager {
 
     this.renderToScreen(transparencyGrid, false, gridRenderUniforms)
 
-    const baseLayer = ResourceManager.get("BaseLayer")
+    const displayLayer = ResourceManager.get("DisplayLayer")
 
-    this.renderToScreen(baseLayer, true, renderUniforms)
+    this.renderToScreen(displayLayer, true, renderUniforms)
 
     const scratchLayerTexture = ResourceManager.get("ScratchLayer")
 
@@ -329,12 +329,12 @@ class _DrawingManager {
     // if (this.currentLayer.noDraw) return
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
     // TODO: More elegant solution here
     if (save && this.currentOperation.tool.name !== "ERASER" && this.currentOperation.tool.name !== "EYEDROPPER") {
-      const baseLayer = ResourceManager.get("BaseLayer")
+      const displayLayer = ResourceManager.get("DisplayLayer")
 
-      const layerProgram = ResourceManager.get("LayerProgram")
       const prefs = usePreferenceStore.getState().prefs
 
       const gl = this.gl
@@ -345,25 +345,25 @@ class _DrawingManager {
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
       gl.blendEquation(gl.FUNC_ADD)
 
-      gl.bindFramebuffer(gl.FRAMEBUFFER, layerProgram.bufferInfo?.framebuffer)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer.bufferInfo?.framebuffer)
 
-      gl.useProgram(layerProgram.programInfo?.program)
+      gl.useProgram(intermediaryLayer.programInfo?.program)
 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, scratchLayer.bufferInfo?.texture)
 
       gl.activeTexture(gl.TEXTURE1)
-      gl.bindTexture(gl.TEXTURE_2D, baseLayer.bufferInfo?.texture)
+      gl.bindTexture(gl.TEXTURE_2D, displayLayer.bufferInfo?.texture)
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, layerProgram.programInfo.VBO)
-      gl.bindVertexArray(layerProgram.programInfo.VAO)
+      gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer.programInfo.VBO)
+      gl.bindVertexArray(intermediaryLayer.programInfo.VAO)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
 
       gl.activeTexture(gl.TEXTURE0)
 
-      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, layerProgram.bufferInfo?.framebuffer)
-      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, baseLayer.bufferInfo?.framebuffer)
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, intermediaryLayer.bufferInfo?.framebuffer)
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, displayLayer.bufferInfo?.framebuffer)
 
       gl.blitFramebuffer(
         0,
@@ -387,6 +387,7 @@ class _DrawingManager {
       gl.bindVertexArray(null)
     }
     this.clearSpecific(scratchLayer)
+    this.clearSpecific(intermediaryLayer)
 
     this.render()
 
@@ -496,39 +497,39 @@ class _DrawingManager {
     this.clearSpecific(scratch, new Float32Array([0, 0, 0, 0]))
 
     ResourceManager.create(
-      "BaseLayer",
+      "DisplayLayer",
       createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
     )
 
     ResourceManager.create(
-      "LayerProgram",
+      "IntermediaryLayer",
       createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, scratchFragment, scratchVertex, [
         "u_source_texture",
         "u_destination_texture",
       ]),
     )
-    const layer = ResourceManager.get("LayerProgram")
-    this.clearSpecific(layer, new Float32Array([0, 0, 0, 0]))
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+    this.clearSpecific(intermediaryLayer, new Float32Array([0, 0, 0, 0]))
 
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
     mat3.scale(
-      layer.data?.matrix,
-      layer.data?.matrix,
+      intermediaryLayer.data?.matrix,
+      intermediaryLayer.data?.matrix,
       vec2.fromValues(1 / (prefs.canvasWidth / 2), 1 / (prefs.canvasHeight / 2)),
     )
 
     mat3.translate(
-      layer.data?.matrix,
-      layer.data?.matrix,
+      intermediaryLayer.data?.matrix,
+      intermediaryLayer.data?.matrix,
       vec2.fromValues(-prefs.canvasWidth / 2, -prefs.canvasHeight / 2),
     )
 
-    gl.useProgram(layer.programInfo?.program)
+    gl.useProgram(intermediaryLayer.programInfo?.program)
 
-    gl.uniform1i(layer.programInfo?.uniforms.u_source_texture, 0)
-    gl.uniform1i(layer.programInfo?.uniforms.u_destination_texture, 1)
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_source_texture, 0)
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_destination_texture, 1)
 
-    gl.uniformMatrix3fv(layer.programInfo.uniforms.u_matrix, false, layer.data?.matrix)
+    gl.uniformMatrix3fv(intermediaryLayer.programInfo.uniforms.u_matrix, false, intermediaryLayer.data?.matrix)
 
     gl.useProgram(null)
 
