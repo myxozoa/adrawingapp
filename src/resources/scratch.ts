@@ -1,52 +1,28 @@
-import { DrawingManager } from "@/managers/DrawingManager"
+import fragment from "@/shaders/Scratch/scratch.frag?raw"
+import vertex from "@/shaders/Scratch/scratch.vert?raw"
 
-import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
-import { ProgramInfo, RenderInfo, type BufferInfo } from "@/types"
-import { mat3 } from "gl-matrix"
+import { setupProgramAttributesUniforms, createBuffer, createVAO } from "@/glUtils"
+import { ProgramInfo, RenderInfo } from "@/types"
 
-// Depending on DrawingManager for feature support info when thats
-// currently determined in the same place this is called isnt great
-export function createCanvasRenderTexture(
-  gl: WebGL2RenderingContext,
-  width: number,
-  height: number,
-  fragment: string,
-  vertex: string,
-  additionalUniforms: string[] = [],
-) {
+export function createLayerProgram(gl: WebGL2RenderingContext, width: number, height: number) {
   const renderInfo: RenderInfo = {
-    bufferInfo: {} as BufferInfo,
-    programInfo: {} as ProgramInfo,
-    data: {
-      matrix: mat3.create(),
+    bufferInfo: {
+      framebuffer: null,
+      texture: null,
     },
+    programInfo: {} as ProgramInfo,
   }
 
-  renderInfo.bufferInfo.texture = createTexture(
-    gl,
-    width,
-    height,
-    DrawingManager.glInfo.supportedImageFormat,
-    DrawingManager.glInfo.supportedType,
-    new Float32Array(width * height * 4).fill(1),
-    true,
-    DrawingManager.glInfo.supportedMinFilterType,
-    DrawingManager.glInfo.supportedMagFilterType,
-  )
-  gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
-
-  renderInfo.bufferInfo.framebuffer = createFramebuffer(gl, renderInfo.bufferInfo.texture)
-  gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
-
-  const { program, attributes, uniforms } = setupProgramAttributesUniforms(
+  const { uniforms, program, attributes } = setupProgramAttributesUniforms(
     gl,
     fragment,
     vertex,
     ["a_position", "a_tex_coord"],
-    ["u_matrix", ...additionalUniforms],
+    ["u_matrix", "u_source_texture", "u_destination_texture"],
   )
-  renderInfo.programInfo.program = program
+
   renderInfo.programInfo.uniforms = uniforms
+  renderInfo.programInfo.program = program
   renderInfo.programInfo.attributes = attributes
 
   renderInfo.programInfo.VBO = setupVBO(gl, width, height)
@@ -66,6 +42,12 @@ export function createCanvasRenderTexture(
   gl.bindTexture(gl.TEXTURE_2D, null)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   gl.bindVertexArray(null)
+
+  gl.useProgram(program)
+  gl.uniform1i(uniforms.u_source_texture, 0)
+  gl.uniform1i(uniforms.u_destination_texture, 1)
+
+  gl.useProgram(null)
 
   return renderInfo
 }

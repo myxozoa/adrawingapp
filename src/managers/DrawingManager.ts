@@ -20,7 +20,7 @@ import { Operation } from "@/objects/Operation.ts"
 
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 
-import { vec2 } from "gl-matrix"
+import { mat3, vec2 } from "gl-matrix"
 
 import { Camera } from "@/objects/Camera"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -28,6 +28,9 @@ import { createCanvasRenderTexture } from "@/resources/canvasRenderTexture"
 
 import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
+import scratchFragment from "@/shaders/Scratch/scratch.frag?raw"
+import scratchVertex from "@/shaders/Scratch/scratch.vert?raw"
+
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
@@ -68,6 +71,8 @@ enum pixelInterpolation {
 }
 
 const previousEvent = { x: 0, y: 0 }
+
+const transparent = new Float32Array([0, 0, 0, 0])
 
 class _DrawingManager {
   gl: WebGL2RenderingContext
@@ -192,15 +197,18 @@ class _DrawingManager {
 
     const gl = this.gl
 
-    gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("CanvasRenderTexture").bufferInfo.framebuffer)
+    // TODO: More elegant solution here
+    if (this.currentOperation.tool.name === "ERASER" || this.currentOperation.tool.name === "EYEDROPPER") {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("BaseLayer").bufferInfo.framebuffer)
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("ScratchLayer").bufferInfo.framebuffer)
+    }
 
     if (switchIfPossible(this.currentOperation.tool)) this.currentOperation.tool.switchTo(gl)
 
     this.execute(this.currentOperation)
 
     // Unbind
-    gl.bindTexture(gl.TEXTURE_2D, null)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
@@ -228,7 +236,12 @@ class _DrawingManager {
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 3.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("BaseLayer").bufferInfo.texture)
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
+
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("ScratchLayer").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
@@ -239,7 +252,12 @@ class _DrawingManager {
       }
     } else {
       if (this.pixelInterpolation !== pixelInterpolation.trilinear) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("CanvasRenderTexture").bufferInfo.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("BaseLayer").bufferInfo.texture)
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedMinFilterType)
+
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("ScratchLayer").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.glInfo.supportedMagFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.glInfo.supportedMinFilterType)
@@ -252,6 +270,7 @@ class _DrawingManager {
   }
 
   public render = () => {
+    const prefs = usePreferenceStore.getState().prefs
     const gl = this.gl
 
     // Draw Screen
@@ -263,19 +282,40 @@ class _DrawingManager {
 
     this.renderToScreen(ResourceManager.get("Background"), false)
 
+    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+
     const transparencyGrid = ResourceManager.get("TransparencyGrid")
 
     this.renderToScreen(transparencyGrid, false, gridRenderUniforms)
 
-    const canvasRenderTexture = ResourceManager.get("CanvasRenderTexture")
+    const baseLayer = ResourceManager.get("BaseLayer")
 
-    this.renderToScreen(canvasRenderTexture, true, renderUniforms)
+    this.renderToScreen(baseLayer, true, renderUniforms)
+
+    const scratchLayerTexture = ResourceManager.get("ScratchLayer")
+
+    this.renderToScreen(scratchLayerTexture, true, renderUniforms)
   }
 
   public swapTool = (tool: AvailableTools) => {
     this.currentTool = tool
     this.currentOperation.reset()
     this.currentOperation.swapTool(tool)
+  }
+
+  public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
+    const prefs = usePreferenceStore.getState().prefs
+
+    const gl = this.gl
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+
+    this.clear(color)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   /**
@@ -288,6 +328,68 @@ class _DrawingManager {
   public endInteraction = (save = true) => {
     // if (this.currentLayer.noDraw) return
 
+    const scratchLayer = ResourceManager.get("ScratchLayer")
+
+    // TODO: More elegant solution here
+    if (save && this.currentOperation.tool.name !== "ERASER" && this.currentOperation.tool.name !== "EYEDROPPER") {
+      const baseLayer = ResourceManager.get("BaseLayer")
+
+      const layerProgram = ResourceManager.get("LayerProgram")
+      const prefs = usePreferenceStore.getState().prefs
+
+      const gl = this.gl
+
+      gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+      gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+      gl.blendEquation(gl.FUNC_ADD)
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, layerProgram.bufferInfo?.framebuffer)
+
+      gl.useProgram(layerProgram.programInfo?.program)
+
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, scratchLayer.bufferInfo?.texture)
+
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture(gl.TEXTURE_2D, baseLayer.bufferInfo?.texture)
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, layerProgram.programInfo.VBO)
+      gl.bindVertexArray(layerProgram.programInfo.VAO)
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+      gl.activeTexture(gl.TEXTURE0)
+
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, layerProgram.bufferInfo?.framebuffer)
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, baseLayer.bufferInfo?.framebuffer)
+
+      gl.blitFramebuffer(
+        0,
+        0,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        0,
+        0,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        gl.COLOR_BUFFER_BIT,
+        gl.NEAREST,
+      )
+
+      gl.useProgram(null)
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.bindTexture(gl.TEXTURE_2D, null)
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, null)
+      gl.bindVertexArray(null)
+    }
+    this.clearSpecific(scratchLayer)
+
+    this.render()
+
     this.waitUntilInteractionEnd = false
     this.needRedraw = true
     positionFilter.reset()
@@ -295,10 +397,6 @@ class _DrawingManager {
     this.currentOperation.reset()
 
     this.currentTool.reset()
-
-    if (save) {
-      // this.currentLayer.addCurrentToUndoSnapshotQueue(this.gl)
-    }
   }
 
   public resetCam = () => {
@@ -366,6 +464,7 @@ class _DrawingManager {
     gl.disable(gl.POLYGON_OFFSET_FILL)
     gl.depthMask(false)
 
+    gl.depthFunc(gl.LESS)
     this.getExtensions(gl)
 
     // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
@@ -384,14 +483,54 @@ class _DrawingManager {
 
     gl.hint(gl.GENERATE_MIPMAP_HINT, gl.NICEST)
 
-    ResourceManager.create(
-      "CanvasRenderTexture",
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
-    )
-
     ResourceManager.create("TransparencyGrid", createTransparencyGrid(gl, prefs.canvasWidth, prefs.canvasHeight))
 
     ResourceManager.create("Background", createFullscreenQuad(gl))
+
+    ResourceManager.create(
+      "ScratchLayer",
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+    )
+
+    const scratch = ResourceManager.get("ScratchLayer")
+    this.clearSpecific(scratch, new Float32Array([0, 0, 0, 0]))
+
+    ResourceManager.create(
+      "BaseLayer",
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+    )
+
+    ResourceManager.create(
+      "LayerProgram",
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, scratchFragment, scratchVertex, [
+        "u_source_texture",
+        "u_destination_texture",
+      ]),
+    )
+    const layer = ResourceManager.get("LayerProgram")
+    this.clearSpecific(layer, new Float32Array([0, 0, 0, 0]))
+
+    // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
+    mat3.scale(
+      layer.data?.matrix,
+      layer.data?.matrix,
+      vec2.fromValues(1 / (prefs.canvasWidth / 2), 1 / (prefs.canvasHeight / 2)),
+    )
+
+    mat3.translate(
+      layer.data?.matrix,
+      layer.data?.matrix,
+      vec2.fromValues(-prefs.canvasWidth / 2, -prefs.canvasHeight / 2),
+    )
+
+    gl.useProgram(layer.programInfo?.program)
+
+    gl.uniform1i(layer.programInfo?.uniforms.u_source_texture, 0)
+    gl.uniform1i(layer.programInfo?.uniforms.u_destination_texture, 1)
+
+    gl.uniformMatrix3fv(layer.programInfo.uniforms.u_matrix, false, layer.data?.matrix)
+
+    gl.useProgram(null)
 
     Camera.init(gl)
 
@@ -455,16 +594,16 @@ class _DrawingManager {
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     // Unbind
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
-    gl.bindVertexArray(null)
+    if (renderInfo.programInfo.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    if (renderInfo.bufferInfo.texture) gl.bindTexture(gl.TEXTURE_2D, null)
+    if (renderInfo.programInfo.VAO) gl.bindVertexArray(null)
   }
 
-  /** Fill black on whatever the current WebGL state is */
-  public clear = () => {
+  /** Fill clear on whatever the current WebGL state is */
+  public clear = (color = transparent) => {
     const gl = this.gl
 
-    gl.clearBufferfv(gl.COLOR, 0, new Float32Array([0, 0, 0, 1]))
+    gl.clearBufferfv(gl.COLOR, 0, color)
   }
 
   // TODO: Reimplement undo

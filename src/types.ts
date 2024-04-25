@@ -212,7 +212,7 @@ export interface BufferInfo {
 }
 
 export interface RenderInfo {
-  programInfo: ProgramInfo
-  bufferInfo: BufferInfo
+  programInfo?: ProgramInfo
+  bufferInfo?: BufferInfo
   data?: PossibleData
 }

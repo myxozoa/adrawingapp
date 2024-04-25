@@ -112,17 +112,21 @@ function pointerdown(event: Event) {
     touches.push(event)
 
     if (touches.length > 2) {
+      DrawingManager.endInteraction(false)
       touches = []
 
       return
     }
     if (touches.length === 2) {
+      DrawingManager.endInteraction(false)
       currentInteractionState = InteractionState.touchPanZoom
 
       startMidPosition.x = (touches[0].x + touches[1].x) / 2
       startMidPosition.y = (touches[1].y + touches[1].y) / 2
       lastMidPosition.x = startMidPosition.x
       lastMidPosition.y = startMidPosition.y
+
+      return
     }
   } else if (ModifierKeyManager.has("space")) {
     currentInteractionState = InteractionState.pan
@@ -131,7 +135,11 @@ function pointerdown(event: Event) {
     startMidPosition.y = event.y
     lastMidPosition.x = event.x
     lastMidPosition.y = event.y
-  } else {
+
+    return
+  }
+
+  if (currentInteractionState === InteractionState.none) {
     currentInteractionState = InteractionState.useTool
 
     const position = calculateWorldPosition(event)
