@@ -42,8 +42,9 @@ void main()
     float dist = circle(point);
 
     // Color brush circle with transparent falloff
-    vec4 main_color = vec4(u_brush_color.rgb, u_flow);
-    vec4 transparent = vec4(u_brush_color.rgb, 0.);
+    // Premultiplied alpha
+    vec4 main_color = vec4(u_brush_color.rgb * u_flow, u_flow);
+    vec4 transparent = vec4(0., 0., 0., 0.);
 
     float edge = 1. - (4. - (u_softness * 4.));
     vec4 color = mix(main_color, transparent, smoothstep(edge - (size * 2.), 1., dist));

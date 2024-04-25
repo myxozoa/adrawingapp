@@ -70,8 +70,7 @@ export class Eraser extends Tool {
     this.brush.switchTo(gl)
 
     gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
-    gl.blendFuncSeparate(gl.ZERO, gl.ONE, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
   }
 
   /** @override */

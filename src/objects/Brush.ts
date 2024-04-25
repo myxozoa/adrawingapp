@@ -349,7 +349,7 @@ export class Brush extends Tool implements IBrush {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
 
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.enable(gl.BLEND)
 

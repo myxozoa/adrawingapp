@@ -258,8 +258,7 @@ class _DrawingManager {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
 
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.blendEquation(gl.FUNC_ADD)
 
     this.renderToScreen(ResourceManager.get("Background"), false)
@@ -357,7 +356,7 @@ class _DrawingManager {
     const gl = this.gl
 
     gl.enable(gl.SCISSOR_TEST)
-    gl.depthFunc(gl.LESS)
+    gl.enable(gl.BLEND)
     gl.enable(gl.DEPTH_TEST)
 
     gl.disable(gl.CULL_FACE)
