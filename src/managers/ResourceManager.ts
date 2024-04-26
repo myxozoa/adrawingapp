@@ -1,6 +1,6 @@
 import { RenderInfo } from "@/types"
 
-type Resources = "CanvasRenderTexture" | "TransparencyGrid" | "Background"
+type Resources = "ScratchLayer" | "IntermediaryLayer" | "DisplayLayer" | "TransparencyGrid" | "Background"
 
 type TResources = Record<Resources, RenderInfo>
 

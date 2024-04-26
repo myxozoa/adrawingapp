@@ -1,320 +1,174 @@
-import { DrawingManager } from "@/managers/DrawingManager"
-import { updatePointer } from "@/managers/PointerManager"
-import { Camera } from "@/objects/Camera"
-import { isPointerEvent, throttleRAF, getDistance } from "@/utils"
-import { isKeyboardEvent, calculateWorldPosition } from "@/utils"
-
-import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
-
+import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
+import { tool_types } from "@/constants.tsx"
+import { getDistance, calculateFromPressure } from "@/utils.ts"
 import { Application } from "@/managers/ApplicationManager"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { ResourceManager } from "@/managers/ResourceManager"
+import { vec2 } from "gl-matrix"
+import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
+import { DrawingManager } from "@/managers/DrawingManager"
 
-const wheelThrottle = throttleRAF()
-const resizeThrottle = throttleRAF()
-const panThrottle = throttleRAF()
-
-enum InteractionState {
-  none,
-  pan,
-  zoom,
-  touchPanZoom,
-  useTool,
+const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
+  return "switchTo" in tool
 }
 
-let currentInteractionState: InteractionState = InteractionState.none
-let touches: PointerEvent[] = []
-let prevTouchDistance = -1
-
-const startMidPosition = { x: 0, y: 0 }
-const lastMidPosition = { x: 0, y: 0 }
-const midPoint = { x: 0, y: 0 }
-
-function removeEvent(event: PointerEvent) {
-  const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
-  touches.splice(index, 1)
+const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
+  return "use" in tool
 }
 
-function wheelZoom(event: Event) {
-  function isWheelEvent(event: Event): event is WheelEvent {
-    return event instanceof WheelEvent
-  }
-
-  if (!isWheelEvent(event)) return
-
-  const pointerState = updatePointer(event)
-
-  const zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
-
-  zoom(pointerState, zoomTarget)
+const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
+  return "draw" in tool
 }
 
-function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
-  // TODO: Change this
-  if (prevTouchDistance !== -1) {
-    const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
+const pressureFilter = new ExponentialSmoothingFilter(0.6)
+const positionFilter = new ExponentialSmoothingFilter(0.5)
+const previousEvent = { x: 0, y: 0 }
 
-    zoom(midPoint, zoomTarget)
-  }
-}
+class _InteractionManager {
+  private prepareOperation = (relativeMouseState: MouseState) => {
+    if (DrawingManager.waitUntilInteractionEnd) return
 
-function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
-  const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
+    const operation = Application.currentOperation
 
-  Camera.zoom = Math.max(0.001, Math.min(30, zoomTarget))
+    const prefs = usePreferenceStore.getState().prefs
 
-  Camera.updateViewProjectionMatrix(DrawingManager.gl)
+    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.smoothAmount = prefs.pressureFiltering
+    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.smoothAmount = prefs.mouseFiltering
 
-  const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
+    const prevPoint = operation.points.getPoint(-1).active
+      ? operation.points.getPoint(-1)
+      : operation.points.currentPoint
 
-  // Repositioning to make the pointer closer to the world space position it had before the zoom
-  const dx = mousePositionAfterZoom.x - mousePositionBeforeZoom.x
-  const dy = mousePositionAfterZoom.y - mousePositionBeforeZoom.y
+    const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
 
-  Camera.x -= dx
-  Camera.y -= dy
+    const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing / 100 : 0
 
-  Camera.updateViewProjectionMatrix(DrawingManager.gl)
-}
+    const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
 
-function pan(midPosition: { x: number; y: number }) {
-  const dx = (midPosition.x - lastMidPosition.x) * window.devicePixelRatio
-  const dy = (midPosition.y - lastMidPosition.y) * window.devicePixelRatio
+    const stampSpacing = Math.max(0.5, size * 2 * spacing)
 
-  Camera.x -= dx / Camera.zoom
-  Camera.y -= dy / Camera.zoom
+    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
-  Camera.updateViewProjectionMatrix(DrawingManager.gl)
+    operation.points.currentPoint.x = filteredPositions[0]
+    operation.points.currentPoint.y = filteredPositions[1]
+    operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-  lastMidPosition.x = midPosition.x
-  lastMidPosition.y = midPosition.y
-}
+    const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
+    operation.points.currentPoint.pressure = filteredPressure[0]
 
-function touchPanZoom() {
-  midPoint.x = (touches[0].x + touches[1].x) / 2
-  midPoint.y = (touches[1].y + touches[1].y) / 2
+    vec2.lerp(
+      operation.points.currentPoint.location,
+      prevPoint.location,
+      operation.points.currentPoint.location,
+      prefs.mouseSmoothing,
+    )
 
-  const distance = getDistance(touches[0], touches[1])
+    const dist = getDistance(prevPoint, operation.points.currentPoint)
 
-  pan(midPoint)
-  pinchZoom(midPoint, distance)
+    switch (operation.tool.type) {
+      case tool_types.STROKE:
+        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
+          operation.points.currentPoint.active = true
 
-  prevTouchDistance = distance
+          operation.points.nextPoint()
 
-  DrawingManager.swapPixelInterpolation()
+          operation.readyToDraw = true
 
-  DrawingManager.render()
-}
-
-function pointerdown(event: Event) {
-  if (!isPointerEvent(event)) return
-  ;(DrawingManager.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
-
-  if (event.pointerType === "touch") {
-    touches.push(event)
-
-    if (touches.length > 2) {
-      DrawingManager.endInteraction(false)
-      touches = []
-
-      return
-    }
-    if (touches.length === 2) {
-      DrawingManager.endInteraction(false)
-      currentInteractionState = InteractionState.touchPanZoom
-
-      startMidPosition.x = (touches[0].x + touches[1].x) / 2
-      startMidPosition.y = (touches[1].y + touches[1].y) / 2
-      lastMidPosition.x = startMidPosition.x
-      lastMidPosition.y = startMidPosition.y
-
-      return
-    }
-  } else if (ModifierKeyManager.has("space")) {
-    currentInteractionState = InteractionState.pan
-
-    startMidPosition.x = event.x
-    startMidPosition.y = event.y
-    lastMidPosition.x = event.x
-    lastMidPosition.y = event.y
-
-    return
-  }
-
-  if (currentInteractionState === InteractionState.none) {
-    currentInteractionState = InteractionState.useTool
-
-    const position = calculateWorldPosition(event)
-
-    DrawingManager.beginDraw(position)
-  }
-}
-
-function pointermove(event: Event) {
-  if (!isPointerEvent(event)) return
-
-  if (event.pointerType === "touch") {
-    const index = touches.findIndex((cachedEvent) => cachedEvent.pointerId === event.pointerId)
-    touches[index] = event
-
-    if (currentInteractionState === InteractionState.touchPanZoom) {
-      panThrottle(touchPanZoom)
-
-      return
-    }
-  }
-
-  if (
-    ((DrawingManager.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId) && !touches[0]) ||
-    (touches[0] && touches[0].pointerId === event.pointerId)
-  ) {
-    if (currentInteractionState === InteractionState.pan) {
-      if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
-        ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
-      }
-
-      panThrottle(() => {
-        pan(event)
-        DrawingManager.render()
-      })
-
-      return
-    }
-
-    if ((DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor == "grab") {
-      ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
-    }
-
-    if (currentInteractionState === InteractionState.useTool) {
-      if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-        const coalesced = event.getCoalescedEvents()
-
-        for (const coalescedEvent of coalesced) {
-          const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent)
-          DrawingManager.continueDraw(coalescedRelativeMouseState)
+          previousEvent.x = relativeMouseState.x
+          previousEvent.y = relativeMouseState.y
         }
-      } else {
-        const position = calculateWorldPosition(event)
+        break
 
-        DrawingManager.continueDraw(position)
-      }
+      case tool_types.POINT:
+        DrawingManager.waitUntilInteractionEnd = true
+
+        operation.points.updateCurrentPoint({}, relativeMouseState.x, relativeMouseState.y)
+
+        operation.points.currentPoint.active = true
+
+        operation.points.nextPoint()
+
+        operation.readyToDraw = true
+        break
     }
   }
-}
 
-function pointerup(event: Event) {
-  if (!isPointerEvent(event)) return
-  ;(DrawingManager.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
+  private executeOperation = (operation: IOperation) => {
+    if (!operation.readyToDraw) return
 
-  removeEvent(event)
+    const gl = Application.gl
 
-  if (currentInteractionState === InteractionState.useTool) {
-    DrawingManager.drawing = false
-    DrawingManager.endInteraction()
+    // TODO: More elegant solution here
+    if (operation.tool.name === "ERASER" || operation.tool.name === "EYEDROPPER") {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("DisplayLayer").bufferInfo?.framebuffer)
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("ScratchLayer").bufferInfo?.framebuffer)
+    }
+
+    if (switchIfPossible(operation.tool)) operation.tool.switchTo(gl)
+
+    if (useIfPossible(operation.tool)) operation.tool.use(gl, operation)
+    if (drawIfPossible(operation.tool)) operation.tool.draw(gl, operation)
+
+    // const format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
+    // const type = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+    // const data = new Float32Array(4)
+    // this.gl.readPixels(0, 0, 1, 1, format, type, data)
+    // console.log(data)
+
+    // Unbind
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  reset()
-}
+  public process = (pointerState: MouseState) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
 
-function wheel(event: Event) {
-  currentInteractionState = InteractionState.zoom
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
 
-  wheelThrottle(() => {
-    wheelZoom(event)
-    DrawingManager.swapPixelInterpolation()
+    this.prepareOperation(pointerState)
+
+    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+
+    this.executeOperation(Application.currentOperation)
+  }
+
+  /**
+   * Resets everything releated to the current operation
+   *
+   * Should be called whenever the user completes something (finishes drawing a stroke in some way, clicks the canvas, etc)
+   *
+   * @param save this determines whether to add the completed interation to the undo history (defaults to true)
+   */
+  public endInteraction = (save = true) => {
+    // if (this.currentLayer.noDraw) return
+
+    const scratchLayer = ResourceManager.get("ScratchLayer")
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+
+    // TODO: More elegant solution here
+    if (
+      save &&
+      Application.currentOperation.tool.name !== "ERASER" &&
+      Application.currentOperation.tool.name !== "EYEDROPPER"
+    ) {
+      DrawingManager.applyScratchLayer()
+    }
+    DrawingManager.clearSpecific(scratchLayer)
+    DrawingManager.clearSpecific(intermediaryLayer)
 
     DrawingManager.render()
-  })
-}
 
-function keyup(event: Event) {
-  if (!isKeyboardEvent(event)) return
+    DrawingManager.waitUntilInteractionEnd = false
+    DrawingManager.needRedraw = true
+    positionFilter.reset()
+    pressureFilter.reset()
+    Application.currentOperation.reset()
 
-  if (event.code === "Space" && event.type === "keyup") {
-    ;(DrawingManager.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
-
-    reset()
+    Application.currentTool.reset()
   }
 }
 
-const listeners = {
-  pointerdown,
-  pointermove,
-  pointerup,
-  wheel,
-  keyup,
-}
-
-function touchdown(event: Event) {
-  event.preventDefault()
-}
-
-function touchmove(event: Event) {
-  event.preventDefault()
-}
-
-function touchend(event: Event) {
-  event.preventDefault()
-}
-
-const touch_listeners = {
-  touchdown,
-  touchmove,
-  touchend,
-}
-
-function resize() {
-  Application.resize()
-
-  Camera.updateViewProjectionMatrix(DrawingManager.gl)
-  DrawingManager.render()
-}
-
-function windowResize() {
-  resizeThrottle(() => {
-    resize()
-
-    // Device rotation hack
-    setTimeout(resize, 1)
-  })
-}
-
-function init() {
-  for (const [name, callback] of Object.entries(listeners)) {
-    DrawingManager.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
-  }
-
-  for (const [name, callback] of Object.entries(touch_listeners)) {
-    DrawingManager.gl.canvas.addEventListener(name, callback, { capture: true })
-  }
-
-  window.addEventListener("resize", windowResize)
-  screen.orientation.addEventListener("change", windowResize)
-}
-
-function reset() {
-  startMidPosition.x = 0
-  startMidPosition.y = 0
-  lastMidPosition.x = 0
-  lastMidPosition.y = 0
-  touches = []
-  prevTouchDistance = -1
-
-  currentInteractionState = InteractionState.none
-}
-
-function destroy() {
-  for (const [name, callback] of Object.entries(listeners)) {
-    DrawingManager.gl.canvas.removeEventListener(name, callback)
-  }
-
-  for (const [name, callback] of Object.entries(touch_listeners)) {
-    DrawingManager.gl.canvas.removeEventListener(name, callback)
-  }
-
-  window.removeEventListener("resize", windowResize)
-  screen.orientation.removeEventListener("change", windowResize)
-}
-
-export const InteractionManager = {
-  init,
-  destroy,
-}
+export const InteractionManager = new _InteractionManager()

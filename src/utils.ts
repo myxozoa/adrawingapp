@@ -1,7 +1,6 @@
 import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
 import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
-import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 
@@ -650,12 +649,15 @@ export function isTouchEvent(event: Event): event is TouchEvent {
   return event instanceof TouchEvent
 }
 
-export function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
+export function calculateWorldPosition(
+  gl: WebGL2RenderingContext,
+  event: PointerEvent | { x: number; y: number },
+): MouseState {
   const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
 
-  const relativeMouseState = getRelativeMousePosition(DrawingManager.gl.canvas as HTMLCanvasElement, pointerState)
+  const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
 
-  const worldPosition = Camera.getWorldMousePosition(relativeMouseState, DrawingManager.gl)
+  const worldPosition = Camera.getWorldMousePosition(relativeMouseState, gl)
 
   relativeMouseState.x = worldPosition[0]
   relativeMouseState.y = worldPosition[1]

@@ -1,12 +1,8 @@
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { tool_types } from "@/constants.tsx"
+import { throttleRAF } from "@/utils.ts"
 
-import { getDistance, throttleRAF, calculateFromPressure } from "@/utils.ts"
-
-import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill, RenderInfo } from "@/types.ts"
-
-import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
+import { MouseState, RenderInfo } from "@/types.ts"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -22,43 +18,27 @@ import scratchVertex from "@/shaders/Scratch/scratch.vert?raw"
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
-
-const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-  return "switchTo" in tool
-}
-
-const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
-  return "use" in tool
-}
-
-const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-  return "draw" in tool
-}
+import { InteractionManager } from "@/managers/InteractionManager"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
-  gl.uniformMatrix3fv(reference.programInfo.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
+  gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
 }
 
 export function gridRenderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   const prefs = usePreferenceStore.getState().prefs
   const size = prefs.canvasWidth * 0.01
 
-  gl.uniform1f(reference.programInfo.uniforms.u_size, size)
+  gl.uniform1f(reference.programInfo?.uniforms.u_size, size)
   renderUniforms(gl, reference)
 }
 
 const startThrottle = throttleRAF()
 const renderThrottle = throttleRAF()
 
-const pressureFilter = new ExponentialSmoothingFilter(0.6)
-const positionFilter = new ExponentialSmoothingFilter(0.5)
-
 enum pixelInterpolation {
   nearest,
   trilinear,
 }
-
-const previousEvent = { x: 0, y: 0 }
 
 const transparent = new Float32Array([0, 0, 0, 0])
 
@@ -67,7 +47,6 @@ class _DrawingManager {
   needRedraw: boolean
   pixelInterpolation: pixelInterpolation
   initialized: boolean
-  drawing: boolean
 
   state: {
     renderInfo: RenderInfo
@@ -76,118 +55,6 @@ class _DrawingManager {
   constructor() {
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
-
-    this.drawing = false
-  }
-
-  private prepareOperation = (relativeMouseState: MouseState) => {
-    if (this.waitUntilInteractionEnd) return
-
-    const operation = Application.currentOperation
-
-    const prefs = usePreferenceStore.getState().prefs
-
-    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.smoothAmount = prefs.pressureFiltering
-    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.smoothAmount = prefs.mouseFiltering
-
-    const prevPoint = operation.points.getPoint(-1).active
-      ? operation.points.getPoint(-1)
-      : operation.points.currentPoint
-
-    const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
-
-    const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing / 100 : 0
-
-    const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
-
-    const stampSpacing = Math.max(0.5, size * 2 * spacing)
-
-    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
-
-    operation.points.currentPoint.x = filteredPositions[0]
-    operation.points.currentPoint.y = filteredPositions[1]
-    operation.points.currentPoint.pointerType = relativeMouseState.pointerType
-
-    const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
-    operation.points.currentPoint.pressure = filteredPressure[0]
-
-    vec2.lerp(
-      operation.points.currentPoint.location,
-      prevPoint.location,
-      operation.points.currentPoint.location,
-      prefs.mouseSmoothing,
-    )
-
-    const dist = getDistance(prevPoint, operation.points.currentPoint)
-
-    switch (operation.tool.type) {
-      case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
-          operation.points.currentPoint.active = true
-
-          operation.points.nextPoint()
-
-          operation.readyToDraw = true
-
-          previousEvent.x = relativeMouseState.x
-          previousEvent.y = relativeMouseState.y
-        }
-        break
-
-      case tool_types.POINT:
-        this.waitUntilInteractionEnd = true
-
-        operation.points.updateCurrentPoint({}, relativeMouseState.x, relativeMouseState.y)
-
-        operation.points.currentPoint.active = true
-
-        operation.points.nextPoint()
-
-        operation.readyToDraw = true
-        break
-    }
-  }
-
-  private executeOperation = (operation: IOperation) => {
-    if (!operation.readyToDraw) return
-
-    const gl = Application.gl
-
-    // TODO: More elegant solution here
-    if (operation.tool.name === "ERASER" || operation.tool.name === "EYEDROPPER") {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("DisplayLayer").bufferInfo.framebuffer)
-    } else {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("ScratchLayer").bufferInfo.framebuffer)
-    }
-
-    if (switchIfPossible(operation.tool)) operation.tool.switchTo(gl)
-
-    if (useIfPossible(operation.tool)) operation.tool.use(gl, operation)
-    if (drawIfPossible(operation.tool)) operation.tool.draw(gl, operation)
-
-    // const format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
-    // const type = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
-    // const data = new Float32Array(4)
-    // this.gl.readPixels(0, 0, 1, 1, format, type, data)
-    // console.log(data)
-
-    // Unbind
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  }
-
-  private loop = (pointerState: MouseState) => {
-    const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
-
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
-
-    this.prepareOperation(pointerState)
-
-    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-
-    this.executeOperation(Application.currentOperation)
   }
 
   public swapPixelInterpolation = () => {
@@ -196,7 +63,7 @@ class _DrawingManager {
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 3.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("DisplayLayer").bufferInfo.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("DisplayLayer").bufferInfo?.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
@@ -297,8 +164,8 @@ class _DrawingManager {
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, displayLayer.bufferInfo?.texture)
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer.programInfo.VBO)
-    gl.bindVertexArray(intermediaryLayer.programInfo.VAO)
+    gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer.programInfo?.VBO)
+    gl.bindVertexArray(intermediaryLayer.programInfo?.VAO)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -327,41 +194,6 @@ class _DrawingManager {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindVertexArray(null)
-  }
-
-  /**
-   * Resets everything releated to the current operation
-   *
-   * Should be called whenever the user completes something (finishes drawing a stroke in some way, clicks the canvas, etc)
-   *
-   * @param save this determines whether to add the completed interation to the undo history (defaults to true)
-   */
-  public endInteraction = (save = true) => {
-    // if (this.currentLayer.noDraw) return
-
-    const scratchLayer = ResourceManager.get("ScratchLayer")
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-
-    // TODO: More elegant solution here
-    if (
-      save &&
-      Application.currentOperation.tool.name !== "ERASER" &&
-      Application.currentOperation.tool.name !== "EYEDROPPER"
-    ) {
-      this.applyScratchLayer()
-    }
-    this.clearSpecific(scratchLayer)
-    this.clearSpecific(intermediaryLayer)
-
-    this.render()
-
-    this.waitUntilInteractionEnd = false
-    this.needRedraw = true
-    positionFilter.reset()
-    pressureFilter.reset()
-    Application.currentOperation.reset()
-
-    Application.currentTool.reset()
   }
 
   /**
@@ -433,9 +265,10 @@ class _DrawingManager {
     gl.useProgram(intermediaryLayer.programInfo?.program)
 
     gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_source_texture, 0)
+
     gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_destination_texture, 1)
 
-    gl.uniformMatrix3fv(intermediaryLayer.programInfo.uniforms.u_matrix, false, intermediaryLayer.data?.matrix)
+    gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data?.matrix)
 
     gl.useProgram(null)
 
@@ -443,19 +276,15 @@ class _DrawingManager {
   }
 
   public beginDraw = (pointerState: MouseState) => {
-    this.drawing = true
-
-    this.loop(pointerState)
+    InteractionManager.process(pointerState)
 
     renderThrottle(this.render)
   }
 
   public continueDraw = (pointerState: MouseState) => {
-    if (this.drawing) {
-      this.loop(pointerState)
+    InteractionManager.process(pointerState)
 
-      renderThrottle(this.render)
-    }
+    renderThrottle(this.render)
   }
 
   public start = () => {
@@ -472,25 +301,25 @@ class _DrawingManager {
   ) => {
     const gl = Application.gl
 
-    if (renderInfo.programInfo.program) gl.useProgram(renderInfo.programInfo.program)
+    if (renderInfo.programInfo?.program) gl.useProgram(renderInfo.programInfo?.program)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-    if (renderInfo.bufferInfo.texture) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
+    if (renderInfo.bufferInfo?.texture) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo?.texture)
 
     if (mipmap) gl.generateMipmap(gl.TEXTURE_2D)
 
-    if (renderInfo.programInfo.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
-    if (renderInfo.programInfo.VAO) gl.bindVertexArray(renderInfo.programInfo.VAO)
+    if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo?.VBO)
+    if (renderInfo.programInfo?.VAO) gl.bindVertexArray(renderInfo.programInfo?.VAO)
 
     if (setUniforms) setUniforms(gl, renderInfo)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     // Unbind
-    if (renderInfo.programInfo.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    if (renderInfo.bufferInfo.texture) gl.bindTexture(gl.TEXTURE_2D, null)
-    if (renderInfo.programInfo.VAO) gl.bindVertexArray(null)
+    if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    if (renderInfo.bufferInfo?.texture) gl.bindTexture(gl.TEXTURE_2D, null)
+    if (renderInfo.programInfo?.VAO) gl.bindVertexArray(null)
   }
 
   /** Fill clear on whatever the current WebGL state is */

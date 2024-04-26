@@ -1,7 +1,7 @@
 import { initializeCanvas, resizeCanvasToDisplaySize } from "@/utils"
 
 import { DrawingManager } from "@/managers/DrawingManager"
-import { InteractionManager } from "@/managers/InteractionManager"
+import { InputManager } from "@/managers/InputManager"
 
 import { tools } from "@/stores/ToolStore.ts"
 import { Camera } from "@/objects/Camera"
@@ -10,13 +10,13 @@ import { Operation } from "@/objects/Operation.ts"
 import { ILayer, IOperation, AvailableTools } from "@/types.ts"
 
 interface SupportedExtensions {
-  colorBufferFloat: EXT_color_buffer_float
-  floatBlend: EXT_float_blend
-  textureFloat: OES_texture_float
-  textureFloatLinear: OES_texture_float_linear
-  textureHalfFloat: OES_texture_float
-  textureHalfFloatLinear: OES_texture_half_float_linear
-  colorBufferHalfFloat: EXT_color_buffer_half_float
+  colorBufferFloat: EXT_color_buffer_float | null
+  floatBlend: EXT_float_blend | null
+  textureFloat: OES_texture_float | null
+  textureFloatLinear: OES_texture_float_linear | null
+  textureHalfFloat: OES_texture_float | null
+  textureHalfFloatLinear: OES_texture_half_float_linear | null
+  colorBufferHalfFloat: EXT_color_buffer_half_float | null
 }
 
 interface SupportedTextureInfo {
@@ -91,7 +91,6 @@ class _Application {
       resize: true,
     }) as WebGL2RenderingContext
 
-    DrawingManager.gl = context
     this.gl = context
   }
 
@@ -106,7 +105,7 @@ class _Application {
     this.getSupportedTextureInfo()
 
     DrawingManager.init()
-    InteractionManager.init()
+    InputManager.init()
 
     this.currentOperation = new Operation(this.currentTool)
 
@@ -125,7 +124,7 @@ class _Application {
   }
 
   public destroy = () => {
-    InteractionManager.destroy()
+    InputManager.destroy()
   }
 }
 
