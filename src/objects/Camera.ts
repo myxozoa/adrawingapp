@@ -1,5 +1,7 @@
 import { mat3, vec2 } from "gl-matrix"
 
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+
 import { toClipSpace } from "@/utils"
 
 const one = vec2.fromValues(1, 1)
@@ -57,6 +59,8 @@ class _Camera {
 
   public init = (gl: WebGL2RenderingContext) => {
     this.updateViewProjectionMatrix(gl)
+
+    this.fitToView(gl)
   }
 
   public updateViewMatrix = () => {
@@ -90,6 +94,26 @@ class _Camera {
     )
 
     return this.tempVec2
+  }
+
+  public fitToView = (gl: WebGL2RenderingContext) => {
+    const prefs = usePreferenceStore.getState().prefs
+
+    // Minimum space between canvas edges and screen edges
+    // Should be greater than the UI width (TODO: Automate)
+    const margin = 50
+
+    // Start with a zoom that allows the whole canvas to be in view
+    const widthZoomTarget = gl.canvas.width - margin * 2
+    const heightZoomTarget = gl.canvas.height - margin * 2
+    Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
+
+    // Start with a camera position that centers the canvas in view
+    // TODO: Fix alg
+    Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
+    Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
+
+    Camera.updateViewProjectionMatrix(gl)
   }
 }
 

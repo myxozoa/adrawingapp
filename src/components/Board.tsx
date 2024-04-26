@@ -5,8 +5,6 @@ import { DrawCanvas } from "@/components/DrawCanvas"
 import { useToolStore } from "@/stores/ToolStore"
 import { useLayerStore } from "@/stores/LayerStore"
 
-import { DrawingManager } from "@/managers/DrawingManager"
-
 import { Application } from "@/managers/ApplicationManager"
 
 function _Board() {
@@ -21,7 +19,7 @@ function _Board() {
   }, [])
 
   useEffect(() => {
-    Application.initialize()
+    Application.init()
 
     return () => {
       Application.destroy()
@@ -29,11 +27,11 @@ function _Board() {
   }, [])
 
   useEffect(() => {
-    DrawingManager.currentLayer = currentLayer
+    Application.currentLayer = currentLayer
   }, [currentLayer])
 
   useEffect(() => {
-    DrawingManager.swapTool(currentTool)
+    Application.swapTool(currentTool)
   }, [currentTool])
 
   return (

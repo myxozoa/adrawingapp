@@ -1,8 +1,7 @@
-import { DrawingManager } from "@/managers/DrawingManager"
-
 import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
 import { ProgramInfo, RenderInfo, type BufferInfo } from "@/types"
 import { mat3 } from "gl-matrix"
+import { Application } from "@/managers/ApplicationManager"
 
 // Depending on DrawingManager for feature support info when thats
 // currently determined in the same place this is called isnt great
@@ -26,12 +25,12 @@ export function createCanvasRenderTexture(
     gl,
     width,
     height,
-    DrawingManager.glInfo.supportedImageFormat,
-    DrawingManager.glInfo.supportedType,
+    Application.textureSupport.imageFormat,
+    Application.textureSupport.pixelType,
     new Float32Array(width * height * 4).fill(1),
     true,
-    DrawingManager.glInfo.supportedMinFilterType,
-    DrawingManager.glInfo.supportedMagFilterType,
+    Application.textureSupport.minFilterType,
+    Application.textureSupport.magFilterType,
   )
   gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
 
