@@ -1,6 +1,6 @@
 import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure } from "@/utils.ts"
+import { getDistance, calculateFromPressure, CanvasSizeCache } from "@/utils.ts"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -124,8 +124,7 @@ class _InteractionManager {
     const gl = Application.gl
     const prefs = usePreferenceStore.getState().prefs
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     this.prepareOperation(pointerState)
 

@@ -4,30 +4,29 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 
-let rectCache: DOMRect | null = null
-// TODO: Type this function better
-export function getRelativeMousePosition(
-  canvas: HTMLCanvasElement,
-  mouseState: MouseState | { x: number; y: number },
-): MouseState {
-  let rect = null
+interface CanvasSizeCache {
+  width: number
+  height: number
+  offsetWidth: number
+  offsetHeight: number
+}
 
-  if (rectCache) rect = rectCache
-  else {
-    rect = canvas.getBoundingClientRect()
-    rectCache = rect
-  }
+export const CanvasSizeCache: CanvasSizeCache = {
+  width: 0,
+  height: 0,
+  offsetHeight: 0,
+  offsetWidth: 0,
+}
 
-  // TODO: Add hiDPI setting on project creation
-  const dpr = window.devicePixelRatio
-
-  const relativePosition = {
+export function getRelativeMousePosition(mouseState: MouseState): MouseState {
+  const state = {
     ...mouseState,
-    x: (mouseState.x - rect.left) * dpr,
-    y: (mouseState.y - rect.top) * dpr,
+
+    x: mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth),
+    y: mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight),
   }
 
-  return relativePosition as MouseState
+  return state
 }
 
 export function throttle(func: (...args: any[]) => void, delay = 250): () => void {
@@ -148,8 +147,17 @@ export function initializeCanvas(
   // TODO: Add hiDPI setting on project creation
   const targetDpi = window.devicePixelRatio
 
-  canvas.width = Math.round(width * targetDpi)
-  canvas.height = Math.round(height * targetDpi)
+  const newWidth = Math.round(width * targetDpi)
+  const newHeight = Math.round(height * targetDpi)
+
+  CanvasSizeCache.width = newWidth
+  CanvasSizeCache.height = newHeight
+  canvas.width = newWidth
+  canvas.height = newHeight
+
+  CanvasSizeCache.offsetHeight = canvas.offsetHeight
+  CanvasSizeCache.offsetWidth = canvas.offsetWidth
+
   if (!options.resize) {
     canvas.style.width = `${width.toString()}px`
     canvas.style.height = `${height.toString()}px`
@@ -200,6 +208,7 @@ function onResize(entries: ResizeObserverEntry[]) {
       width = entry.contentRect.width
       height = entry.contentRect.height
     }
+
     const displayWidth = Math.round(width * dpr)
     const displayHeight = Math.round(height * dpr)
     canvasToDisplaySizeMap.set(entry.target as HTMLCanvasElement, [displayWidth, displayHeight])
@@ -215,6 +224,11 @@ export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: 
     // Make the canvas the same size
     canvas.width = displayWidth
     canvas.height = displayHeight
+
+    CanvasSizeCache.offsetHeight = canvas.offsetHeight
+    CanvasSizeCache.offsetWidth = canvas.offsetWidth
+    CanvasSizeCache.width = displayWidth
+    CanvasSizeCache.height = displayHeight
     if (callback) callback()
   }
   return needResize
@@ -446,10 +460,10 @@ export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
  */
 export function cubicBezier(start: number, control1: number, control2: number, end: number, t: number): number {
   const inv = 1 - t
-  const c0 = Math.pow(inv, 3) * start
-  const c1 = 3 * Math.pow(inv, 2) * t * control1
-  const c2 = 3 * inv * Math.pow(t, 2) * control2
-  const c3 = Math.pow(t, 3) * end
+  const c0 = inv * inv * inv * start
+  const c1 = 3 * inv * inv * t * control1
+  const c2 = 3 * inv * t * t * control2
+  const c3 = t * t * t * end
 
   return c0 + c1 + c2 + c3
 }
@@ -493,10 +507,10 @@ const tempVec2 = vec2.create()
 /**
  * Translate coordinates from `0...width` or `0...height` to clip space `-1...1`
  */
-export function toClipSpace(point: { x: number; y: number }, canvas: HTMLCanvasElement | OffscreenCanvas): vec2 {
+export function toClipSpace(point: { x: number; y: number }): vec2 {
   // Calculate clip space coordinates for x and y
-  const clipX = (2 * point.x) / canvas.width - 1
-  const clipY = 1 - (2 * point.y) / canvas.height
+  const clipX = (2 * point.x) / CanvasSizeCache.width - 1
+  const clipY = 1 - (2 * point.y) / CanvasSizeCache.height
 
   return vec2.set(tempVec2, clipX, clipY)
 }
@@ -649,15 +663,16 @@ export function isTouchEvent(event: Event): event is TouchEvent {
   return event instanceof TouchEvent
 }
 
-export function calculateWorldPosition(
-  gl: WebGL2RenderingContext,
-  event: PointerEvent | { x: number; y: number },
-): MouseState {
+export function isWheelEvent(event: Event): event is WheelEvent {
+  return event instanceof WheelEvent
+}
+
+export function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
   const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
 
-  const relativeMouseState = getRelativeMousePosition(gl.canvas as HTMLCanvasElement, pointerState)
+  const relativeMouseState = getRelativeMousePosition(pointerState)
 
-  const worldPosition = Camera.getWorldMousePosition(relativeMouseState, gl)
+  const worldPosition = Camera.getWorldMousePosition(relativeMouseState)
 
   relativeMouseState.x = worldPosition[0]
   relativeMouseState.y = worldPosition[1]

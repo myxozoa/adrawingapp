@@ -1,8 +1,15 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import { isPointerEvent, throttleRAF, getDistance } from "@/utils"
-import { isKeyboardEvent, calculateWorldPosition } from "@/utils"
+import {
+  isPointerEvent,
+  throttleRAF,
+  getDistance,
+  isWheelEvent,
+  isKeyboardEvent,
+  calculateWorldPosition,
+  CanvasSizeCache,
+} from "@/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
@@ -34,11 +41,16 @@ function removeEvent(event: PointerEvent) {
   touches.splice(index, 1)
 }
 
-function wheelZoom(event: Event) {
-  function isWheelEvent(event: Event): event is WheelEvent {
-    return event instanceof WheelEvent
+function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (predicate(arr[i])) {
+      return i
+    }
   }
+  return -1
+}
 
+function wheelZoom(event: Event) {
   if (!isWheelEvent(event)) return
 
   const pointerState = updatePointer(event)
@@ -50,22 +62,25 @@ function wheelZoom(event: Event) {
 
 function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
   // TODO: Change this
-  if (prevTouchDistance !== -1) {
-    const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
+  if (prevTouchDistance === -1) return
 
-    zoom(midPoint, zoomTarget)
-  }
+  const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
+
+  zoom(midPoint, zoomTarget)
 }
 
 function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   const gl = Application.gl
-  const mousePositionBeforeZoom = calculateWorldPosition(gl, pointerPosition)
+
+  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+
+  const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
 
   Camera.zoom = Math.max(0.001, Math.min(30, zoomTarget))
 
-  Camera.updateViewProjectionMatrix(Application.gl)
+  Camera.updateViewProjectionMatrix(gl)
 
-  const mousePositionAfterZoom = calculateWorldPosition(gl, pointerPosition)
+  const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
 
   // Repositioning to make the pointer closer to the world space position it had before the zoom
   const dx = mousePositionAfterZoom.x - mousePositionBeforeZoom.x
@@ -74,17 +89,22 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   Camera.x -= dx
   Camera.y -= dy
 
-  Camera.updateViewProjectionMatrix(Application.gl)
+  Camera.updateViewProjectionMatrix(gl)
 }
 
 function pan(midPosition: { x: number; y: number }) {
-  const dx = (midPosition.x - lastMidPosition.x) * window.devicePixelRatio
-  const dy = (midPosition.y - lastMidPosition.y) * window.devicePixelRatio
+  if (lastMidPosition.x === 0 && lastMidPosition.y === 0) return
+  const gl = Application.gl
+
+  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+
+  const dx = midPosition.x - lastMidPosition.x
+  const dy = midPosition.y - lastMidPosition.y
 
   Camera.x -= dx / Camera.zoom
   Camera.y -= dy / Camera.zoom
 
-  Camera.updateViewProjectionMatrix(Application.gl)
+  Camera.updateViewProjectionMatrix(gl)
 
   lastMidPosition.x = midPosition.x
   lastMidPosition.y = midPosition.y
@@ -92,7 +112,7 @@ function pan(midPosition: { x: number; y: number }) {
 
 function touchPanZoom() {
   midPoint.x = (touches[0].x + touches[1].x) / 2
-  midPoint.y = (touches[1].y + touches[1].y) / 2
+  midPoint.y = (touches[0].y + touches[1].y) / 2
 
   const distance = getDistance(touches[0], touches[1])
 
@@ -110,8 +130,6 @@ function pointerdown(event: Event) {
   if (!isPointerEvent(event)) return
   ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
-  const gl = Application.gl
-
   if (event.pointerType === "touch") {
     touches.push(event)
 
@@ -126,7 +144,7 @@ function pointerdown(event: Event) {
       currentInteractionState = InteractionState.touchPanZoom
 
       startMidPosition.x = (touches[0].x + touches[1].x) / 2
-      startMidPosition.y = (touches[1].y + touches[1].y) / 2
+      startMidPosition.y = (touches[0].y + touches[1].y) / 2
       lastMidPosition.x = startMidPosition.x
       lastMidPosition.y = startMidPosition.y
 
@@ -146,7 +164,7 @@ function pointerdown(event: Event) {
   if (currentInteractionState === InteractionState.none) {
     currentInteractionState = InteractionState.useTool
 
-    const position = calculateWorldPosition(gl, event)
+    const position = calculateWorldPosition(event)
 
     DrawingManager.beginDraw(position)
   }
@@ -155,10 +173,8 @@ function pointerdown(event: Event) {
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
 
-  const gl = Application.gl
-
   if (event.pointerType === "touch") {
-    const index = touches.findIndex((cachedEvent) => cachedEvent.pointerId === event.pointerId)
+    const index = findLastIndex(touches, (cachedEvent) => cachedEvent.pointerId === event.pointerId)
     touches[index] = event
 
     if (currentInteractionState === InteractionState.touchPanZoom) {
@@ -194,11 +210,11 @@ function pointermove(event: Event) {
         const coalesced = event.getCoalescedEvents()
 
         for (const coalescedEvent of coalesced) {
-          const coalescedRelativeMouseState = calculateWorldPosition(gl, coalescedEvent)
+          const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent)
           DrawingManager.continueDraw(coalescedRelativeMouseState)
         }
       } else {
-        const position = calculateWorldPosition(gl, event)
+        const position = calculateWorldPosition(event)
 
         DrawingManager.continueDraw(position)
       }
@@ -300,7 +316,9 @@ function reset() {
   startMidPosition.y = 0
   lastMidPosition.x = 0
   lastMidPosition.y = 0
-  touches = []
+  midPoint.x = 0
+  midPoint.y = 0
+  touches.splice(0, touches.length)
   prevTouchDistance = -1
 
   currentInteractionState = InteractionState.none

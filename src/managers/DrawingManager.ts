@@ -1,6 +1,6 @@
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { throttleRAF } from "@/utils.ts"
+import { throttleRAF, CanvasSizeCache } from "@/utils.ts"
 
 import { MouseState, RenderInfo } from "@/types.ts"
 
@@ -101,8 +101,8 @@ class _DrawingManager {
     const gl = Application.gl
 
     // Draw Screen
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.scissor(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+    gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.blendEquation(gl.FUNC_ADD)
@@ -131,7 +131,7 @@ class _DrawingManager {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
     gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     this.clear(color)

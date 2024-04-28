@@ -24,9 +24,10 @@ function parseMouseButtons(event: PointerEvent | WheelEvent) {
 
 export const updatePointer = (event: PointerEvent | WheelEvent): MouseState => {
   parseMouseButtons(event)
-  ;(PointerManager.x = event.clientX), (PointerManager.y = event.clientY)
+  ;(PointerManager.x = event.x), (PointerManager.y = event.y)
 
   if (isPointerEvent(event)) {
+    ;(PointerManager.x = event.offsetX), (PointerManager.y = event.offsetY)
     ;(PointerManager.pressure = event.pressure),
       (PointerManager.pointerType = event.pointerType as unknown as PointerType)
   }

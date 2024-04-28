@@ -2,7 +2,7 @@ import { mat3, vec2 } from "gl-matrix"
 
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { toClipSpace } from "@/utils"
+import { CanvasSizeCache, toClipSpace } from "@/utils"
 
 const one = vec2.fromValues(1, 1)
 
@@ -69,8 +69,8 @@ class _Camera {
     mat3.scale(this.viewMatrix, this.viewMatrix, this.invZoom)
   }
 
-  public updateViewProjectionMatrix = (gl: WebGL2RenderingContext) => {
-    mat3.projection(this.viewProjectionMatrix, gl.canvas.width, gl.canvas.height)
+  public updateViewProjectionMatrix = () => {
+    mat3.projection(this.viewProjectionMatrix, CanvasSizeCache.width, CanvasSizeCache.height)
     this.updateViewMatrix()
     mat3.invert(this.tempMat3, this.viewMatrix)
     mat3.multiply(this.viewProjectionMatrix, this.viewProjectionMatrix, this.tempMat3)
@@ -86,12 +86,8 @@ class _Camera {
     return this.inverseViewProjectionMatrix
   }
 
-  public getWorldMousePosition = (position: { x: number; y: number }, gl: WebGL2RenderingContext): vec2 => {
-    vec2.transformMat3(
-      this.tempVec2,
-      toClipSpace(position, gl.canvas as HTMLCanvasElement),
-      this.getInverseViewProjectionMatrix(),
-    )
+  public getWorldMousePosition = (position: { x: number; y: number }): vec2 => {
+    vec2.transformMat3(this.tempVec2, toClipSpace(position), this.getInverseViewProjectionMatrix())
 
     return this.tempVec2
   }
@@ -104,8 +100,8 @@ class _Camera {
     const margin = 50
 
     // Start with a zoom that allows the whole canvas to be in view
-    const widthZoomTarget = gl.canvas.width - margin * 2
-    const heightZoomTarget = gl.canvas.height - margin * 2
+    const widthZoomTarget = CanvasSizeCache.width - margin * 2
+    const heightZoomTarget = CanvasSizeCache.height - margin * 2
     Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
 
     // Start with a camera position that centers the canvas in view
