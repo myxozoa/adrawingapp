@@ -27,7 +27,7 @@ export function createCanvasRenderTexture(
     height,
     Application.textureSupport.imageFormat,
     Application.textureSupport.pixelType,
-    new Float32Array(width * height * 4).fill(1),
+    null,
     true,
     Application.textureSupport.minFilterType,
     Application.textureSupport.magFilterType,

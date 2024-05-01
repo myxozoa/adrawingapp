@@ -679,3 +679,7 @@ export function calculateWorldPosition(event: PointerEvent | { x: number; y: num
 
   return relativeMouseState
 }
+
+export function calculateSpacing(spacing: number, size: number) {
+  return Math.max(0.5, size * 2 * (spacing / 100))
+}

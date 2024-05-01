@@ -19,6 +19,9 @@ import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
+import { useLayerStore } from "@/stores/LayerStore"
+
+import { ILayer } from "@/types.ts"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -41,6 +44,7 @@ enum pixelInterpolation {
 }
 
 const transparent = new Float32Array([0, 0, 0, 0])
+const white = new Float32Array([1, 1, 1, 1])
 
 class _DrawingManager {
   waitUntilInteractionEnd: boolean
@@ -63,7 +67,7 @@ class _DrawingManager {
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 3.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("DisplayLayer").bufferInfo?.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("IntermediaryLayer").bufferInfo?.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
@@ -79,7 +83,7 @@ class _DrawingManager {
       }
     } else {
       if (this.pixelInterpolation !== pixelInterpolation.trilinear) {
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("DisplayLayer").bufferInfo.texture)
+        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("IntermediaryLayer").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
@@ -97,6 +101,8 @@ class _DrawingManager {
   }
 
   public render = () => {
+    const layers = useLayerStore.getState().layers
+    const currentLayerID = useLayerStore.getState().currentLayer.id
     const prefs = usePreferenceStore.getState().prefs
     const gl = Application.gl
 
@@ -107,21 +113,55 @@ class _DrawingManager {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.blendEquation(gl.FUNC_ADD)
 
+    this.swapPixelInterpolation()
+
     this.renderToScreen(ResourceManager.get("Background"), false)
 
     gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
-    const transparencyGrid = ResourceManager.get("TransparencyGrid")
-
-    this.renderToScreen(transparencyGrid, false, gridRenderUniforms)
+    this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
     const displayLayer = ResourceManager.get("DisplayLayer")
+    const emptyLayer = ResourceManager.get("EmptyLayer")
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
-    this.renderToScreen(displayLayer, true, renderUniforms)
+    const currentLayerIndex = layers.findIndex((layer) => layer.id === currentLayerID)
 
-    const scratchLayerTexture = ResourceManager.get("ScratchLayer")
+    // Layers below current
+    for (let i = 0; i < currentLayerIndex; i += 2) {
+      const layer = layers[i]
+      const layer2 = layers[i + 1]
 
-    this.renderToScreen(scratchLayerTexture, true, renderUniforms)
+      const layerResource = ResourceManager.get(`Layer${layer.id}`)
+
+      const layer2Resource = i === currentLayerIndex - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
+
+      this.compositeLayers(layer2Resource, layerResource)
+    }
+
+    const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+
+    const scratchLayer = ResourceManager.get("ScratchLayer")
+
+    this.compositeLayers(scratchLayer, currentLayer)
+
+    // Layers above current
+    for (let i = currentLayerIndex + 1; i < layers.length; i += 2) {
+      const layer = layers[i]
+      const layer2 = layers[i + 1]
+
+      const layerResource = ResourceManager.get(`Layer${layer.id}`)
+
+      const layer2Resource = i === layers.length - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
+
+      this.compositeLayers(layer2Resource, layerResource)
+    }
+
+    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+
+    this.renderToScreen(intermediaryLayer, true, renderUniforms, displayLayer)
+
+    this.clearSpecific(intermediaryLayer)
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
@@ -139,10 +179,8 @@ class _DrawingManager {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  public applyScratchLayer = () => {
-    const scratchLayer = ResourceManager.get("ScratchLayer")
+  public compositeLayers = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-    const displayLayer = ResourceManager.get("DisplayLayer")
 
     const prefs = usePreferenceStore.getState().prefs
 
@@ -158,21 +196,38 @@ class _DrawingManager {
 
     gl.useProgram(intermediaryLayer.programInfo?.program)
 
-    gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, scratchLayer.bufferInfo?.texture)
-
     gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, displayLayer.bufferInfo?.texture)
+    gl.bindTexture(gl.TEXTURE_2D, bottom.bufferInfo?.texture)
+
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, top.bufferInfo?.texture)
 
     gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer.programInfo?.VBO)
     gl.bindVertexArray(intermediaryLayer.programInfo?.VAO)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-    gl.activeTexture(gl.TEXTURE0)
+    // gl.activeTexture(gl.TEXTURE0)
 
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, intermediaryLayer.bufferInfo?.framebuffer)
-    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, displayLayer.bufferInfo?.framebuffer)
+    if (destination) {
+      this.blit(intermediaryLayer, destination)
+    }
+
+    gl.useProgram(null)
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindVertexArray(null)
+  }
+
+  public blit = (source: RenderInfo, destination: RenderInfo) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
+
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, source.bufferInfo?.framebuffer)
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, destination.bufferInfo?.framebuffer)
 
     gl.blitFramebuffer(
       0,
@@ -186,14 +241,6 @@ class _DrawingManager {
       gl.COLOR_BUFFER_BIT,
       gl.NEAREST,
     )
-
-    gl.useProgram(null)
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
   }
 
   /**
@@ -205,6 +252,7 @@ class _DrawingManager {
     if (this.initialized) return
 
     const prefs = usePreferenceStore.getState().prefs
+    const layers = useLayerStore.getState().layers
     const gl = Application.gl
 
     gl.enable(gl.SCISSOR_TEST)
@@ -231,23 +279,38 @@ class _DrawingManager {
       createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
     )
 
-    const scratch = ResourceManager.get("ScratchLayer")
-    this.clearSpecific(scratch, new Float32Array([0, 0, 0, 0]))
+    ResourceManager.create(
+      "EmptyLayer",
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+    )
+
+    // this.clearSpecific(scratch, new Float32Array([0, 0, 0, 1]))
 
     ResourceManager.create(
       "DisplayLayer",
       createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
     )
 
-    ResourceManager.create(
+    // this.clearSpecific(displayLayer, new Float32Array([1, 1, 1, 1]))
+
+    for (const layer of layers) {
+      this.newLayer(layer)
+    }
+
+    const currentLayerId = useLayerStore.getState().currentLayer.id
+
+    const currentLayer = ResourceManager.get(`Layer${currentLayerId}`)
+
+    this.clearSpecific(currentLayer, white)
+
+    const intermediaryLayer = ResourceManager.create(
       "IntermediaryLayer",
       createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, scratchFragment, scratchVertex, [
         "u_source_texture",
         "u_destination_texture",
       ]),
     )
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-    this.clearSpecific(intermediaryLayer, new Float32Array([0, 0, 0, 0]))
+    // this.clearSpecific(intermediaryLayer, new Float32Array([0, 0, 0, 0]))
 
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
     mat3.scale(
@@ -275,6 +338,16 @@ class _DrawingManager {
     this.initialized = true
   }
 
+  public newLayer = (layer: ILayer) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
+
+    ResourceManager.create(
+      `Layer${layer.id}`,
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+    )
+  }
+
   public beginDraw = (pointerState: MouseState) => {
     InteractionManager.process(pointerState)
 
@@ -298,10 +371,14 @@ class _DrawingManager {
     renderInfo: RenderInfo,
     mipmap: boolean,
     setUniforms?: (gl: WebGL2RenderingContext, reference: RenderInfo) => void,
+    overrides?: RenderInfo,
   ) => {
     const gl = Application.gl
 
-    if (renderInfo.programInfo?.program) gl.useProgram(renderInfo.programInfo?.program)
+    // TODO: Better override system
+    if (overrides?.programInfo?.program) {
+      gl.useProgram(overrides.programInfo?.program)
+    } else if (renderInfo.programInfo?.program) gl.useProgram(renderInfo.programInfo?.program)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
@@ -312,7 +389,8 @@ class _DrawingManager {
     if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo?.VBO)
     if (renderInfo.programInfo?.VAO) gl.bindVertexArray(renderInfo.programInfo?.VAO)
 
-    if (setUniforms) setUniforms(gl, renderInfo)
+    if (setUniforms && overrides?.programInfo?.uniforms) setUniforms(gl, overrides)
+    else if (setUniforms) setUniforms(gl, renderInfo)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 

@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { Board } from "@/components/Board"
 import { TopMenu } from "@/components/TopMenu"
-// import { Layers } from "@/components/LayerSelection/Layers"
+import { Layers } from "@/components/LayerSelection/Layers"
 import { Tools } from "@/components/ToolSelection/Tools"
 import { ToolSettings } from "@/components/ToolSettings"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
@@ -21,6 +21,7 @@ function App() {
         <ErrorBoundary fallback={<div>unfortunate!</div>}>
           <Board />
         </ErrorBoundary>
+        <Layers />
       </div>
     </ThemeProvider>
   )

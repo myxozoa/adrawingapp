@@ -120,10 +120,6 @@ function touchPanZoom() {
   pinchZoom(midPoint, distance)
 
   prevTouchDistance = distance
-
-  DrawingManager.swapPixelInterpolation()
-
-  DrawingManager.render()
 }
 
 function pointerdown(event: Event) {
@@ -178,7 +174,8 @@ function pointermove(event: Event) {
     touches[index] = event
 
     if (currentInteractionState === InteractionState.touchPanZoom) {
-      panThrottle(touchPanZoom)
+      touchPanZoom()
+      panThrottle(DrawingManager.render)
 
       return
     }
@@ -193,10 +190,8 @@ function pointermove(event: Event) {
         ;(Application.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
       }
 
-      panThrottle(() => {
-        pan(event)
-        DrawingManager.render()
-      })
+      pan(event)
+      panThrottle(DrawingManager.render)
 
       return
     }
@@ -225,7 +220,6 @@ function pointermove(event: Event) {
 function pointerup(event: Event) {
   if (!isPointerEvent(event)) return
   ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
-
   removeEvent(event)
 
   if (currentInteractionState === InteractionState.useTool) {
@@ -238,12 +232,8 @@ function pointerup(event: Event) {
 function wheel(event: Event) {
   currentInteractionState = InteractionState.zoom
 
-  wheelThrottle(() => {
-    wheelZoom(event)
-    DrawingManager.swapPixelInterpolation()
-
-    DrawingManager.render()
-  })
+  wheelZoom(event)
+  wheelThrottle(DrawingManager.render)
 }
 
 function keyup(event: Event) {

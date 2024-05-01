@@ -118,8 +118,6 @@ class _Application {
       if (tool.init) tool.init(gl)
     })
 
-    DrawingManager.swapPixelInterpolation()
-
     DrawingManager.start()
   }
 

@@ -18,6 +18,15 @@ void main() {
   vec4 source = texture(u_source_texture, v_tex_coord);
   vec4 dest = texture(u_destination_texture, v_tex_coord);
 
-
-  fragColor = pdOver(source, dest);
+  if (source.a == 0. && dest.a == 0.) {
+    discard;
+  }
+  
+  if (source.a == 0.) {
+    fragColor = dest;
+  } else if (dest.a == 0.) {
+    fragColor = source;
+  } else {
+    fragColor = pdOver(source, dest);
+  }
 }

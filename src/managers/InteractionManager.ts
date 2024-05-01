@@ -7,6 +7,7 @@ import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 import { DrawingManager } from "@/managers/DrawingManager"
+import { useLayerStore } from "@/stores/LayerStore"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
@@ -153,7 +154,10 @@ class _InteractionManager {
       Application.currentOperation.tool.name !== "ERASER" &&
       Application.currentOperation.tool.name !== "EYEDROPPER"
     ) {
-      DrawingManager.applyScratchLayer()
+      const currentLayerID = useLayerStore.getState().currentLayer.id
+      const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+
+      DrawingManager.compositeLayers(scratchLayer, currentLayer, currentLayer)
     }
     DrawingManager.clearSpecific(scratchLayer)
     DrawingManager.clearSpecific(intermediaryLayer)

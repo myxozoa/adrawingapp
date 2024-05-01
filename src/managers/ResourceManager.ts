@@ -1,8 +1,7 @@
+import { Application } from "@/managers/ApplicationManager"
 import { RenderInfo } from "@/types"
 
-type Resources = "ScratchLayer" | "IntermediaryLayer" | "DisplayLayer" | "TransparencyGrid" | "Background"
-
-type TResources = Record<Resources, RenderInfo>
+type TResources = Record<string, RenderInfo>
 
 class _ResourceManager {
   resources: TResources
@@ -13,9 +12,19 @@ class _ResourceManager {
 
   create = (name: keyof typeof this.resources, renderInfo: RenderInfo) => {
     this.resources[name] = renderInfo
+
+    return renderInfo
   }
 
   delete = (name: keyof typeof this.resources) => {
+    const resource = this.resources[name]
+
+    // TODO: delete buffers as well
+    Application.gl.deleteTexture(resource.bufferInfo?.texture)
+
+    Application.gl.deleteFramebuffer(resource.bufferInfo?.framebuffer)
+    Application.gl.deleteProgram(resource.programInfo?.program)
+
     delete this.resources[name]
   }
 

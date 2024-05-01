@@ -3,7 +3,10 @@ import { ILayer, LayerID, LayerName } from "@/types"
 
 import { Layer } from "@/objects/Layer"
 
+import { DrawingManager } from "@/managers/DrawingManager"
+
 import { createSelectors } from "@/stores/selectors"
+import { ResourceManager } from "@/managers/ResourceManager"
 
 interface State {
   layers: ILayer[]
@@ -22,7 +25,7 @@ interface Action {
   keepCurrentLayerInSync: () => void
 }
 
-const baseLayer = new Layer("New Layer", { width: 1000, height: 1000 })
+const baseLayer = new Layer("New Layer")
 
 let currentLayerIndex = 0
 
@@ -57,16 +60,20 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     })),
   newLayer: () =>
     set((state) => {
-      if (state.layers.length > 9) return state
+      // if (state.layers.length > 9) return state
 
-      const newLayer = new Layer(`New Layer (${state.layers.length})`, { width: 1000, height: 1000 })
-      currentLayerIndex = 0
+      const newLayer = new Layer(`New Layer (${state.layers.length})`)
 
-      return { ...state, currentLayer: newLayer, layers: [newLayer, ...state.layers] }
+      DrawingManager.newLayer(newLayer)
+
+      currentLayerIndex++
+
+      return { ...state, currentLayer: newLayer, layers: [...state.layers, newLayer] }
     }),
-  removeLayer: () =>
+  removeLayer: () => {
     set((state) => {
       if (state.currentLayer && state.layers.length && state.layers.length > 1) {
+        ResourceManager.delete(`Layer${state.currentLayer.id}`)
         const newLayers = [...state.layers].filter((layer) => {
           return layer.id !== state.currentLayer.id
         })
@@ -79,15 +86,19 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       }
 
       return state
-    }),
-  setCurrentLayer: (id: LayerID) =>
+    })
+
+    DrawingManager.render()
+  },
+  setCurrentLayer: (id: LayerID) => {
     set((state) => {
       const _currentLayerIndex = state.layers.findIndex((layer) => layer.id === id)
 
       currentLayerIndex = _currentLayerIndex
 
       return { ...state, currentLayer: state.layers[_currentLayerIndex] }
-    }),
+    })
+  },
   saveNewName: (id: LayerID, name: LayerName) =>
     set((state) => {
       const newLayers = state.layers.map((layer) => {
