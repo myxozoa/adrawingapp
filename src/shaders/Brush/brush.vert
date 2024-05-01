@@ -9,8 +9,8 @@ uniform vec2 u_point;
 
 void main() {
   // Give enough pixels around quad to account for decent smooth edges
-  float scale_by = u_size + 9.;
-  mat3 translation_matrix = mat3(vec2(1.,0.), 0., vec2(0,1.), 0., u_point, 1.);
+  float scale_by = (u_size) + 8.;
+  mat3 translation_matrix = mat3(vec2(1., 0.), 0., vec2(0, 1.), 0., u_point, 1.);
   mat3 scale_matrix = mat3(
     translation_matrix[0][0] * scale_by, 
     translation_matrix[0][1] * scale_by, 
