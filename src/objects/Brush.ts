@@ -17,6 +17,7 @@ import {
   maintainPointSpacing,
   calculateFromPressure,
   calculateCurveLength,
+  calculateSpacing,
 } from "@/utils"
 
 import * as glUtils from "@/glUtils"
@@ -208,7 +209,7 @@ export class Brush extends Tool implements IBrush {
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
     const size = calculateFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
 
-    const stampSpacing = Math.max(0.5, size * 2 * (this.settings.spacing / 100))
+    const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
     const estimatedArcLength = calculateCurveLength(start, control, control2, end)
 
@@ -245,7 +246,7 @@ export class Brush extends Tool implements IBrush {
     const distance = getDistance(start, end)
     const size = calculateFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
 
-    const stampSpacing = Math.max(0.5, size * 2 * (this.settings.spacing / 100))
+    const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
     const steps = distance / stampSpacing
 

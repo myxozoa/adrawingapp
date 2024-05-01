@@ -1,6 +1,6 @@
 import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure, CanvasSizeCache } from "@/utils.ts"
+import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing } from "@/utils.ts"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -41,11 +41,11 @@ class _InteractionManager {
 
     const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
 
-    const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing / 100 : 0
+    const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
 
     const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
 
-    const stampSpacing = Math.max(0.5, size * 2 * spacing)
+    const stampSpacing = calculateSpacing(spacing, size)
 
     const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
