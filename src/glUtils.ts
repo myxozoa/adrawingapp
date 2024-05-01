@@ -97,6 +97,9 @@ export function createTexture(
 
     if (minFilterType) gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilterType)
     if (magFilterType) gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magFilterType)
+  } else {
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
   }
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)

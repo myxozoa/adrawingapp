@@ -11,7 +11,7 @@ import { ILayer, IOperation, AvailableTools } from "@/types.ts"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
-  floatBlend: EXT_float_blend | null
+  // floatBlend: EXT_float_blend | null
   textureFloat: OES_texture_float | null
   textureFloatLinear: OES_texture_float_linear | null
   textureHalfFloat: OES_texture_float | null
@@ -55,7 +55,7 @@ class _Application {
     // Firefox will give an implicit enable warning if EXT_float_blend is enabled before
     // EXT_color_buffer_float because the implicit EXT_color_buffer_float overrides it.
     // this is not supported on iOS
-    this.extensions.floatBlend = gl.getExtension("EXT_float_blend")
+    // this.extensions.floatBlend = gl.getExtension("EXT_float_blend")
     this.extensions.textureFloat = gl.getExtension("OES_texture_float") // Only needed for 32bit?
     this.extensions.textureFloatLinear = gl.getExtension("OES_texture_float_linear")
     this.extensions.textureHalfFloat = gl.getExtension("OES_texture_half_float")

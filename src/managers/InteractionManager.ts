@@ -44,7 +44,7 @@ class _InteractionManager {
 
     const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
 
-    const size = calculateFromPressure(_size, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
+    const size = calculateFromPressure(_size / 2, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
 
     const stampSpacing = calculateSpacing(spacing, size)
 

@@ -207,7 +207,7 @@ export class Brush extends Tool implements IBrush {
    * Interpret the points as a bezier curve and stamp along it
    */
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
-    const size = calculateFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
+    const size = calculateFromPressure(this.settings.size / 2, start.pressure, start.pointerType === "pen")
 
     const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
@@ -244,14 +244,14 @@ export class Brush extends Tool implements IBrush {
    */
   private line = (gl: WebGL2RenderingContext, start: IPoint, end: IPoint) => {
     const distance = getDistance(start, end)
-    const size = calculateFromPressure(this.settings.size, start.pressure, start.pointerType === "pen")
+    const size = calculateFromPressure(this.settings.size / 2, start.pressure, start.pointerType === "pen")
 
     const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
     const steps = distance / stampSpacing
 
     // Stamp at evenly spaced intervals between the two points
-    for (let t = 0, j = 0; t < 1; t += 1 / steps, j++) {
+    for (let t = 1 / steps, j = 0; t < 1; t += 1 / steps, j++) {
       const newPoint = calculatePointAlongDirection(start, end, t)
 
       this.interpolationPoint.x = newPoint.x
@@ -271,7 +271,7 @@ export class Brush extends Tool implements IBrush {
 
     this.previouslyDrawnPoint.copy(point)
 
-    const size = calculateFromPressure(this.settings.size, point.pressure, point.pointerType === "pen")
+    const size = calculateFromPressure(this.settings.size / 2, point.pressure, point.pointerType === "pen")
     const flow = calculateFromPressure(this.settings.flow / 100, point.pressure, point.pointerType === "pen")
     const hardness = calculateFromPressure(this.settings.hardness / 100, point.pressure, false)
 
@@ -280,10 +280,10 @@ export class Brush extends Tool implements IBrush {
     const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
     const startScissorX = point.x - size
-    const startScissorY = point.y
+    const startScissorY = prefs.canvasHeight - size - point.y
 
     // Internals
-    gl.scissor(startScissorX, prefs.canvasHeight - size - startScissorY, size * 2 + 10, size * 2 + 10)
+    gl.scissor(startScissorX, startScissorY, size * 2 + 4, size * 2 + 4)
 
     gl.uniform1f(this.programInfo.uniforms.u_flow, flow)
 

@@ -11,6 +11,7 @@ export function createCanvasRenderTexture(
   height: number,
   fragment: string,
   vertex: string,
+  mipMap: boolean,
   additionalUniforms: string[] = [],
 ) {
   const renderInfo: RenderInfo = {
@@ -28,7 +29,7 @@ export function createCanvasRenderTexture(
     Application.textureSupport.imageFormat,
     Application.textureSupport.pixelType,
     null,
-    true,
+    mipMap,
     Application.textureSupport.minFilterType,
     Application.textureSupport.magFilterType,
   )
