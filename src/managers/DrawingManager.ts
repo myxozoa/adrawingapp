@@ -72,11 +72,6 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
 
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("ScratchLayer").bufferInfo.texture)
-
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
-
         gl.bindTexture(gl.TEXTURE_2D, null)
 
         this.pixelInterpolation = pixelInterpolation.nearest
@@ -84,11 +79,6 @@ class _DrawingManager {
     } else {
       if (this.pixelInterpolation !== pixelInterpolation.trilinear) {
         gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("IntermediaryLayer").bufferInfo.texture)
-
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
-
-        gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("ScratchLayer").bufferInfo.texture)
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
@@ -156,8 +146,6 @@ class _DrawingManager {
 
       this.compositeLayers(layer2Resource, layerResource)
     }
-
-    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     this.renderToScreen(intermediaryLayer, true, renderUniforms, displayLayer)
 
@@ -276,19 +264,40 @@ class _DrawingManager {
 
     ResourceManager.create(
       "ScratchLayer",
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+      createCanvasRenderTexture(
+        gl,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        renderTextureFragment,
+        renderTextureVertex,
+        false,
+      ),
     )
 
     ResourceManager.create(
       "EmptyLayer",
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+      createCanvasRenderTexture(
+        gl,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        renderTextureFragment,
+        renderTextureVertex,
+        false,
+      ),
     )
 
     // this.clearSpecific(scratch, new Float32Array([0, 0, 0, 1]))
 
     ResourceManager.create(
       "DisplayLayer",
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+      createCanvasRenderTexture(
+        gl,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        renderTextureFragment,
+        renderTextureVertex,
+        false,
+      ),
     )
 
     // this.clearSpecific(displayLayer, new Float32Array([1, 1, 1, 1]))
@@ -305,7 +314,7 @@ class _DrawingManager {
 
     const intermediaryLayer = ResourceManager.create(
       "IntermediaryLayer",
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, scratchFragment, scratchVertex, [
+      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, scratchFragment, scratchVertex, true, [
         "u_source_texture",
         "u_destination_texture",
       ]),
@@ -346,7 +355,14 @@ class _DrawingManager {
 
     ResourceManager.create(
       `Layer${layer.id}`,
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, renderTextureFragment, renderTextureVertex),
+      createCanvasRenderTexture(
+        gl,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        renderTextureFragment,
+        renderTextureVertex,
+        false,
+      ),
     )
   }
 
@@ -376,6 +392,9 @@ class _DrawingManager {
     overrides?: RenderInfo,
   ) => {
     const gl = Application.gl
+
+    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+    gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     // TODO: Better override system
     if (overrides?.programInfo?.program) {
@@ -429,3 +448,6 @@ class _DrawingManager {
 }
 
 export const DrawingManager = new _DrawingManager()
+
+// @ts-expect-error Adding global for debugging purposes
+window.__DrawingManager = DrawingManager
