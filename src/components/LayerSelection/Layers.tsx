@@ -18,8 +18,8 @@ function _Layers() {
   const editingLayer = useLayerStore.use.editingLayer()
 
   return (
-    <Container className="absolute right-0 top-1/2 h-1/2 w-36 -translate-y-1/2 shadow-md">
-      <Panel className="w-full grow overflow-y-auto">
+    <Container className="absolute right-0 top-1/2 h-1/2 w-36 -translate-y-1/2">
+      <Panel className="mb-1 w-full grow overflow-y-auto shadow-md">
         {layers
           .map((layer, idx) => {
             return (
@@ -36,7 +36,7 @@ function _Layers() {
           })
           .reverse()}
       </Panel>
-      <Panel className="mt-0 flex w-full justify-between">
+      <Panel className="mt-0 flex w-full justify-between shadow-md">
         <Button variant="outline" size="sm" className="w-1/2" onClick={() => newLayer()}>
           <FilePlus2 strokeWidth={1.5} />
         </Button>
