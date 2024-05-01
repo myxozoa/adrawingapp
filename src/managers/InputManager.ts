@@ -15,6 +15,7 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
+import type { MouseState } from "@/types"
 
 const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
@@ -78,7 +79,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   Camera.zoom = Math.max(0.001, Math.min(30, zoomTarget))
 
-  Camera.updateViewProjectionMatrix(gl)
+  Camera.updateViewProjectionMatrix()
 
   const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
 
@@ -89,7 +90,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   Camera.x -= dx
   Camera.y -= dy
 
-  Camera.updateViewProjectionMatrix(gl)
+  Camera.updateViewProjectionMatrix()
 }
 
 function pan(midPosition: { x: number; y: number }) {
@@ -104,7 +105,7 @@ function pan(midPosition: { x: number; y: number }) {
   Camera.x -= dx / Camera.zoom
   Camera.y -= dy / Camera.zoom
 
-  Camera.updateViewProjectionMatrix(gl)
+  Camera.updateViewProjectionMatrix()
 
   lastMidPosition.x = midPosition.x
   lastMidPosition.y = midPosition.y
@@ -160,7 +161,7 @@ function pointerdown(event: Event) {
   if (currentInteractionState === InteractionState.none) {
     currentInteractionState = InteractionState.useTool
 
-    const position = calculateWorldPosition(event)
+    const position = calculateWorldPosition(event) as MouseState
 
     DrawingManager.beginDraw(position)
   }
@@ -205,11 +206,11 @@ function pointermove(event: Event) {
         const coalesced = event.getCoalescedEvents()
 
         for (const coalescedEvent of coalesced) {
-          const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent)
+          const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
           DrawingManager.continueDraw(coalescedRelativeMouseState)
         }
       } else {
-        const position = calculateWorldPosition(event)
+        const position = calculateWorldPosition(event) as MouseState
 
         DrawingManager.continueDraw(position)
       }
@@ -275,7 +276,7 @@ const touch_listeners = {
 function resize() {
   Application.resize()
 
-  Camera.updateViewProjectionMatrix(Application.gl)
+  Camera.updateViewProjectionMatrix()
   DrawingManager.render()
 }
 

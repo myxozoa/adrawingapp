@@ -21,7 +21,7 @@ import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 import { useLayerStore } from "@/stores/LayerStore"
 
-import { ILayer } from "@/types.ts"
+import { Layer } from "@/objects/Layer"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -179,7 +179,7 @@ class _DrawingManager {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  public compositeLayers = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
+  public compositeLayers = (top: RenderInfo, bottom: RenderInfo, destination?: RenderInfo) => {
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
     const prefs = usePreferenceStore.getState().prefs
@@ -313,15 +313,17 @@ class _DrawingManager {
     // this.clearSpecific(intermediaryLayer, new Float32Array([0, 0, 0, 0]))
 
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
+
+    // TODO: clean up these assertions
     mat3.scale(
-      intermediaryLayer.data?.matrix,
-      intermediaryLayer.data?.matrix,
+      intermediaryLayer.data!.matrix!,
+      intermediaryLayer.data!.matrix!,
       vec2.fromValues(1 / (prefs.canvasWidth / 2), 1 / (prefs.canvasHeight / 2)),
     )
 
     mat3.translate(
-      intermediaryLayer.data?.matrix,
-      intermediaryLayer.data?.matrix,
+      intermediaryLayer.data!.matrix!,
+      intermediaryLayer.data!.matrix!,
       vec2.fromValues(-prefs.canvasWidth / 2, -prefs.canvasHeight / 2),
     )
 
@@ -331,14 +333,14 @@ class _DrawingManager {
 
     gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_destination_texture, 1)
 
-    gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data?.matrix)
+    gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data!.matrix!)
 
     gl.useProgram(null)
 
     this.initialized = true
   }
 
-  public newLayer = (layer: ILayer) => {
+  public newLayer = (layer: Layer) => {
     const gl = Application.gl
     const prefs = usePreferenceStore.getState().prefs
 

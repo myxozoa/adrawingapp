@@ -57,10 +57,10 @@ class _Camera {
     vec2.set(this.info.position, this.info.position[0], value)
   }
 
-  public init = (gl: WebGL2RenderingContext) => {
-    this.updateViewProjectionMatrix(gl)
+  public init = () => {
+    this.updateViewProjectionMatrix()
 
-    this.fitToView(gl)
+    this.fitToView()
   }
 
   public updateViewMatrix = () => {
@@ -92,7 +92,7 @@ class _Camera {
     return this.tempVec2
   }
 
-  public fitToView = (gl: WebGL2RenderingContext) => {
+  public fitToView = () => {
     const prefs = usePreferenceStore.getState().prefs
 
     // Minimum space between canvas edges and screen edges
@@ -109,7 +109,7 @@ class _Camera {
     Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
     Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
 
-    Camera.updateViewProjectionMatrix(gl)
+    Camera.updateViewProjectionMatrix()
   }
 }
 

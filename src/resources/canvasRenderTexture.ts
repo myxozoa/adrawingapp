@@ -21,7 +21,7 @@ export function createCanvasRenderTexture(
     },
   }
 
-  renderInfo.bufferInfo.texture = createTexture(
+  renderInfo.bufferInfo!.texture = createTexture(
     gl,
     width,
     height,
@@ -32,10 +32,10 @@ export function createCanvasRenderTexture(
     Application.textureSupport.minFilterType,
     Application.textureSupport.magFilterType,
   )
-  gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
+  gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo!.texture)
 
-  renderInfo.bufferInfo.framebuffer = createFramebuffer(gl, renderInfo.bufferInfo.texture)
-  gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
+  renderInfo.bufferInfo!.framebuffer = createFramebuffer(gl, renderInfo.bufferInfo!.texture)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo!.framebuffer)
 
   const { program, attributes, uniforms } = setupProgramAttributesUniforms(
     gl,
@@ -44,15 +44,15 @@ export function createCanvasRenderTexture(
     ["a_position", "a_tex_coord"],
     ["u_matrix", ...additionalUniforms],
   )
-  renderInfo.programInfo.program = program
-  renderInfo.programInfo.uniforms = uniforms
-  renderInfo.programInfo.attributes = attributes
+  renderInfo.programInfo!.program = program
+  renderInfo.programInfo!.uniforms = uniforms
+  renderInfo.programInfo!.attributes = attributes
 
-  renderInfo.programInfo.VBO = setupVBO(gl, width, height)
-  gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
+  renderInfo.programInfo!.VBO = setupVBO(gl, width, height)
+  gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo!.VBO)
 
-  renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
-  gl.bindVertexArray(renderInfo.programInfo.VAO)
+  renderInfo.programInfo!.VAO = createVAO(gl, attributes.a_position)
+  gl.bindVertexArray(renderInfo.programInfo!.VAO)
 
   const uvBuffer = setupUVBuffer(gl)
   gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)

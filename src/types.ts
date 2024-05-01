@@ -181,9 +181,7 @@ export interface ILayer {
   id: LayerID
   redoSnapshotQueue: Float32Array[]
   undoSnapshotQueue: Float32Array[]
-  drawingData: Float32Array
   noDraw: boolean
-  size: Size
   boundingBox: Box
   // saveAndStartNewOperation(): void
   // getImageData(): ImageData
@@ -199,11 +197,11 @@ export interface PossibleData {
 }
 
 export interface ProgramInfo {
-  program: WebGLProgram
+  program: Nullable<WebGLProgram>
   uniforms: Record<string, WebGLUniformLocation>
   attributes: Record<string, GLint>
-  VBO: WebGLBuffer
-  VAO: WebGLBuffer
+  VBO: Nullable<WebGLBuffer>
+  VAO: Nullable<WebGLBuffer>
 }
 
 export interface BufferInfo {
@@ -212,7 +210,7 @@ export interface BufferInfo {
 }
 
 export interface RenderInfo {
-  programInfo?: ProgramInfo
-  bufferInfo?: BufferInfo
+  programInfo: ProgramInfo
+  bufferInfo: BufferInfo
   data?: PossibleData
 }

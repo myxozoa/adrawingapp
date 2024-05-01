@@ -9,14 +9,14 @@ import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
 
 interface State {
-  layers: ILayer[]
-  currentLayer: ILayer
+  layers: Layer[]
+  currentLayer: Layer
   editingLayer: LayerID | null
 }
 
 interface Action {
-  setLayers: (layers: ILayer[]) => void
-  _setCurrentLayer: (layer: ILayer) => void
+  setLayers: (layers: Layer[]) => void
+  _setCurrentLayer: (layer: Layer) => void
   setEditingLayer: (id: LayerID) => void
   setCurrentLayer: (id: LayerID) => void
   newLayer: () => void
@@ -46,11 +46,11 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return state
     }),
-  setLayers: (layers: ILayer[]) =>
+  setLayers: (layers: Layer[]) =>
     set(() => ({
       layers,
     })),
-  _setCurrentLayer: (layer: ILayer) =>
+  _setCurrentLayer: (layer: Layer) =>
     set(() => ({
       currentLayer: layer,
     })),

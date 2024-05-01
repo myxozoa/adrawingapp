@@ -111,7 +111,7 @@ class _Application {
 
     this.resize()
 
-    Camera.init(gl)
+    Camera.init()
 
     // Initialize tools
     Object.values(tools).forEach((tool) => {

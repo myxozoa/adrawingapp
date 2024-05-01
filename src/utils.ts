@@ -18,7 +18,9 @@ export const CanvasSizeCache: CanvasSizeCache = {
   offsetWidth: 0,
 }
 
-export function getRelativeMousePosition(mouseState: MouseState): MouseState {
+export function getRelativeMousePosition(
+  mouseState: MouseState | { x: number; y: number },
+): MouseState | { x: number; y: number } {
   const state = {
     ...mouseState,
 
@@ -667,7 +669,9 @@ export function isWheelEvent(event: Event): event is WheelEvent {
   return event instanceof WheelEvent
 }
 
-export function calculateWorldPosition(event: PointerEvent | { x: number; y: number }): MouseState {
+export function calculateWorldPosition(
+  event: PointerEvent | { x: number; y: number },
+): MouseState | { x: number; y: number } {
   const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
 
   const relativeMouseState = getRelativeMousePosition(pointerState)
