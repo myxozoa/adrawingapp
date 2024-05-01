@@ -97,7 +97,7 @@ class _Camera {
 
     // Minimum space between canvas edges and screen edges
     // Should be greater than the UI width (TODO: Automate)
-    const margin = 50
+    const margin = Math.max(CanvasSizeCache.width, CanvasSizeCache.height) / 100
 
     // Start with a zoom that allows the whole canvas to be in view
     const widthZoomTarget = CanvasSizeCache.width - margin * 2
@@ -114,3 +114,6 @@ class _Camera {
 }
 
 export const Camera = new _Camera()
+
+// @ts-expect-error Adding camera global for debugging purposes
+window.__Camera = Camera

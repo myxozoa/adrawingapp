@@ -77,7 +77,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
 
-  Camera.zoom = Math.max(0.001, Math.min(30, zoomTarget))
+  Camera.zoom = Math.max(0.001, Math.min(100, zoomTarget))
 
   Camera.updateViewProjectionMatrix()
 
