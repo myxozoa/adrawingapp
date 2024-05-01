@@ -1,6 +1,6 @@
 #version 300 es
 
-precision highp float;
+precision mediump float;
 
 in vec2 v_position;
 out vec4 fragColor;
@@ -34,7 +34,7 @@ void main()
 
     float size_adjustment = (size_random * (size_random_amount)) - (size_random_amount - 0.01);
 
-    float size = 1. / clamp(u_size + size_adjustment, 1., 100.);
+    float size = 1. / clamp(u_size + size_adjustment, 1., 1000.);
 
     // Calculate brush circle
     vec2 position = gl_FragCoord.xy - u_point;
@@ -61,6 +61,9 @@ void main()
     float alpha = (alpha_random * (noise_amount)) - (noise_amount - 0.01);
 
     color.a = clamp(color.a - alpha, 0., 1.);
+    
+    // Premultiplied alpha
+    color.rgb = color.rgb * color.a;
     
     fragColor = color;
 }

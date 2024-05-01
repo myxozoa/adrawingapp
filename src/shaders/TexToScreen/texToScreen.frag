@@ -11,5 +11,8 @@ uniform mediump sampler2D textureSampler;
 void main() {
   vec4 color = texture(textureSampler, v_tex_coord);
 
+  if (color.a == 0.)
+    discard;
+
   fragColor = color;
 }

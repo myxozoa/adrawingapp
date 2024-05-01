@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 // import { DrawingManager } from "@/managers/drawingManager"
 import { Slider } from "@/components/ui/slider"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { DrawingManager } from "@/managers/DrawingManager"
 
 // const saveImage = async () => {
 //   const prefs = usePreferenceStore.getState().prefs
@@ -113,6 +114,8 @@ function _TopMenu() {
             <MenubarContent>
               <MenubarItem disabled>Undo</MenubarItem>
               <MenubarItem disabled>Redo</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem onSelect={() => DrawingManager.clearAll()}>Clear All</MenubarItem>
               <MenubarSeparator />
               <MenubarItem disabled>Project Name</MenubarItem>
               <DialogTrigger asChild>

@@ -4,7 +4,7 @@ import vertex from "@/shaders/Background/background.vert?raw"
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
 import { ProgramInfo, RenderInfo } from "@/types"
 
-export function createBackground(gl: WebGL2RenderingContext) {
+export function createFullscreenQuad(gl: WebGL2RenderingContext) {
   const renderInfo: RenderInfo = {
     bufferInfo: {
       framebuffer: null,
@@ -14,18 +14,18 @@ export function createBackground(gl: WebGL2RenderingContext) {
   }
 
   const { program, attributes, uniforms } = setupProgramAttributesUniforms(gl, fragment, vertex, ["a_position"], [])
-  renderInfo.programInfo.program = program
-  renderInfo.programInfo.uniforms = uniforms
-  renderInfo.programInfo.attributes = attributes
+  renderInfo.programInfo!.program = program
+  renderInfo.programInfo!.uniforms = uniforms
+  renderInfo.programInfo!.attributes = attributes
 
   gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
   gl.enableVertexAttribArray(attributes.a_tex_coord)
 
-  renderInfo.programInfo.VBO = setupVBO(gl)
-  gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
+  renderInfo.programInfo!.VBO = FullscreenQuad.setupVBO(gl)
+  gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo!.VBO)
 
-  renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
-  gl.bindVertexArray(renderInfo.programInfo.VAO)
+  renderInfo.programInfo!.VAO = createVAO(gl, attributes.a_position)
+  gl.bindVertexArray(renderInfo.programInfo!.VAO)
 
   // Unbind
   gl.bindBuffer(gl.ARRAY_BUFFER, null)
@@ -55,4 +55,8 @@ function setupVBO(gl: WebGL2RenderingContext) {
   ])
 
   return createBuffer(gl, positions)
+}
+
+export const FullscreenQuad = {
+  setupVBO,
 }

@@ -5,10 +5,7 @@ import { DrawCanvas } from "@/components/DrawCanvas"
 import { useToolStore } from "@/stores/ToolStore"
 import { useLayerStore } from "@/stores/LayerStore"
 
-import { DrawingManager } from "@/managers/DrawingManager"
-
-import { initializeCanvas } from "@/utils"
-import { InteractionManager } from "@/managers/InteractionManager"
+import { Application } from "@/managers/ApplicationManager"
 
 function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
@@ -18,30 +15,23 @@ function _Board() {
   useLayoutEffect(() => {
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
-    const context = initializeCanvas(boardRef.current, rect.width, rect.height, {
-      resize: true,
-    }) as WebGL2RenderingContext
-
-    DrawingManager.gl = context
-    DrawingManager.canvasRef = boardRef
+    Application.createCanvas(boardRef.current, rect.width, rect.height)
   }, [])
 
   useEffect(() => {
-    DrawingManager.init()
-    InteractionManager.init()
-    DrawingManager.start()
+    Application.init()
 
     return () => {
-      InteractionManager.destroy()
+      Application.destroy()
     }
   }, [])
 
   useEffect(() => {
-    DrawingManager.currentLayer = currentLayer
+    Application.currentLayer = currentLayer
   }, [currentLayer])
 
   useEffect(() => {
-    DrawingManager.swapTool(currentTool)
+    Application.swapTool(currentTool)
   }, [currentTool])
 
   return (

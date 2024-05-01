@@ -1,5 +1,7 @@
 #version 300 es
 
+precision mediump float;
+
 in vec2 a_position;
 
 uniform float u_size;

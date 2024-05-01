@@ -1,8 +1,7 @@
-import { DrawingManager } from "@/managers/DrawingManager"
-
 import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
 import { ProgramInfo, RenderInfo, type BufferInfo } from "@/types"
-import { mat3, vec2 } from "gl-matrix"
+import { mat3 } from "gl-matrix"
+import { Application } from "@/managers/ApplicationManager"
 
 // Depending on DrawingManager for feature support info when thats
 // currently determined in the same place this is called isnt great
@@ -12,6 +11,7 @@ export function createCanvasRenderTexture(
   height: number,
   fragment: string,
   vertex: string,
+  additionalUniforms: string[] = [],
 ) {
   const renderInfo: RenderInfo = {
     bufferInfo: {} as BufferInfo,
@@ -21,18 +21,16 @@ export function createCanvasRenderTexture(
     },
   }
 
-  mat3.translate(renderInfo.data!.matrix!, renderInfo.data!.matrix!, vec2.fromValues(0, 0))
-
   renderInfo.bufferInfo.texture = createTexture(
     gl,
     width,
     height,
-    DrawingManager.glInfo.supportedImageFormat,
-    DrawingManager.glInfo.supportedType,
-    new Float32Array(width * height * 4).fill(1),
+    Application.textureSupport.imageFormat,
+    Application.textureSupport.pixelType,
+    null,
     true,
-    DrawingManager.glInfo.supportedMinFilterType,
-    DrawingManager.glInfo.supportedMagFilterType,
+    Application.textureSupport.minFilterType,
+    Application.textureSupport.magFilterType,
   )
   gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
 
@@ -44,7 +42,7 @@ export function createCanvasRenderTexture(
     fragment,
     vertex,
     ["a_position", "a_tex_coord"],
-    ["u_matrix"],
+    ["u_matrix", ...additionalUniforms],
   )
   renderInfo.programInfo.program = program
   renderInfo.programInfo.uniforms = uniforms

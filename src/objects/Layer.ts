@@ -1,6 +1,6 @@
 import { blend_modes } from "../constants"
 
-import { ILayer, LayerID, LayerName, BlendModes, Size, Box } from "@/types"
+import { ILayer, LayerID, LayerName, BlendModes, Box } from "@/types"
 
 // TODO: Fix this
 export class Layer implements ILayer {
@@ -9,21 +9,17 @@ export class Layer implements ILayer {
   id: LayerID
   undoSnapshotQueue: Float32Array[]
   redoSnapshotQueue: Float32Array[]
-  drawingData: Float32Array
   noDraw: boolean
-  size: Size
   boundingBox: Box
 
-  constructor(name: LayerName, size: Size) {
+  constructor(name: LayerName) {
     this.blendMode = blend_modes.normal
     this.name = name
     this.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random() * Math.random()).toString()
     this.undoSnapshotQueue = []
     this.redoSnapshotQueue = []
-    this.drawingData = new Float32Array(4 * size.width * size.height)
     this.noDraw = false
-    this.size = size
-    this.boundingBox = { x: 0, y: 0, ...size }
+    this.boundingBox = { x: 0, y: 0, width: 0, height: 0 } //  TODO: Calculate every time drawn to
   }
 
   // addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {
