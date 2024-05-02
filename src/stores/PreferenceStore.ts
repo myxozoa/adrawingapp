@@ -24,9 +24,9 @@ const usePreferenceStoreBase = create<State & Action>()(
       prefs: {
         pressureSensitivity: 0.8,
         // These preferences are inverted (1-n)
-        pressureFiltering: 0.1,
-        mouseFiltering: 0.3,
-        mouseSmoothing: 0.3,
+        pressureFiltering: 0.9,
+        mouseFiltering: 0.7,
+        mouseSmoothing: 0.6,
         canvasWidth: 10 * 300,
         canvasHeight: 8 * 300,
       },
