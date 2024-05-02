@@ -51,17 +51,20 @@ class _InteractionManager {
 
     const stampSpacing = calculateSpacing(spacing, size)
 
-    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
-
     if (mergeEvent) {
-      operation.points.currentPoint.x = lerp(filteredPositions[0], toMergeEvent.x, 0.5)
-      operation.points.currentPoint.y = lerp(filteredPositions[1], toMergeEvent.y, 0.5)
+      relativeMouseState.x = lerp(toMergeEvent.x, relativeMouseState.x, 0.5)
+      relativeMouseState.y = lerp(toMergeEvent.y, relativeMouseState.y, 0.5)
 
       mergeEvent = false
-    } else {
-      operation.points.currentPoint.x = filteredPositions[0]
-      operation.points.currentPoint.y = filteredPositions[1]
     }
+
+    toMergeEvent.x = relativeMouseState.x
+    toMergeEvent.y = relativeMouseState.y
+
+    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
+
+    operation.points.currentPoint.x = filteredPositions[0]
+    operation.points.currentPoint.y = filteredPositions[1]
 
     operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
@@ -87,8 +90,6 @@ class _InteractionManager {
           operation.readyToDraw = true
         } else {
           mergeEvent = true
-          toMergeEvent.x = operation.points.currentPoint.x
-          toMergeEvent.y = operation.points.currentPoint.y
         }
         break
 
