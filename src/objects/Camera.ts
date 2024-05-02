@@ -86,7 +86,7 @@ class _Camera {
     return this.inverseViewProjectionMatrix
   }
 
-  public getWorldMousePosition = (position: { x: number; y: number }): vec2 => {
+  public getWorldPosition = (position: { x: number; y: number }): vec2 => {
     vec2.transformMat3(this.tempVec2, toClipSpace(position), this.getInverseViewProjectionMatrix())
 
     return this.tempVec2
@@ -109,7 +109,7 @@ class _Camera {
       y: CanvasSizeCache.height / 2,
     }
 
-    const screenMiddleWorldPosition = this.getWorldMousePosition(screenMiddle)
+    const screenMiddleWorldPosition = this.getWorldPosition(screenMiddle)
 
     // Start with a camera position that centers the canvas in view
     Camera.x = -Math.max(margin, margin + screenMiddleWorldPosition[0] - prefs.canvasWidth / 2)
