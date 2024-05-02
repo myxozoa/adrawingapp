@@ -157,7 +157,11 @@ function _ToolSettings() {
   }
 
   return (
-    <Container className="absolute left-1/2 top-8 z-10 -translate-x-1/2 shadow-md">
+    <Container
+      className={`absolute left-1/2 top-8 z-10 -translate-x-1/2 shadow-md ${
+        currentTool.availableSettings.length === 0 ? "hidden" : ""
+      }`}
+    >
       <Panel className="flex w-full items-center">
         <div className="flex flex-col items-center justify-center lg:flex-row">
           {/* <ToolPreview /> */}
