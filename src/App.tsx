@@ -6,24 +6,20 @@ import { Tools } from "@/components/ToolSelection/Tools"
 import { ToolSettings } from "@/components/ToolSettings"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 
-import { ThemeProvider } from "@/components/ThemeProvider"
-
 function App() {
   useEffect(() => {
     window.document.documentElement.classList.add("dark")
   }, [])
   return (
-    <ThemeProvider storageKey="draw-ui-theme">
-      <div className="flex max-h-[100dvh] min-h-[100dvh] flex-col">
-        <TopMenu />
-        <ToolSettings />
-        <Tools />
-        <ErrorBoundary fallback={<div>unfortunate!</div>}>
-          <Board />
-        </ErrorBoundary>
-        <Layers />
-      </div>
-    </ThemeProvider>
+    <div className="flex max-h-[100dvh] min-h-[100dvh] flex-col">
+      <TopMenu />
+      <ToolSettings />
+      <Tools />
+      <ErrorBoundary fallback={<div>unfortunate!</div>}>
+        <Board />
+      </ErrorBoundary>
+      <Layers />
+    </div>
   )
 }
 

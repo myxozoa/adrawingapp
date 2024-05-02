@@ -236,6 +236,8 @@ function wheel(event: Event) {
 
   wheelZoom(event)
   wheelThrottle(DrawingManager.render)
+
+  currentInteractionState = InteractionState.none
 }
 
 function keyup(event: Event) {

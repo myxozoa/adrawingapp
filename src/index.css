@@ -4,71 +4,35 @@
 
 @layer base {
   :root {
-    --background: 220, 6%, 96%;
-    --foreground: 222, 10%, 16%;
+    --background: 100, 0%, 32%;
+    --foreground: 160, 0%, 86%;
 
-    --muted: 215, 14%, 0%;
-    --muted-foreground: 222, 0%, 16%;
+    --muted: 160, 0%, 25%;
+    --muted-foreground: 160, 0%, 62%;
 
-    --popover: 220, 6%, 96%;
-    --popover-foreground: 222, 10%, 16%;
+    --popover: 100, 0%, 32%;
+    --popover-foreground: 160, 0%, 86%;
 
-    --border: 222, 10%, 70%;
-    --input: 222, 10%, 70%;
-
-    --card: 220, 6%, 96%;
-    --card-foreground: 222, 10%, 16%;
-
-    --primary: 222, 10%, 70%;
-    --primary-foreground: 220, 6%, 96%;
-
-    --secondary: 215, 4%, 80%;
-    --secondary-foreground: 222, 10%, 16%;
-
-    --accent: 215, 4%, 80%;
-    --accent-foreground: 222, 10%, 16%;
-
-    --destructive: 0, 10%, 50%;
-    --destructive-foreground: 222, 10%, 16%;
-
-    --ring: 222, 10%, 70%;
-    --border: 240 10% 90%;
-    --input: 240 10% 90%;
-    --ring: 240 10% 10%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 220, 6%, 16%;
-    --foreground: 222, 10%, 96%;
-
-    --muted: 215, 4%, 25%;
-    --muted-foreground: 222, 10%, 96%;
-
-    --popover: 220, 6%, 16%;
-    --popover-foreground: 222, 10%, 96%;
-
-    --border: 222, 10%, 40%;
-    --input: 222, 10%, 40%;
-
-    --card: 220, 6%, 16%;
-    --card-foreground: 222, 10%, 96%;
+    --card: 100, 0%, 32%;
+    --card-foreground: 160, 0%, 86%;
 
     --primary: 222, 10%, 65%;
-    --primary-foreground: 220, 6%, 16%;
+    --primary-foreground: 100, 0%, 32%;
 
-    --secondary: 215, 4%, 25%;
-    --secondary-foreground: 222, 10%, 96%;
+    --secondary: 160, 0%, 25%;
+    --secondary-foreground: 160, 0%, 40%;
 
-    --accent: 215, 4%, 25%;
-    --accent-foreground: 222, 10%, 96%;
+    --accent: 160, 0%, 25%;
+    --accent-foreground: 160, 0%, 86%;
 
     --destructive: 0, 10%, 50%;
-    --destructive-foreground: 222, 10%, 96%;
+    --destructive-foreground: 160, 0%, 86%;
 
-    --border: 240 10% 15.9%;
-    --input: 240 10% 15.9%;
+    --border: 160, 0%, 22%;
+    --input: 160, 0%, 22%;
     --ring: 240 10% 83.9%;
+
+    --radius: 6px;
   }
 }
 
@@ -85,13 +49,15 @@
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
+
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.86);
+  background-color: rgb(38, 38, 38);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -133,4 +99,36 @@ body {
   display: flex;
   place-items: center;
   min-width: 320px;
+}
+
+input:focus {
+  outline: none;
+}
+
+input[type="color"] {
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+::-webkit-color-swatch {
+  border: 0;
+  border-radius: 0;
+}
+
+::-moz-color-swatch,
+::-moz-focus-inner {
+  border: 0;
+}
+
+::-moz-focus-inner {
+  padding: 0;
 }

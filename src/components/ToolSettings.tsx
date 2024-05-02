@@ -5,12 +5,8 @@ import Container from "@/components/Container"
 // import { ToolPreview } from '@/components/ToolPreview'
 
 import { useToolStore } from "@/stores/ToolStore"
-import { useMainStore } from "@/stores/MainStore"
-
-import { hexToRgb, rgbToHex } from "@/utils"
 
 import { Slider } from "@/components/ui/slider"
-import { Separator } from "@/components/ui/separator"
 import { AvailableTools } from "@/types"
 
 const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
@@ -19,9 +15,9 @@ const SliderSetting = (name: string, value: number, _onValueChange: (value: numb
 
   return (
     <div key={`${name}_setting`} className="flex h-full flex-row items-center justify-center">
-      <p className="pr-2 text-sm text-muted-foreground">{name}</p>
+      <p className="pr-2 text-sm text-foreground">{name}:</p>
       <Slider className="mr-4 w-28" {...props} value={[value]} onValueChange={onValueChange} />
-      <p className="mr-2 w-[3ch] text-sm text-muted-foreground">{value}</p>
+      <p className="w-[3ch] text-sm text-foreground">{value}</p>
     </div>
   )
 }
@@ -29,8 +25,6 @@ const SliderSetting = (name: string, value: number, _onValueChange: (value: numb
 function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
   const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
-  const color = useMainStore.use.color()
-  const setColor = useMainStore.use.setColor()
 
   // TODO: Theres some other way to get this to be safe
   const [toolState, setToolState] = useState({
@@ -131,14 +125,7 @@ function _ToolSettings() {
     })
   }, [currentTool])
 
-  const changeColor = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const rgb = hexToRgb(event.target.value)
-
-    if (rgb) setColor(rgb)
-  }
-
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
-    color: <input type="color" value={rgbToHex(color)} onChange={changeColor} />,
     size:
       toolState.size !== undefined
         ? SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), {
@@ -170,15 +157,17 @@ function _ToolSettings() {
   }
 
   return (
-    <Container className="absolute left-1/2 top-10 z-10 h-10 -translate-x-1/2 shadow-md">
-      <Panel className="flex h-full w-full items-center">
-        <div className="flex flex-row">
+    <Container className="absolute left-1/2 top-8 z-10 -translate-x-1/2 shadow-md">
+      <Panel className="flex w-full items-center">
+        <div className="flex flex-col items-center justify-center lg:flex-row">
           {/* <ToolPreview /> */}
           {currentTool.availableSettings.map((setting) => {
             return (
-              <div key={"tool_settings" + setting} className="flex flex-row pr-4">
+              <div
+                key={"tool_settings" + setting}
+                className="flex flex-row max-lg:mb-2 max-lg:border-b max-lg:py-1 lg:mr-2 lg:border-r lg:pr-2"
+              >
                 {elements[setting]}
-                <Separator orientation="vertical" />
               </div>
             )
           })}

@@ -7,14 +7,24 @@ import Tool from "@/components/ToolSelection/Tool"
 import { useToolStore } from "@/stores/ToolStore"
 
 import { tools } from "@/stores/ToolStore"
-import { DarkModeToggle } from "@/components/DarkModeToggle"
+
+import { hexToRgb, rgbToHex } from "@/utils"
+import { useMainStore } from "@/stores/MainStore"
 
 function _Tools() {
   const currentTool = useToolStore.use.currentTool()
   const setCurrentTool = useToolStore.use.setCurrentTool()
+  const color = useMainStore.use.color()
+  const setColor = useMainStore.use.setColor()
+
+  const changeColor = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const rgb = hexToRgb(event.target.value)
+
+    if (rgb) setColor(rgb)
+  }
 
   return (
-    <Container className="absolute top-1/2 z-10 w-12 -translate-y-1/2 shadow-md">
+    <Container className="absolute top-1/2 z-10 w-11 -translate-y-1/2 shadow-md">
       <Panel className="flex w-full grow flex-col justify-between">
         <div>
           {Object.values(tools).map((tool) => {
@@ -28,8 +38,7 @@ function _Tools() {
             )
           })}
         </div>
-
-        <DarkModeToggle />
+        <input className="w-auto rounded-sm	" type="color" value={rgbToHex(color)} onChange={changeColor} />
       </Panel>
     </Container>
   )
