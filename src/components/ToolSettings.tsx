@@ -59,7 +59,20 @@ function _ToolSettings() {
       let hackyVariable = null
       setToolState((prev) => {
         if (prev.size) {
-          hackyVariable = Math.min(prev.size + 5, 100)
+          let newSize = prev.size
+          if (prev.size < 10) {
+            newSize = prev.size + 1
+          }
+
+          if (prev.size >= 10 && prev.size < 100) {
+            newSize = prev.size + 10
+          }
+
+          if (prev.size >= 100 && prev.size < 1000) {
+            newSize = prev.size + 50
+          }
+
+          hackyVariable = Math.min(newSize, 1000)
           return { ...prev, size: hackyVariable }
         } else {
           return prev
@@ -72,7 +85,20 @@ function _ToolSettings() {
       let hackyVariable = null
       setToolState((prev) => {
         if (prev.size) {
-          hackyVariable = Math.max(prev.size - 5, 1)
+          let newSize = prev.size
+          if (prev.size <= 10) {
+            newSize = prev.size - 1
+          }
+
+          if (prev.size > 10 && prev.size < 100) {
+            newSize = prev.size - 10
+          }
+
+          if (prev.size >= 100 && prev.size < 1000) {
+            newSize = prev.size - 50
+          }
+
+          hackyVariable = Math.max(newSize, 1)
           return { ...prev, size: hackyVariable }
         } else {
           return prev
