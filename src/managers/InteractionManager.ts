@@ -1,6 +1,6 @@
 import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing } from "@/utils.ts"
+import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils.ts"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -23,7 +23,10 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
 const positionFilter = new ExponentialSmoothingFilter(0.5)
-const previousEvent = { x: 0, y: 0 }
+
+const toMergeEvent = { x: 0, y: 0 }
+
+let mergeEvent = false
 
 class _InteractionManager {
   private prepareOperation = (relativeMouseState: MouseState) => {
@@ -50,8 +53,16 @@ class _InteractionManager {
 
     const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
-    operation.points.currentPoint.x = filteredPositions[0]
-    operation.points.currentPoint.y = filteredPositions[1]
+    if (mergeEvent) {
+      operation.points.currentPoint.x = lerp(filteredPositions[0], toMergeEvent.x, 0.5)
+      operation.points.currentPoint.y = lerp(filteredPositions[1], toMergeEvent.y, 0.5)
+
+      mergeEvent = false
+    } else {
+      operation.points.currentPoint.x = filteredPositions[0]
+      operation.points.currentPoint.y = filteredPositions[1]
+    }
+
     operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
     const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
@@ -74,9 +85,10 @@ class _InteractionManager {
           operation.points.nextPoint()
 
           operation.readyToDraw = true
-
-          previousEvent.x = relativeMouseState.x
-          previousEvent.y = relativeMouseState.y
+        } else {
+          mergeEvent = true
+          toMergeEvent.x = operation.points.currentPoint.x
+          toMergeEvent.y = operation.points.currentPoint.y
         }
         break
 
@@ -144,6 +156,8 @@ class _InteractionManager {
    */
   public endInteraction = (save = true) => {
     // if (this.currentLayer.noDraw) return
+
+    mergeEvent = false
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")

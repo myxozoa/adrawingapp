@@ -207,6 +207,7 @@ function pointermove(event: Event) {
 
         for (const coalescedEvent of coalesced) {
           const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
+
           DrawingManager.continueDraw(coalescedRelativeMouseState)
         }
       } else {
