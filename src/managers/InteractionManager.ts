@@ -8,6 +8,7 @@ import { vec2 } from "gl-matrix"
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
+import { Camera } from "@/objects/Camera"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
@@ -36,8 +37,8 @@ class _InteractionManager {
 
     const prefs = usePreferenceStore.getState().prefs
 
-    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.smoothAmount = prefs.pressureFiltering
-    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.smoothAmount = prefs.mouseFiltering
+    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.changeSetting(prefs.pressureFiltering)
+    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.changeSetting(prefs.mouseFiltering)
 
     const prevPoint = operation.points.getPoint(-1).active
       ? operation.points.getPoint(-1)
@@ -60,6 +61,12 @@ class _InteractionManager {
 
     toMergeEvent.x = relativeMouseState.x
     toMergeEvent.y = relativeMouseState.y
+
+    // To counteract the fact that the pointer position resolution gets much lower the
+    // more zoomed out the canvas becomes we raise filtering to compensate
+    if (Camera.zoom < 1) {
+      positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - (1 - Camera.zoom) / 3, 1), 0.1))
+    }
 
     const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
