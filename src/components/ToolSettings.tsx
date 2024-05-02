@@ -165,7 +165,7 @@ function _ToolSettings() {
             return (
               <div
                 key={"tool_settings" + setting}
-                className="flex flex-row max-lg:mb-2 max-lg:border-b max-lg:py-1 lg:mr-2 lg:border-r lg:pr-2"
+                className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2"
               >
                 {elements[setting]}
               </div>
