@@ -87,7 +87,7 @@ const SliderSetting = (name: string, value: number, _onValueChange: (value: numb
       <div className="flex h-full flex-row items-center justify-center">
         <p className="pr-2 text-sm text-muted-foreground">{name}</p>
         <Slider className="mr-4 w-28" {...props} value={[value]} onValueChange={onValueChange} />
-        <p className="mr-2 w-[3ch] text-sm text-muted-foreground">{value}</p>
+        <p className="mr-2 w-[3ch] text-sm text-muted-foreground">{value.toFixed(2)}</p>
       </div>
     </div>
   )
@@ -134,40 +134,40 @@ function _TopMenu() {
               {
                 min: 0,
                 max: 1,
-                step: 0.1,
+                step: 0.01,
               },
             )}
 
             {SliderSetting(
               "Pressure Filtering",
-              Math.round((1 - prefs.pressureFiltering) * 10) / 10,
+              ((1 - prefs.pressureFiltering) * 10) / 10,
               (pressureFiltering) => setPrefs({ pressureFiltering: 1 - pressureFiltering }),
               {
                 min: 0,
-                max: 0.9,
-                step: 0.1,
+                max: 0.99,
+                step: 0.01,
               },
             )}
 
             {SliderSetting(
               "Mouse Filtering",
-              Math.round((1 - prefs.mouseFiltering) * 10) / 10,
+              ((1 - prefs.mouseFiltering) * 10) / 10,
               (mouseFiltering) => setPrefs({ mouseFiltering: 1 - mouseFiltering }),
               {
                 min: 0,
-                max: 0.9,
-                step: 0.1,
+                max: 0.99,
+                step: 0.01,
               },
             )}
 
             {SliderSetting(
               "Mouse Smoothing",
-              Math.round((1 - prefs.mouseSmoothing) * 10) / 10,
+              ((1 - prefs.mouseSmoothing) * 10) / 10,
               (mouseSmoothing) => setPrefs({ mouseSmoothing: 1 - mouseSmoothing }),
               {
                 min: 0,
-                max: 0.9,
-                step: 0.1,
+                max: 0.99,
+                step: 0.01,
               },
             )}
           </DialogHeader>
