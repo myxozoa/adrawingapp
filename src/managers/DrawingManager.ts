@@ -450,7 +450,7 @@ class _DrawingManager {
   }
 
   public clearAll = () => {
-    for (const resource of Object.values(ResourceManager.resources)) {
+    for (const [_, resource] of ResourceManager.resources) {
       if (resource.bufferInfo?.framebuffer) {
         this.clearSpecific(resource)
       }

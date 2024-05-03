@@ -53,9 +53,24 @@ class _Application {
     this.currentLayer = {} as ILayer
     this.currentTool = {} as AvailableTools
     this.currentOperation = {} as Operation
-    this.extensions = {} as SupportedExtensions
-    this.systemConstraints = {} as SystemConstraints
-    this.textureSupport = {} as SupportedTextureInfo
+    this.extensions = {
+      colorBufferFloat: null,
+      floatBlend: null,
+      textureFloat: null,
+      textureFloatLinear: null,
+      textureHalfFloat: null,
+      textureHalfFloatLinear: null,
+      colorBufferHalfFloat: null,
+    }
+    this.systemConstraints = {
+      maxTextureSize: 0,
+      maxTextureImageUnits: 0,
+      maxRenderBufferSize: 0,
+      maxDrawBuffers: 0,
+      maxColorAttachments: 0,
+      maxSamples: 0,
+    }
+    this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
   }
 
   private getExtensions = () => {
