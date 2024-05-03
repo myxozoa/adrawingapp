@@ -2,7 +2,7 @@ import fragment from "@/shaders/Background/background.frag?raw"
 import vertex from "@/shaders/Background/background.vert?raw"
 
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
-import { ProgramInfo, RenderInfo } from "@/types"
+import { RenderInfo } from "@/types"
 
 export function createFullscreenQuad(gl: WebGL2RenderingContext) {
   const renderInfo: RenderInfo = {
@@ -10,7 +10,7 @@ export function createFullscreenQuad(gl: WebGL2RenderingContext) {
       framebuffer: null,
       texture: null,
     },
-    programInfo: {} as ProgramInfo,
+    programInfo: { program: null, uniforms: {}, attributes: {}, VBO: null, VAO: null },
   }
 
   const { program, attributes, uniforms } = setupProgramAttributesUniforms(gl, fragment, vertex, ["a_position"], [])

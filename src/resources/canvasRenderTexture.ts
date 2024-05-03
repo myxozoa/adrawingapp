@@ -1,5 +1,5 @@
 import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
-import { ProgramInfo, RenderInfo, type BufferInfo } from "@/types"
+import { RenderInfo } from "@/types"
 import { mat3 } from "gl-matrix"
 import { Application } from "@/managers/ApplicationManager"
 
@@ -15,8 +15,11 @@ export function createCanvasRenderTexture(
   additionalUniforms: string[] = [],
 ) {
   const renderInfo: RenderInfo = {
-    bufferInfo: {} as BufferInfo,
-    programInfo: {} as ProgramInfo,
+    bufferInfo: {
+      framebuffer: null,
+      texture: null,
+    },
+    programInfo: { program: null, uniforms: {}, attributes: {}, VBO: null, VAO: null },
     data: {
       matrix: mat3.create(),
     },

@@ -1,6 +1,6 @@
 import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing } from "@/utils.ts"
+import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils.ts"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -8,6 +8,7 @@ import { vec2 } from "gl-matrix"
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
+import { Camera } from "@/objects/Camera"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
@@ -23,7 +24,10 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6)
 const positionFilter = new ExponentialSmoothingFilter(0.5)
-const previousEvent = { x: 0, y: 0 }
+
+const toMergeEvent = { x: 0, y: 0 }
+
+let mergeEvent = false
 
 class _InteractionManager {
   private prepareOperation = (relativeMouseState: MouseState) => {
@@ -33,8 +37,8 @@ class _InteractionManager {
 
     const prefs = usePreferenceStore.getState().prefs
 
-    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.smoothAmount = prefs.pressureFiltering
-    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.smoothAmount = prefs.mouseFiltering
+    if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.changeSetting(prefs.pressureFiltering)
+    if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.changeSetting(prefs.mouseFiltering)
 
     const prevPoint = operation.points.getPoint(-1).active
       ? operation.points.getPoint(-1)
@@ -48,20 +52,42 @@ class _InteractionManager {
 
     const stampSpacing = calculateSpacing(spacing, size)
 
+    if (mergeEvent) {
+      relativeMouseState.x = lerp(toMergeEvent.x, relativeMouseState.x, 0.5)
+      relativeMouseState.y = lerp(toMergeEvent.y, relativeMouseState.y, 0.5)
+
+      mergeEvent = false
+    }
+
+    toMergeEvent.x = relativeMouseState.x
+    toMergeEvent.y = relativeMouseState.y
+
+    // To counteract the fact that the pointer position resolution gets much lower the
+    // more zoomed out the canvas becomes we raise filtering to compensate
+    if (Camera.zoom < 1) {
+      positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - (1 - Camera.zoom) / 3, 1), 0.1))
+    }
+
     const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
 
     operation.points.currentPoint.x = filteredPositions[0]
     operation.points.currentPoint.y = filteredPositions[1]
+
     operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
     const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
     operation.points.currentPoint.pressure = filteredPressure[0]
 
+    let pointerTypeLerpAdjustment = 0
+
+    if (relativeMouseState.pointerType === "mouse") pointerTypeLerpAdjustment = 0.3
+    if (relativeMouseState.pointerType === "touch") pointerTypeLerpAdjustment = 0.2
+
     vec2.lerp(
       operation.points.currentPoint.location,
       prevPoint.location,
       operation.points.currentPoint.location,
-      prefs.mouseSmoothing,
+      Math.max(prefs.mouseSmoothing - pointerTypeLerpAdjustment, 0.01),
     )
 
     const dist = getDistance(prevPoint, operation.points.currentPoint)
@@ -74,9 +100,8 @@ class _InteractionManager {
           operation.points.nextPoint()
 
           operation.readyToDraw = true
-
-          previousEvent.x = relativeMouseState.x
-          previousEvent.y = relativeMouseState.y
+        } else {
+          mergeEvent = true
         }
         break
 
@@ -145,6 +170,8 @@ class _InteractionManager {
   public endInteraction = (save = true) => {
     // if (this.currentLayer.noDraw) return
 
+    mergeEvent = false
+
     const scratchLayer = ResourceManager.get("ScratchLayer")
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
@@ -157,7 +184,7 @@ class _InteractionManager {
       const currentLayerID = useLayerStore.getState().currentLayer.id
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
-      DrawingManager.compositeLayers(scratchLayer, currentLayer, currentLayer)
+      DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)
     }
     DrawingManager.clearSpecific(scratchLayer)
     DrawingManager.clearSpecific(intermediaryLayer)

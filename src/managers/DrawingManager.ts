@@ -65,7 +65,7 @@ class _DrawingManager {
     const gl = Application.gl
 
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
-    if (Camera.zoom > 3.5) {
+    if (Camera.zoom > 2.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
         gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("IntermediaryLayer").bufferInfo?.texture)
 
@@ -91,10 +91,10 @@ class _DrawingManager {
   }
 
   public render = () => {
-    const layers = useLayerStore.getState().layers
-    const currentLayerID = useLayerStore.getState().currentLayer.id
     const prefs = usePreferenceStore.getState().prefs
     const gl = Application.gl
+
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     // Draw Screen
     gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
@@ -111,43 +111,11 @@ class _DrawingManager {
 
     this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
-    const displayLayer = ResourceManager.get("DisplayLayer")
-    const emptyLayer = ResourceManager.get("EmptyLayer")
+    this.compositeLayers()
+
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
-    const currentLayerIndex = layers.findIndex((layer) => layer.id === currentLayerID)
-
-    // Layers below current
-    for (let i = 0; i < currentLayerIndex; i += 2) {
-      const layer = layers[i]
-      const layer2 = layers[i + 1]
-
-      const layerResource = ResourceManager.get(`Layer${layer.id}`)
-
-      const layer2Resource = i === currentLayerIndex - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
-
-      this.compositeLayers(layer2Resource, layerResource)
-    }
-
-    const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
-
-    const scratchLayer = ResourceManager.get("ScratchLayer")
-
-    this.compositeLayers(scratchLayer, currentLayer)
-
-    // Layers above current
-    for (let i = currentLayerIndex + 1; i < layers.length; i += 2) {
-      const layer = layers[i]
-      const layer2 = layers[i + 1]
-
-      const layerResource = ResourceManager.get(`Layer${layer.id}`)
-
-      const layer2Resource = i === layers.length - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
-
-      this.compositeLayers(layer2Resource, layerResource)
-    }
-
-    this.renderToScreen(intermediaryLayer, true, renderUniforms, displayLayer)
+    this.renderToScreen(intermediaryLayer, true, renderUniforms, ResourceManager.get("DisplayLayer"))
 
     this.clearSpecific(intermediaryLayer)
   }
@@ -167,12 +135,21 @@ class _DrawingManager {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  public compositeLayers = (top: RenderInfo, bottom: RenderInfo, destination?: RenderInfo) => {
+  public compositeLayers = () => {
+    const gl = Application.gl
+    const emptyLayer = ResourceManager.get("EmptyLayer")
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
     const prefs = usePreferenceStore.getState().prefs
 
-    const gl = Application.gl
+    const layers = useLayerStore.getState().layers
+    const currentLayerID = useLayerStore.getState().currentLayer.id
+    const currentLayerIndex = layers.findIndex((layer) => layer.id === currentLayerID)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer.bufferInfo?.framebuffer)
+    gl.useProgram(intermediaryLayer.programInfo?.program)
+    gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer.programInfo?.VBO)
+    gl.bindVertexArray(intermediaryLayer.programInfo?.VAO)
 
     gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
     gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
@@ -180,9 +157,45 @@ class _DrawingManager {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.blendEquation(gl.FUNC_ADD)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer.bufferInfo?.framebuffer)
+    // Layers below current
+    for (let i = 0; i < currentLayerIndex; i += 2) {
+      const layer = layers[i]
+      const layer2 = layers[i + 1]
 
-    gl.useProgram(intermediaryLayer.programInfo?.program)
+      const layerResource = ResourceManager.get(`Layer${layer.id}`)
+
+      const layer2Resource = i === currentLayerIndex - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
+
+      this.compositeLayer(layer2Resource, layerResource)
+    }
+
+    const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+
+    const scratchLayer = ResourceManager.get("ScratchLayer")
+
+    this.compositeLayer(scratchLayer, currentLayer)
+
+    // Layers above current
+    for (let i = currentLayerIndex + 1; i < layers.length; i += 2) {
+      const layer = layers[i]
+      const layer2 = layers[i + 1]
+
+      const layerResource = ResourceManager.get(`Layer${layer.id}`)
+
+      const layer2Resource = i === layers.length - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
+
+      this.compositeLayer(layer2Resource, layerResource)
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindVertexArray(null)
+    gl.useProgram(null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+  }
+
+  private compositeLayer = (top: RenderInfo, bottom: RenderInfo) => {
+    const gl = Application.gl
 
     gl.activeTexture(gl.TEXTURE1)
     gl.bindTexture(gl.TEXTURE_2D, bottom.bufferInfo?.texture)
@@ -190,24 +203,29 @@ class _DrawingManager {
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, top.bufferInfo?.texture)
 
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
+  }
+
+  public commitLayer = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
+    const gl = Application.gl
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+
+    const prefs = usePreferenceStore.getState().prefs
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer.bufferInfo?.framebuffer)
+    gl.useProgram(intermediaryLayer.programInfo?.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer.programInfo?.VBO)
     gl.bindVertexArray(intermediaryLayer.programInfo?.VAO)
 
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
+    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
-    // gl.activeTexture(gl.TEXTURE0)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendEquation(gl.FUNC_ADD)
 
-    if (destination) {
-      this.blit(intermediaryLayer, destination)
-    }
+    this.compositeLayer(top, bottom)
 
-    gl.useProgram(null)
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
+    this.blit(intermediaryLayer, destination)
   }
 
   public blit = (source: RenderInfo, destination: RenderInfo) => {
@@ -229,6 +247,9 @@ class _DrawingManager {
       gl.COLOR_BUFFER_BIT,
       gl.NEAREST,
     )
+
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
   }
 
   /**
@@ -429,7 +450,7 @@ class _DrawingManager {
   }
 
   public clearAll = () => {
-    for (const resource of Object.values(ResourceManager.resources)) {
+    for (const [_, resource] of ResourceManager.resources) {
       if (resource.bufferInfo?.framebuffer) {
         this.clearSpecific(resource)
       }

@@ -207,6 +207,7 @@ function pointermove(event: Event) {
 
         for (const coalescedEvent of coalesced) {
           const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
+
           DrawingManager.continueDraw(coalescedRelativeMouseState)
         }
       } else {
@@ -235,6 +236,8 @@ function wheel(event: Event) {
 
   wheelZoom(event)
   wheelThrottle(DrawingManager.render)
+
+  currentInteractionState = InteractionState.none
 }
 
 function keyup(event: Event) {

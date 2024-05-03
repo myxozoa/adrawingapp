@@ -38,11 +38,11 @@ function _Layers() {
       </Panel>
       <Panel className="mt-0 flex w-full justify-between shadow-md">
         <Button variant="outline" size="sm" className="w-1/2" onClick={() => newLayer()}>
-          <FilePlus2 strokeWidth={1.5} />
+          <FilePlus2 className="h-5 w-5" strokeWidth={1.5} />
         </Button>
 
         <Button variant="outline" size="sm" className="w-1/2" onClick={() => removeLayer()}>
-          <Trash2 strokeWidth={1.5} />
+          <Trash2 className="h-5 w-5" strokeWidth={1.5} />
         </Button>
       </Panel>
     </Container>

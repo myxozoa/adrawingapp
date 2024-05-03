@@ -16,24 +16,32 @@ interface State {
 
 interface Action {
   setPrefs: (prefs: Partial<State["prefs"]>) => void
+  resetToDefault: () => void
+}
+
+export const defaultPreferences = {
+  pressureSensitivity: 0.8,
+  // These preferences are inverted (1-n)
+  pressureFiltering: 0.9,
+  mouseFiltering: 0.7,
+  mouseSmoothing: 0.6,
+  canvasWidth: 10 * 300,
+  canvasHeight: 8 * 300,
 }
 
 const usePreferenceStoreBase = create<State & Action>()(
   persist(
     (set) => ({
-      prefs: {
-        pressureSensitivity: 0.8,
-        // These preferences are inverted (1-n)
-        pressureFiltering: 0.1,
-        mouseFiltering: 0.3,
-        mouseSmoothing: 0.3,
-        canvasWidth: 10 * 300,
-        canvasHeight: 8 * 300,
-      },
+      prefs: defaultPreferences,
       setPrefs: (prefs: Partial<State["prefs"]>) =>
         set((prev) => ({
           prefs: { ...prev.prefs, ...prefs },
         })),
+      resetToDefault: () => {
+        set(() => ({
+          prefs: { ...defaultPreferences },
+        }))
+      },
     }),
     {
       name: "preferences",

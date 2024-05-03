@@ -86,7 +86,7 @@ class _Camera {
     return this.inverseViewProjectionMatrix
   }
 
-  public getWorldMousePosition = (position: { x: number; y: number }): vec2 => {
+  public getWorldPosition = (position: { x: number; y: number }): vec2 => {
     vec2.transformMat3(this.tempVec2, toClipSpace(position), this.getInverseViewProjectionMatrix())
 
     return this.tempVec2
@@ -97,17 +97,23 @@ class _Camera {
 
     // Minimum space between canvas edges and screen edges
     // Should be greater than the UI width (TODO: Automate)
-    const margin = Math.max(CanvasSizeCache.width, CanvasSizeCache.height) / 100
+    const margin = (Math.max(CanvasSizeCache.width, CanvasSizeCache.height) / 100) * 4
 
     // Start with a zoom that allows the whole canvas to be in view
     const widthZoomTarget = CanvasSizeCache.width - margin * 2
     const heightZoomTarget = CanvasSizeCache.height - margin * 2
     Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
 
+    const screenMiddle = {
+      x: CanvasSizeCache.width / 2,
+      y: CanvasSizeCache.height / 2,
+    }
+
+    const screenMiddleWorldPosition = this.getWorldPosition(screenMiddle)
+
     // Start with a camera position that centers the canvas in view
-    // TODO: Fix alg
-    Camera.x = -Math.max(margin, widthZoomTarget / 2 - (prefs.canvasWidth * Camera.zoom) / 2)
-    Camera.y = -Math.max(margin, heightZoomTarget / 2 - (prefs.canvasHeight * Camera.zoom) / 2)
+    Camera.x = -Math.max(margin, margin + screenMiddleWorldPosition[0] - prefs.canvasWidth / 2)
+    Camera.y = -Math.max(margin, margin + screenMiddleWorldPosition[1] - prefs.canvasHeight / 2)
 
     Camera.updateViewProjectionMatrix()
   }

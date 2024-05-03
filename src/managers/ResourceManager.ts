@@ -1,23 +1,25 @@
 import { Application } from "@/managers/ApplicationManager"
 import { RenderInfo } from "@/types"
 
-type TResources = Record<string, RenderInfo>
+type TResources = Map<string, RenderInfo>
 
 class _ResourceManager {
   resources: TResources
 
   constructor() {
-    this.resources = {} as TResources
+    this.resources = new Map()
   }
 
-  create = (name: keyof typeof this.resources, renderInfo: RenderInfo) => {
-    this.resources[name] = renderInfo
+  create = (name: string, renderInfo: RenderInfo) => {
+    this.resources.set(name, renderInfo)
 
     return renderInfo
   }
 
-  delete = (name: keyof typeof this.resources) => {
-    const resource = this.resources[name]
+  delete = (name: string) => {
+    const resource = this.resources.get(name)
+
+    if (!resource) return
 
     // TODO: delete buffers as well
     Application.gl.deleteTexture(resource.bufferInfo?.texture)
@@ -25,11 +27,15 @@ class _ResourceManager {
     Application.gl.deleteFramebuffer(resource.bufferInfo?.framebuffer)
     Application.gl.deleteProgram(resource.programInfo?.program)
 
-    delete this.resources[name]
+    this.resources.delete(name)
   }
 
-  get = (name: keyof typeof this.resources) => {
-    return this.resources[name]
+  get = (name: string): RenderInfo => {
+    const fetched = this.resources.get(name)
+
+    if (!fetched) throw new Error("Resource not found")
+
+    return fetched
   }
 }
 

@@ -2,7 +2,7 @@ import fragment from "@/shaders/TransparencyGrid/transparencyGrid.frag?raw"
 import vertex from "@/shaders/TransparencyGrid/transparencyGrid.vert?raw"
 
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
-import { ProgramInfo, RenderInfo } from "@/types"
+import { RenderInfo } from "@/types"
 import { mat3, vec2 } from "gl-matrix"
 
 export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number, height: number) {
@@ -11,7 +11,7 @@ export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number
       framebuffer: null,
       texture: null,
     },
-    programInfo: {} as ProgramInfo,
+    programInfo: { program: null, uniforms: {}, attributes: {}, VBO: null, VAO: null },
     data: {
       matrix: mat3.create(),
     },
