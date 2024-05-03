@@ -65,7 +65,7 @@ class _DrawingManager {
     const gl = Application.gl
 
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
-    if (Camera.zoom > 3.5) {
+    if (Camera.zoom > 2.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
         gl.bindTexture(gl.TEXTURE_2D, ResourceManager.get("IntermediaryLayer").bufferInfo?.texture)
 
