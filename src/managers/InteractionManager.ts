@@ -78,11 +78,16 @@ class _InteractionManager {
     const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
     operation.points.currentPoint.pressure = filteredPressure[0]
 
+    let pointerTypeLerpAdjustment = 0
+
+    if (relativeMouseState.pointerType === "mouse") pointerTypeLerpAdjustment = 0.3
+    if (relativeMouseState.pointerType === "touch") pointerTypeLerpAdjustment = 0.2
+
     vec2.lerp(
       operation.points.currentPoint.location,
       prevPoint.location,
       operation.points.currentPoint.location,
-      Math.max(prefs.mouseSmoothing - (relativeMouseState.pointerType === "mouse" ? 0.3 : 0), 0.01),
+      Math.max(prefs.mouseSmoothing - pointerTypeLerpAdjustment, 0.01),
     )
 
     const dist = getDistance(prevPoint, operation.points.currentPoint)
