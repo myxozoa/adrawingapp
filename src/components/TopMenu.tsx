@@ -123,6 +123,19 @@ function _TopMenu() {
               </DialogTrigger>
             </MenubarContent>
           </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Help</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem
+                onSelect={() => {
+                  localStorage.clear()
+                  usePreferenceStore.getState().resetToDefault()
+                }}
+              >
+                Reset Preferences
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
         </Menubar>
         <DialogContent>
           <DialogHeader>
