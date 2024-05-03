@@ -82,7 +82,7 @@ class _InteractionManager {
       operation.points.currentPoint.location,
       prevPoint.location,
       operation.points.currentPoint.location,
-      prefs.mouseSmoothing,
+      Math.max(prefs.mouseSmoothing - (relativeMouseState.pointerType === "mouse" ? 0.3 : 0), 0.01),
     )
 
     const dist = getDistance(prevPoint, operation.points.currentPoint)
