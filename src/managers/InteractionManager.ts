@@ -179,7 +179,7 @@ class _InteractionManager {
       const currentLayerID = useLayerStore.getState().currentLayer.id
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
-      DrawingManager.compositeLayers(scratchLayer, currentLayer, currentLayer)
+      DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)
     }
     DrawingManager.clearSpecific(scratchLayer)
     DrawingManager.clearSpecific(intermediaryLayer)
