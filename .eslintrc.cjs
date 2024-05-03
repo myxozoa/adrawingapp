@@ -19,6 +19,14 @@ module.exports = {
     "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
     "@typescript-eslint/prefer-nullish-coalescing": "off",
     "@typescript-eslint/consistent-indexed-object-style": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn", // or "error"
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      },
+    ],
     "no-extra-semi": "off",
   },
   parserOptions: {
