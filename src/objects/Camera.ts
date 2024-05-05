@@ -121,5 +121,7 @@ class _Camera {
 
 export const Camera = new _Camera()
 
-// @ts-expect-error Adding camera global for debugging purposes
-window.__Camera = Camera
+if (import.meta.env.DEV) {
+  // @ts-expect-error Adding camera global for debugging purposes
+  window.__Camera = Camera
+}

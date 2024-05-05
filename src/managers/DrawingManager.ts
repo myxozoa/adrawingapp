@@ -470,5 +470,7 @@ class _DrawingManager {
 
 export const DrawingManager = new _DrawingManager()
 
-// @ts-expect-error Adding global for debugging purposes
-window.__DrawingManager = DrawingManager
+if (import.meta.env.DEV) {
+  // @ts-expect-error Adding global for debugging purposes
+  window.__DrawingManager = DrawingManager
+}
