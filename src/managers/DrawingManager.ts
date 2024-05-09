@@ -170,7 +170,7 @@ class _DrawingManager {
         gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer2.blendMode)
         gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer2.opacity)
 
-      this.compositeLayer(layer2Resource, layerResource)
+        this.compositeLayer(layer2Resource, layerResource)
       } else {
         gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
         gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
@@ -201,7 +201,7 @@ class _DrawingManager {
         gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer2.blendMode)
         gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer2.opacity)
 
-      this.compositeLayer(layer2Resource, layerResource)
+        this.compositeLayer(layer2Resource, layerResource)
       } else {
         gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
         gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
