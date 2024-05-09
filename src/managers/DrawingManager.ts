@@ -12,8 +12,8 @@ import { createCanvasRenderTexture } from "@/resources/canvasRenderTexture"
 
 import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
 import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
-import scratchFragment from "@/shaders/Scratch/scratch.frag?raw"
-import scratchVertex from "@/shaders/Scratch/scratch.vert?raw"
+import layerCompositionFragment from "@/shaders/LayerComposition/layerComposition.frag?raw"
+import layerCompositionVertex from "@/shaders/LayerComposition/layerComposition.vert?raw"
 
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
@@ -335,11 +335,20 @@ class _DrawingManager {
 
     const intermediaryLayer = ResourceManager.create(
       "IntermediaryLayer",
-      createCanvasRenderTexture(gl, prefs.canvasWidth, prefs.canvasHeight, scratchFragment, scratchVertex, true, [
-        "u_source_texture",
-        "u_destination_texture",
-      ]),
+      createCanvasRenderTexture(
+        gl,
+        prefs.canvasWidth,
+        prefs.canvasHeight,
+        layerCompositionFragment,
+        layerCompositionVertex,
+        true,
+        ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
+      ),
     )
+
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
+
     // this.clearSpecific(intermediaryLayer, new Float32Array([0, 0, 0, 0]))
 
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
@@ -359,9 +368,9 @@ class _DrawingManager {
 
     gl.useProgram(intermediaryLayer.programInfo?.program)
 
-    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_source_texture, 0)
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_bottom_texture, 0)
 
-    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_destination_texture, 1)
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_top_texture, 1)
 
     gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data!.matrix!)
 
