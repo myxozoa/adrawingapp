@@ -116,11 +116,7 @@ class _DrawingManager {
 
     this.compositeLayers()
 
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-
     this.renderToScreen(intermediaryLayer, true, renderUniforms, ResourceManager.get("DisplayLayer"))
-
-    this.clearSpecific(intermediaryLayer)
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {

@@ -60,19 +60,6 @@ export class Eraser extends Tool {
     this.brush.init(gl)
   }
 
-  /** Switch WebGL state to what we need
-   *
-   *  MUST be called every time before a usage operation
-   *
-   * @override
-   */
-  switchTo = (gl: WebGL2RenderingContext) => {
-    this.brush.switchTo(gl)
-
-    gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT)
-    gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA)
-  }
-
   /** @override */
   draw = (gl: WebGL2RenderingContext, operation: IOperation) => {
     this.brush.draw(gl, operation)
