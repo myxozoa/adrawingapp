@@ -1,4 +1,4 @@
-import { BlendModes, Modifier, ToolName, ToolType } from "@/types"
+import { Modifier, ToolName, ToolType } from "@/types"
 
 export const tool_list: Record<ToolName, ToolName> = {
   // PEN: "PEN",
@@ -13,23 +13,23 @@ export const tool_types: Record<ToolType, ToolType> = {
   POINT: "POINT",
 }
 
-export const blend_modes: Record<string, BlendModes> = {
-  normal: "normal",
-  multiply: "multiply",
-  screen: "screen",
-  overlay: "overlay",
-  darken: "darken",
-  lighten: "lighten",
-  colorDodge: "color-dodge",
-  colorBurn: "color-burn",
-  hardLight: "hard-light",
-  softLight: "soft-light",
-  difference: "difference",
-  exclusion: "exclusion",
-  hue: "hue",
-  saturation: "saturation",
-  color: "color",
-  luminosity: "luminosity",
+export enum blend_modes {
+  normal = 0,
+  multiply,
+  screen,
+  overlay,
+  darken,
+  lighten,
+  colorDodge,
+  colorBurn,
+  hardLight,
+  softLight,
+  difference,
+  exclusion,
+  hue,
+  saturation,
+  color,
+  luminosity,
 }
 
 export const key_modifers: Record<string, Modifier> = {
