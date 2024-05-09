@@ -26,7 +26,7 @@ export const toolProperties: toolProperties = {
   //   numberOfPoints: 8,
   // },
   BRUSH: {
-    availableSettings: ["size", "hardness", "flow", "spacing"],
+    availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
     numberOfPoints: 8,

@@ -9,6 +9,7 @@ import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
+import { useToolStore } from "@/stores/ToolStore"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
@@ -173,7 +174,7 @@ class _InteractionManager {
     mergeEvent = false
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+    const currentTool = useToolStore.getState().currentTool
 
     // TODO: More elegant solution here
     if (
@@ -184,12 +185,17 @@ class _InteractionManager {
       const currentLayerID = useLayerStore.getState().currentLayer.id
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
+      const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+
+      Application.gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+      Application.gl.uniform1f(
+        intermediaryLayer.programInfo.uniforms.u_opacity,
+        (currentTool.settings.opacity as number) / 100,
+      )
+
       DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)
     }
     DrawingManager.clearSpecific(scratchLayer)
-    DrawingManager.clearSpecific(intermediaryLayer)
-
-    DrawingManager.render()
 
     DrawingManager.waitUntilInteractionEnd = false
     DrawingManager.needRedraw = true
@@ -198,6 +204,7 @@ class _InteractionManager {
     Application.currentOperation.reset()
 
     Application.currentTool.reset()
+    DrawingManager.render()
   }
 }
 

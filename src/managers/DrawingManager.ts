@@ -22,6 +22,7 @@ import { InteractionManager } from "@/managers/InteractionManager"
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { Layer } from "@/objects/Layer"
+import { useToolStore } from "@/stores/ToolStore"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -93,8 +94,10 @@ class _DrawingManager {
   public render = () => {
     const prefs = usePreferenceStore.getState().prefs
     const gl = Application.gl
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    this.clearSpecific(intermediaryLayer)
 
     // Draw Screen
     gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
@@ -141,6 +144,7 @@ class _DrawingManager {
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
     const prefs = usePreferenceStore.getState().prefs
+    const currentTool = useToolStore.getState().currentTool
 
     const layers = useLayerStore.getState().layers
     const currentLayerID = useLayerStore.getState().currentLayer.id
@@ -164,14 +168,27 @@ class _DrawingManager {
 
       const layerResource = ResourceManager.get(`Layer${layer.id}`)
 
-      const layer2Resource = i === currentLayerIndex - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
+      if (layer2) {
+        const layer2Resource = ResourceManager.get(`Layer${layer2.id}`)
+
+        gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer2.blendMode)
+        gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer2.opacity)
 
       this.compositeLayer(layer2Resource, layerResource)
+      } else {
+        gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+        gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
+
+        this.compositeLayer(emptyLayer, layerResource)
+      }
     }
 
     const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
+
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, (currentTool.settings.opacity as number) / 100)
 
     this.compositeLayer(scratchLayer, currentLayer)
 
@@ -182,9 +199,19 @@ class _DrawingManager {
 
       const layerResource = ResourceManager.get(`Layer${layer.id}`)
 
-      const layer2Resource = i === layers.length - 1 ? emptyLayer : ResourceManager.get(`Layer${layer2.id}`)
+      if (layer2) {
+        const layer2Resource = ResourceManager.get(`Layer${layer2.id}`)
+
+        gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer2.blendMode)
+        gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer2.opacity)
 
       this.compositeLayer(layer2Resource, layerResource)
+      } else {
+        gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+        gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
+
+        this.compositeLayer(emptyLayer, layerResource)
+      }
     }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
@@ -198,10 +225,9 @@ class _DrawingManager {
     const gl = Application.gl
 
     gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, bottom.bufferInfo?.texture)
-
-    gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, top.bufferInfo?.texture)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, bottom.bufferInfo?.texture)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
@@ -209,6 +235,8 @@ class _DrawingManager {
   public commitLayer = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
     const gl = Application.gl
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+
+    this.clearSpecific(intermediaryLayer)
 
     const prefs = usePreferenceStore.getState().prefs
 
@@ -220,12 +248,15 @@ class _DrawingManager {
     gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
     gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.blendEquation(gl.FUNC_ADD)
+    gl.disable(gl.BLEND)
 
     this.compositeLayer(top, bottom)
 
     this.blit(intermediaryLayer, destination)
+
+    this.clearSpecific(intermediaryLayer)
+
+    gl.enable(gl.BLEND)
   }
 
   public blit = (source: RenderInfo, destination: RenderInfo) => {
@@ -244,7 +275,7 @@ class _DrawingManager {
       0,
       prefs.canvasWidth,
       prefs.canvasHeight,
-      gl.COLOR_BUFFER_BIT,
+      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
       gl.NEAREST,
     )
 
