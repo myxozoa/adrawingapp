@@ -5,13 +5,9 @@ precision highp float;
 in vec2 v_position;
 out vec4 fragColor;
 
-uniform float u_size;
-uniform vec2 u_point;
+uniform vec3 u_point_random;
 uniform vec3 u_brush_color;
-uniform float u_softness;
-uniform float u_flow;
-uniform float u_roughness;
-uniform float u_random;
+uniform vec4 u_brush_qualities;
 
 // book of shaders
 float random(vec2 st)
@@ -26,6 +22,14 @@ float circle(vec2 point)
 
 void main()
 {
+    float u_flow = u_brush_qualities.x;
+    float u_softness = u_brush_qualities.y;
+    float u_roughness = u_brush_qualities.z;
+    float u_size = u_brush_qualities.w;
+
+    vec2 u_point = u_point_random.xy;
+    float u_random = u_point_random.z;
+
     vec2 st = ((gl_FragCoord.xy * (1./u_size)) + u_random);
 
     // Vary the size for rougher brush edges

@@ -74,7 +74,7 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_point", "u_size", "u_brush_color", "u_softness", "u_flow", "u_random", "u_roughness"]
+    const uniformNames = ["u_point_random", "u_brush_color", "u_brush_qualities"]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -285,17 +285,9 @@ export class Brush extends Tool implements IBrush {
     // Internals
     gl.scissor(startScissorX, startScissorY, size * 2 + 4, size * 2 + 4)
 
-    gl.uniform1f(this.programInfo.uniforms.u_flow, flow)
+    gl.uniform4f(this.programInfo.uniforms.u_brush_qualities, flow, hardness, base_roughness - roughness, size)
 
-    gl.uniform1f(this.programInfo.uniforms.u_softness, hardness)
-
-    gl.uniform1f(this.programInfo.uniforms.u_roughness, base_roughness - roughness)
-
-    gl.uniform2f(this.programInfo.uniforms.u_point, point.x, prefs.canvasHeight - point.y)
-
-    gl.uniform1f(this.programInfo.uniforms.u_size, size)
-
-    gl.uniform1f(this.programInfo.uniforms.u_random, Math.random())
+    gl.uniform3f(this.programInfo.uniforms.u_point_random, point.x, prefs.canvasHeight - point.y, Math.random())
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
