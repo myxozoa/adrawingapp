@@ -121,7 +121,8 @@ class _DrawingManager {
     gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    this.clearSpecific(framebuffers[readFramebuffer])
+
+    this.empty(framebuffers[readFramebuffer].bufferInfo.textures[0])
 
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
     gl.blendEquation(gl.FUNC_ADD)
@@ -214,7 +215,7 @@ class _DrawingManager {
           framebuffers[readFramebuffer].bufferInfo.textures[0],
         )
 
-        this.clearSpecific(intermediaryLayer3)
+        this.empty(intermediaryLayer3.bufferInfo.textures[0])
       }
 
       readFramebuffer = Number(!readFramebuffer)
@@ -268,7 +269,8 @@ class _DrawingManager {
 
     this.blit(intermediaryLayer3, destination)
 
-    this.clearSpecific(intermediaryLayer3)
+    // this.clearSpecific(intermediaryLayer3)
+    this.empty(intermediaryLayer3.bufferInfo.textures[0])
 
     gl.enable(gl.BLEND)
 
@@ -584,6 +586,18 @@ class _DrawingManager {
     }
 
     this.render()
+  }
+
+  public empty = (texture: WebGLTexture) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
+
+    const emptyLayer = ResourceManager.get("EmptyLayer")
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, emptyLayer.bufferInfo.framebuffer)
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, prefs.canvasWidth, prefs.canvasHeight)
   }
 
   // TODO: Reimplement undo
