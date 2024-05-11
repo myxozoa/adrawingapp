@@ -157,14 +157,16 @@ export function createVAO(gl: WebGL2RenderingContext, attribute: number, size = 
 /**
  * @throws If unable to create framebuffer
  */
-export function createFramebuffer(gl: WebGL2RenderingContext, texture: WebGLTexture): WebGLFramebuffer {
+export function createFramebuffer(gl: WebGL2RenderingContext, textures: WebGLTexture[]): WebGLFramebuffer {
   const fb = gl.createFramebuffer()
 
   if (!fb) throw new Error("Unable to create WebGL framebuffer")
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
 
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+  for (let i = 0; i < textures.length; i++) {
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, textures[i], 0)
+  }
 
   const framebufferStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
 

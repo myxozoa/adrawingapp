@@ -187,7 +187,7 @@ export interface ProgramInfo {
 }
 
 export interface BufferInfo {
-  texture: Nullable<WebGLTexture>
+  textures: Nullable<WebGLTexture>[]
   framebuffer: Nullable<WebGLFramebuffer>
 }
 
