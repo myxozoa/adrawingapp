@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { ILayer, LayerID, LayerName } from "@/types"
+import { LayerID, LayerName } from "@/types"
 
 import { Layer } from "@/objects/Layer"
 
@@ -7,6 +7,7 @@ import { DrawingManager } from "@/managers/DrawingManager"
 
 import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
+import { throttleRAF } from "@/utils"
 
 interface State {
   layers: Layer[]
@@ -22,10 +23,13 @@ interface Action {
   newLayer: () => void
   removeLayer: () => void
   saveNewName: (id: LayerID, name: LayerName) => void
+  setOpacity: (id: LayerID, opacity: number) => void
   keepCurrentLayerInSync: () => void
 }
 
 const baseLayer = new Layer("New Layer")
+
+const debounce = throttleRAF()
 
 let currentLayerIndex = 0
 
@@ -58,7 +62,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     set(() => ({
       editingLayer: id,
     })),
-  newLayer: () =>
+  newLayer: () => {
     set((state) => {
       // if (state.layers.length > 9) return state
 
@@ -69,7 +73,10 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       currentLayerIndex++
 
       return { ...state, currentLayer: newLayer, layers: [...state.layers, newLayer] }
-    }),
+    })
+
+    DrawingManager.render()
+  },
   removeLayer: () => {
     set((state) => {
       if (state.currentLayer && state.layers.length && state.layers.length > 1) {
@@ -98,6 +105,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, currentLayer: state.layers[_currentLayerIndex] }
     })
+
+    DrawingManager.render()
   },
   saveNewName: (id: LayerID, name: LayerName) =>
     set((state) => {
@@ -110,6 +119,19 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, name }, editingLayer: null }
     }),
+  setOpacity: (id: LayerID, opacity: number) => {
+    set((state) => {
+      const newLayers = state.layers.map((layer) => {
+        if (id === layer.id) {
+          return { ...layer, opacity }
+        }
+        return layer
+      })
+
+      return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, opacity }, editingLayer: null }
+    })
+    debounce(DrawingManager.render)
+  },
 }))
 
 export const useLayerStore = createSelectors(useLayerStoreBase)

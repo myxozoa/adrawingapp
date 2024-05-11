@@ -13,11 +13,12 @@ export function createCanvasRenderTexture(
   vertex: string,
   mipMap: boolean,
   additionalUniforms: string[] = [],
+  numTextures = 1,
 ) {
   const renderInfo: RenderInfo = {
     bufferInfo: {
       framebuffer: null,
-      texture: null,
+      textures: [],
     },
     programInfo: { program: null, uniforms: {}, attributes: {}, VBO: null, VAO: null },
     data: {
@@ -25,20 +26,21 @@ export function createCanvasRenderTexture(
     },
   }
 
-  renderInfo.bufferInfo.texture = createTexture(
-    gl,
-    width,
-    height,
-    Application.textureSupport.imageFormat,
-    Application.textureSupport.pixelType,
-    null,
-    mipMap,
-    Application.textureSupport.minFilterType,
-    Application.textureSupport.magFilterType,
-  )
-  gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo.texture)
+  for (let i = 0; i <= numTextures; i++) {
+    renderInfo.bufferInfo.textures[i] = createTexture(
+      gl,
+      width,
+      height,
+      Application.textureSupport.imageFormat,
+      Application.textureSupport.pixelType,
+      null,
+      mipMap,
+      Application.textureSupport.minFilterType,
+      Application.textureSupport.magFilterType,
+    )
+  }
 
-  renderInfo.bufferInfo.framebuffer = createFramebuffer(gl, renderInfo.bufferInfo.texture)
+  renderInfo.bufferInfo.framebuffer = createFramebuffer(gl, renderInfo.bufferInfo.textures)
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
 
   const { program, attributes, uniforms } = setupProgramAttributesUniforms(

@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react"
 
 import Panel from "@/components/Panel"
 import Container from "@/components/Container"
-// import { ToolPreview } from '@/components/ToolPreview'
 
 import { useToolStore } from "@/stores/ToolStore"
 
@@ -11,13 +10,12 @@ import { AvailableTools } from "@/types"
 
 const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
   const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
-  // const handler = useCallback(throttle(onValueChange, 16), [dependency])
 
   return (
     <div key={`${name}_setting`} className="flex h-full flex-row items-center justify-center">
       <p className="pr-2 text-sm text-foreground">{name}:</p>
       <Slider className="mr-4 w-28" {...props} value={[value]} onValueChange={onValueChange} />
-      <p className="w-[3ch] text-sm text-foreground">{value}</p>
+      <p className="min-w-[3ch] text-sm text-foreground">{value}</p>
     </div>
   )
 }
@@ -32,6 +30,8 @@ function _ToolSettings() {
     size: currentTool.settings.size as number | undefined,
     // @ts-expect-error spent too long on this
     hardness: currentTool.settings.hardness as number | undefined,
+    // @ts-expect-error spent too long on this
+    opacity: currentTool.settings.opacity as number | undefined,
     // @ts-expect-error spent too long on this
     flow: currentTool.settings.flow as number | undefined,
     // @ts-expect-error spent too long on this
@@ -119,6 +119,8 @@ function _ToolSettings() {
       // @ts-expect-error spent too long on this
       hardness: currentTool.settings.hardness as number | undefined,
       // @ts-expect-error spent too long on this
+      opacity: currentTool.settings.opacity as number | undefined,
+      // @ts-expect-error spent too long on this
       flow: currentTool.settings.flow as number | undefined,
       // @ts-expect-error spent too long on this
       spacing: currentTool.settings.spacing as number | undefined,
@@ -136,6 +138,13 @@ function _ToolSettings() {
     hardness:
       toolState.hardness !== undefined
         ? SliderSetting("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), {
+            min: 1,
+            max: 100,
+          })
+        : null,
+    opacity:
+      toolState.opacity !== undefined
+        ? SliderSetting("opacity", toolState.opacity, (opacity) => changeToolSetting({ opacity }), {
             min: 1,
             max: 100,
           })

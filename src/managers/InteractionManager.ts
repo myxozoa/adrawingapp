@@ -173,7 +173,6 @@ class _InteractionManager {
     mergeEvent = false
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
 
     // TODO: More elegant solution here
     if (
@@ -187,9 +186,6 @@ class _InteractionManager {
       DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)
     }
     DrawingManager.clearSpecific(scratchLayer)
-    DrawingManager.clearSpecific(intermediaryLayer)
-
-    DrawingManager.render()
 
     DrawingManager.waitUntilInteractionEnd = false
     DrawingManager.needRedraw = true
@@ -198,6 +194,7 @@ class _InteractionManager {
     Application.currentOperation.reset()
 
     Application.currentTool.reset()
+    DrawingManager.render()
   }
 }
 
