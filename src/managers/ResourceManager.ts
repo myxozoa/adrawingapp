@@ -21,6 +21,8 @@ class _ResourceManager {
 
     if (!resource) return
 
+    Application.gl.bindTexture(Application.gl.TEXTURE_2D, null)
+
     // TODO: delete buffers as well
     for (const texture of resource.bufferInfo.textures) {
       Application.gl.deleteTexture(texture)
