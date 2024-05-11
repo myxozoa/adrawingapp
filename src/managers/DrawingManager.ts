@@ -87,7 +87,7 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
 
-        gl.bindTexture(gl.TEXTURE_2D, null)
+        // gl.bindTexture(gl.TEXTURE_2D, null)
 
         this.pixelInterpolation = pixelInterpolation.nearest
       }
@@ -98,7 +98,7 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
 
-        gl.bindTexture(gl.TEXTURE_2D, null)
+        // gl.bindTexture(gl.TEXTURE_2D, null)
 
         this.pixelInterpolation = pixelInterpolation.trilinear
       }
@@ -158,7 +158,7 @@ class _DrawingManager {
 
     this.clear(color)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   public compositeLayers = () => {
@@ -224,10 +224,10 @@ class _DrawingManager {
 
     gl.enable(gl.BLEND)
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
-    gl.useProgram(null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    // gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    // gl.bindVertexArray(null)
+    // gl.useProgram(null)
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   private compositeLayer = (top: WebGLTexture, bottom: WebGLTexture) => {
@@ -240,7 +240,7 @@ class _DrawingManager {
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-    gl.bindTexture(gl.TEXTURE_2D, null)
+    // gl.bindTexture(gl.TEXTURE_2D, null)
   }
 
   public commitLayer = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
@@ -274,11 +274,11 @@ class _DrawingManager {
 
     gl.enable(gl.BLEND)
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
-    gl.useProgram(null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
+    // gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    // gl.bindVertexArray(null)
+    // gl.useProgram(null)
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    // gl.bindTexture(gl.TEXTURE_2D, null)
   }
 
   public blit = (source: RenderInfo, destination: RenderInfo) => {
@@ -301,8 +301,8 @@ class _DrawingManager {
       gl.NEAREST,
     )
 
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
-    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
+    // gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
+    // gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
   }
 
   /**
@@ -444,8 +444,6 @@ class _DrawingManager {
 
     gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data!.matrix!)
 
-    gl.useProgram(null)
-
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
 
     // TODO: clean up these assertions
@@ -469,8 +467,6 @@ class _DrawingManager {
 
     gl.uniformMatrix3fv(intermediaryLayer2.programInfo?.uniforms.u_matrix, false, intermediaryLayer2.data!.matrix!)
 
-    gl.useProgram(null)
-
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
 
     // TODO: clean up these assertions
@@ -493,8 +489,6 @@ class _DrawingManager {
     gl.uniform1i(intermediaryLayer3.programInfo?.uniforms.u_top_texture, 1)
 
     gl.uniformMatrix3fv(intermediaryLayer3.programInfo?.uniforms.u_matrix, false, intermediaryLayer3.data!.matrix!)
-
-    gl.useProgram(null)
 
     this.initialized = true
   }
@@ -566,9 +560,9 @@ class _DrawingManager {
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     // Unbind
-    if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    if (renderInfo.bufferInfo?.textures) gl.bindTexture(gl.TEXTURE_2D, null)
-    if (renderInfo.programInfo?.VAO) gl.bindVertexArray(null)
+    // if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    // if (renderInfo.bufferInfo?.textures) gl.bindTexture(gl.TEXTURE_2D, null)
+    // if (renderInfo.programInfo?.VAO) gl.bindVertexArray(null)
   }
 
   /** Fill clear on whatever the current WebGL state is */
