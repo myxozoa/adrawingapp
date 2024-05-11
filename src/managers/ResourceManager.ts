@@ -22,7 +22,9 @@ class _ResourceManager {
     if (!resource) return
 
     // TODO: delete buffers as well
-    Application.gl.deleteTexture(resource.bufferInfo?.texture)
+    for (const texture of resource.bufferInfo.textures) {
+      Application.gl.deleteTexture(texture)
+    }
 
     Application.gl.deleteFramebuffer(resource.bufferInfo?.framebuffer)
     Application.gl.deleteProgram(resource.programInfo?.program)

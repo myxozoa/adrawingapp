@@ -8,7 +8,7 @@ export function createFullscreenQuad(gl: WebGL2RenderingContext) {
   const renderInfo: RenderInfo = {
     bufferInfo: {
       framebuffer: null,
-      texture: null,
+      textures: [],
     },
     programInfo: { program: null, uniforms: {}, attributes: {}, VBO: null, VAO: null },
   }

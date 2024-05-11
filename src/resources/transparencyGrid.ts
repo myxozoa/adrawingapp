@@ -9,7 +9,7 @@ export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number
   const renderInfo: RenderInfo = {
     bufferInfo: {
       framebuffer: null,
-      texture: null,
+      textures: [],
     },
     programInfo: { program: null, uniforms: {}, attributes: {}, VBO: null, VAO: null },
     data: {

@@ -10,7 +10,7 @@ import { useLayerStore } from "@/stores/LayerStore"
 
 import { Slider } from "@/components/ui/slider"
 
-const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
+const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props?: any) => {
   const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
 
   return (

@@ -2,7 +2,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { throttleRAF, CanvasSizeCache } from "@/utils.ts"
 
-import { MouseState, RenderInfo } from "@/types.ts"
+import { AvailableTools, MouseState, RenderInfo } from "@/types.ts"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -21,8 +21,14 @@ import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 import { useLayerStore } from "@/stores/LayerStore"
 
+import { IBrush } from "@/types.ts"
+
 import { Layer } from "@/objects/Layer"
 import { useToolStore } from "@/stores/ToolStore"
+
+const isBrush = (tool: AvailableTools): tool is IBrush => {
+  return tool.name === "BRUSH"
+}
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -176,16 +182,18 @@ class _DrawingManager {
 
     gl.disable(gl.BLEND)
 
-    const scratchLayer = ResourceManager.get("ScratchLayer")
-    const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+    if (isBrush(currentTool)) {
+      const scratchLayer = ResourceManager.get("ScratchLayer")
+      const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
-    gl.useProgram(intermediaryLayer3.programInfo?.program)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
+      gl.useProgram(intermediaryLayer3.programInfo?.program)
 
-    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
-    gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, (currentTool.settings.opacity as number) / 100)
+      gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
+      gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
 
-    this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
+      this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
+    }
 
     // Layers below current
     for (const layer of layers) {
@@ -251,8 +259,10 @@ class _DrawingManager {
 
     gl.disable(gl.BLEND)
 
-    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
-    gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, (currentTool.settings.opacity as number) / 100)
+    if (isBrush(currentTool)) {
+      gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
+      gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+    }
 
     this.compositeLayer(top.bufferInfo.textures[0], bottom.bufferInfo.textures[0])
 
@@ -541,7 +551,7 @@ class _DrawingManager {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-    if (renderInfo.bufferInfo?.textures) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo?.textures[0])
+    if (renderInfo.bufferInfo?.textures.length) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo?.textures[0])
 
     if (mipmap) gl.generateMipmap(gl.TEXTURE_2D)
 

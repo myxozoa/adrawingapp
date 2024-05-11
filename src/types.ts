@@ -158,7 +158,7 @@ export type AvailableTools = IBrush | IPen | IFill | IEyedropper | IEraser
 export type LayerName = string
 export type LayerID = string
 export interface ILayer {
-  blendMode: BlendModes
+  blendMode: number
   name: LayerName
   id: LayerID
   redoSnapshotQueue: Float32Array[]
@@ -187,7 +187,7 @@ export interface ProgramInfo {
 }
 
 export interface BufferInfo {
-  textures: Nullable<WebGLTexture>[]
+  textures: WebGLTexture[]
   framebuffer: Nullable<WebGLFramebuffer>
 }
 

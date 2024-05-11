@@ -9,7 +9,6 @@ import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
-import { useToolStore } from "@/stores/ToolStore"
 
 const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "switchTo" in tool
