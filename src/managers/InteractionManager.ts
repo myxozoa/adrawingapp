@@ -174,7 +174,6 @@ class _InteractionManager {
     mergeEvent = false
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
-    const currentTool = useToolStore.getState().currentTool
 
     // TODO: More elegant solution here
     if (
@@ -184,14 +183,6 @@ class _InteractionManager {
     ) {
       const currentLayerID = useLayerStore.getState().currentLayer.id
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
-
-      const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-
-      Application.gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
-      Application.gl.uniform1f(
-        intermediaryLayer.programInfo.uniforms.u_opacity,
-        (currentTool.settings.opacity as number) / 100,
-      )
 
       DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)
     }

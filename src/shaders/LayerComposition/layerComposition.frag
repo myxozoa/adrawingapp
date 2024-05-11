@@ -54,6 +54,9 @@ vec4 blendColor(vec4 base, vec4 blend, float opacity) {
 
   vec3 blended = pdOver(base.rgb, blend.rgb, blend.a);
 
+  blended = max(min(blended, 1.),0.);
+  alpha = max(min(alpha, 1.), 0.);
+
   return vec4(blended, alpha);
 }
 
@@ -64,12 +67,16 @@ void main() {
   if (bottom.a == 0. && top.a == 0.) {
     discard;
   }
+
+  vec4 outColor;
   
   if (bottom.a == 0.) {
-    fragColor = top * u_opacity;
+    outColor = top * u_opacity;
   } else if (top.a == 0.) {
-    fragColor = bottom;
+    outColor = bottom;
   } else {
-    fragColor = blendColor(bottom, top, u_opacity);
+    outColor = blendColor(bottom, top, u_opacity);
   }
+
+  fragColor = outColor;
 }
