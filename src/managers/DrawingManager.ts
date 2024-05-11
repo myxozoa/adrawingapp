@@ -137,13 +137,7 @@ class _DrawingManager {
 
     this.compositeLayers()
 
-    // const currentLayerID = useLayerStore.getState().currentLayer.id
-
-    // const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
-
-    // const displayLayer = ResourceManager.get("DisplayLayer")
     this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
-    // this.renderToScreen(displayLayer, true, renderUniforms)
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
@@ -164,6 +158,7 @@ class _DrawingManager {
   public compositeLayers = () => {
     const gl = Application.gl
 
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
     const intermediaryLayer3 = ResourceManager.get("IntermediaryLayer3")
 
     readFramebuffer = 1
@@ -174,7 +169,7 @@ class _DrawingManager {
 
     const layers = useLayerStore.getState().layers
     const currentLayerID = useLayerStore.getState().currentLayer.id
-
+    gl.useProgram(intermediaryLayer.programInfo?.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
     gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
 
@@ -188,10 +183,9 @@ class _DrawingManager {
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
-      gl.useProgram(intermediaryLayer3.programInfo?.program)
 
-      gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
-      gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+      gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
 
       this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
     }
@@ -202,10 +196,8 @@ class _DrawingManager {
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
 
-      gl.useProgram(framebuffers[writeFramebuffer].programInfo?.program)
-
-      gl.uniform1i(framebuffers[writeFramebuffer].programInfo.uniforms.u_blend_mode, layer.blendMode)
-      gl.uniform1f(framebuffers[writeFramebuffer].programInfo.uniforms.u_opacity, layer.opacity / 100)
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer.blendMode)
+      gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer.opacity / 100)
 
       if (layer.id !== currentLayerID) {
         this.compositeLayer(layerResource.bufferInfo.textures[0], framebuffers[readFramebuffer].bufferInfo.textures[0])
@@ -269,7 +261,6 @@ class _DrawingManager {
 
     this.blit(intermediaryLayer3, destination)
 
-    // this.clearSpecific(intermediaryLayer3)
     this.empty(intermediaryLayer3.bufferInfo.textures[0])
 
     gl.enable(gl.BLEND)
