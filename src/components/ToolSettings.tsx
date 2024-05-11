@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react"
 
 import Panel from "@/components/Panel"
 import Container from "@/components/Container"
-// import { ToolPreview } from '@/components/ToolPreview'
 
 import { useToolStore } from "@/stores/ToolStore"
 
@@ -11,7 +10,6 @@ import { AvailableTools } from "@/types"
 
 const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
   const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
-  // const handler = useCallback(throttle(onValueChange, 16), [dependency])
 
   return (
     <div key={`${name}_setting`} className="flex h-full flex-row items-center justify-center">

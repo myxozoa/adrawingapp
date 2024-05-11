@@ -21,7 +21,7 @@ export class Layer implements ILayer {
     this.redoSnapshotQueue = []
     this.noDraw = false
     this.boundingBox = { x: 0, y: 0, width: 0, height: 0 } //  TODO: Calculate every time drawn to
-    this.opacity = 1
+    this.opacity = 100
   }
 
   // addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {
