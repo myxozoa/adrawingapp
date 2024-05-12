@@ -106,7 +106,6 @@ class _DrawingManager {
   }
 
   public render = () => {
-    const prefs = usePreferenceStore.getState().prefs
     const gl = Application.gl
 
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
@@ -116,28 +115,20 @@ class _DrawingManager {
       framebuffers = [intermediaryLayer, intermediaryLayer2]
     }
 
-    // Draw Screen
-    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-    gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-    this.empty(framebuffers[readFramebuffer].bufferInfo.textures[0])
-
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.blendEquation(gl.FUNC_ADD)
 
     this.swapPixelInterpolation()
 
     this.renderToScreen(ResourceManager.get("Background"), false)
-
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
     this.compositeLayers()
 
     this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
+
+    gl.flush()
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
@@ -151,8 +142,6 @@ class _DrawingManager {
     gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     this.clear(color)
-
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   public compositeLayers = () => {
@@ -215,11 +204,6 @@ class _DrawingManager {
     }
 
     gl.enable(gl.BLEND)
-
-    // gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    // gl.bindVertexArray(null)
-    // gl.useProgram(null)
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   private compositeLayer = (top: WebGLTexture, bottom: WebGLTexture) => {
@@ -231,8 +215,6 @@ class _DrawingManager {
     gl.bindTexture(gl.TEXTURE_2D, bottom)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    // gl.bindTexture(gl.TEXTURE_2D, null)
   }
 
   public commitLayer = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
@@ -259,17 +241,11 @@ class _DrawingManager {
 
     this.compositeLayer(top.bufferInfo.textures[0], bottom.bufferInfo.textures[0])
 
-    this.blit(intermediaryLayer3, destination)
+    this.copy(intermediaryLayer3.bufferInfo.framebuffer!, destination.bufferInfo.textures[0])
 
     this.empty(intermediaryLayer3.bufferInfo.textures[0])
 
     gl.enable(gl.BLEND)
-
-    // gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    // gl.bindVertexArray(null)
-    // gl.useProgram(null)
-    // gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    // gl.bindTexture(gl.TEXTURE_2D, null)
   }
 
   public blit = (source: RenderInfo, destination: RenderInfo) => {
@@ -291,9 +267,16 @@ class _DrawingManager {
       gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
       gl.NEAREST,
     )
+  }
 
-    // gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
-    // gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
+  public copy = (source: WebGLFramebuffer, destination: WebGLTexture) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, source)
+    gl.bindTexture(gl.TEXTURE_2D, destination)
+
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, prefs.canvasWidth, prefs.canvasHeight)
   }
 
   /**
@@ -549,11 +532,6 @@ class _DrawingManager {
     else if (setUniforms) setUniforms(gl, renderInfo)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    // Unbind
-    // if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    // if (renderInfo.bufferInfo?.textures) gl.bindTexture(gl.TEXTURE_2D, null)
-    // if (renderInfo.programInfo?.VAO) gl.bindVertexArray(null)
   }
 
   /** Fill clear on whatever the current WebGL state is */

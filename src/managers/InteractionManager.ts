@@ -141,9 +141,6 @@ class _InteractionManager {
     // const data = new Float32Array(4)
     // this.gl.readPixels(0, 0, 1, 1, format, type, data)
     // console.log(data)
-
-    // Unbind
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   public process = (pointerState: MouseState) => {
