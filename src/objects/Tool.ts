@@ -60,14 +60,14 @@ export const toolDefaults: ToolDefaults = {
     size: 10,
     opacity: 100,
     flow: 100,
-    hardness: 98,
+    hardness: 100,
     spacing: 5,
   },
   ERASER: {
     size: 5,
     opacity: 100,
     flow: 100,
-    hardness: 98,
+    hardness: 100,
     spacing: 20,
   },
   FILL: {
