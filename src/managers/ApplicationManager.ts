@@ -126,7 +126,7 @@ class _Application {
   public createCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
     const context = initializeCanvas(canvas, width, height, {
       resize: true,
-    }) as WebGL2RenderingContext
+    })
 
     this.gl = context
   }

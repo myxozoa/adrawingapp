@@ -184,14 +184,15 @@ class _InteractionManager {
     }
     DrawingManager.clearSpecific(scratchLayer)
 
+    DrawingManager.render()
+    DrawingManager.pauseDraw()
+
     DrawingManager.waitUntilInteractionEnd = false
-    DrawingManager.needRedraw = true
     positionFilter.reset()
     pressureFilter.reset()
     Application.currentOperation.reset()
 
     Application.currentTool.reset()
-    DrawingManager.render()
   }
 }
 

@@ -163,8 +163,10 @@ function pointerdown(event: Event) {
 
     const position = calculateWorldPosition(event) as MouseState
 
-    DrawingManager.beginDraw(position)
+    InteractionManager.process(position)
   }
+
+  DrawingManager.beginDraw()
 }
 
 function pointermove(event: Event) {
@@ -208,12 +210,12 @@ function pointermove(event: Event) {
         for (const coalescedEvent of coalesced) {
           const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
 
-          DrawingManager.continueDraw(coalescedRelativeMouseState)
+          InteractionManager.process(coalescedRelativeMouseState)
         }
       } else {
         const position = calculateWorldPosition(event) as MouseState
 
-        DrawingManager.continueDraw(position)
+        InteractionManager.process(position)
       }
     }
   }

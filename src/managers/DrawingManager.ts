@@ -128,7 +128,9 @@ class _DrawingManager {
 
     this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
 
-    gl.flush()
+    if (this.needRedraw) {
+      requestAnimationFrame(this.render)
+    }
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
@@ -484,16 +486,15 @@ class _DrawingManager {
     )
   }
 
-  public beginDraw = (pointerState: MouseState) => {
-    InteractionManager.process(pointerState)
+  public beginDraw = () => {
 
-    renderThrottle(this.render)
+    this.needRedraw = true
+
+    requestAnimationFrame(this.render)
   }
 
-  public continueDraw = (pointerState: MouseState) => {
-    InteractionManager.process(pointerState)
-
-    renderThrottle(this.render)
+  public pauseDraw = () => {
+    this.needRedraw = false
   }
 
   public start = () => {

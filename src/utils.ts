@@ -131,7 +131,7 @@ export function initializeCanvas(
   width: number,
   height: number,
   _options: Partial<Options> = {},
-) {
+): WebGL2RenderingContext {
   const defaultOptions: Options = {
     desynchronized: true,
     resize: false,
@@ -177,7 +177,7 @@ export function initializeCanvas(
     resizeObserver.observe(canvas, { box: "content-box" })
   }
 
-  return context
+  return context as WebGL2RenderingContext
 }
 
 // https://webgl2fundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
