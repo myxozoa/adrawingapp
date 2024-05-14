@@ -80,15 +80,12 @@ class _DrawingManager {
   public swapPixelInterpolation = () => {
     const gl = Application.gl
 
+    const displayLayer = ResourceManager.get("DisplayLayer")
+
     // Swap to Nearest Neighbor mipmap interpolation when zoomed very closely
     if (Camera.zoom > 2.5) {
       if (this.pixelInterpolation !== pixelInterpolation.nearest) {
-        gl.bindTexture(gl.TEXTURE_2D, framebuffers[readFramebuffer].bufferInfo?.textures[0])
-
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
-
-        gl.bindTexture(gl.TEXTURE_2D, framebuffers[writeFramebuffer].bufferInfo?.textures[0])
+        gl.bindTexture(gl.TEXTURE_2D, displayLayer.bufferInfo?.textures[0])
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
@@ -97,12 +94,7 @@ class _DrawingManager {
       }
     } else {
       if (this.pixelInterpolation !== pixelInterpolation.trilinear) {
-        gl.bindTexture(gl.TEXTURE_2D, framebuffers[readFramebuffer].bufferInfo.textures[0])
-
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
-        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
-
-        gl.bindTexture(gl.TEXTURE_2D, framebuffers[writeFramebuffer].bufferInfo?.textures[0])
+        gl.bindTexture(gl.TEXTURE_2D, displayLayer.bufferInfo.textures[0])
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
@@ -127,14 +119,17 @@ class _DrawingManager {
 
     this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
-    // if (this.shouldRecomposite) {
-    this.compositeLayers()
-    // }
+    const displayLayer = ResourceManager.get("DisplayLayer")
+
+    if (this.shouldRecomposite) {
+      this.compositeLayers()
+
+      this.blit(framebuffers[readFramebuffer], displayLayer)
+    }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-    this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
-
+    this.renderToScreen(displayLayer, true, renderUniforms)
     // Cursor.draw(gl, InteractionManager.currentMousePosition)
   }
 
@@ -371,7 +366,7 @@ class _DrawingManager {
         prefs.canvasHeight,
         renderTextureFragment,
         renderTextureVertex,
-        false,
+        true,
       ),
     )
 
@@ -393,7 +388,7 @@ class _DrawingManager {
         prefs.canvasHeight,
         layerCompositionFragment,
         layerCompositionVertex,
-        true,
+        false,
         ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
       ),
     )
@@ -406,7 +401,7 @@ class _DrawingManager {
         prefs.canvasHeight,
         layerCompositionFragment,
         layerCompositionVertex,
-        true,
+        false,
         ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
       ),
     )
