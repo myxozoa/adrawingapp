@@ -91,7 +91,6 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
 
-
         this.pixelInterpolation = pixelInterpolation.nearest
       }
     } else {
@@ -105,7 +104,6 @@ class _DrawingManager {
 
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
-
 
         this.pixelInterpolation = pixelInterpolation.trilinear
       }
@@ -474,6 +472,8 @@ class _DrawingManager {
     gl.uniformMatrix3fv(intermediaryLayer3.programInfo?.uniforms.u_matrix, false, intermediaryLayer3.data!.matrix!)
 
     this.initialized = true
+
+    framebuffers = [intermediaryLayer, intermediaryLayer2]
   }
 
   public newLayer = (layer: Layer) => {
