@@ -129,6 +129,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, opacity }, editingLayer: null }
     })
     DrawingManager.recomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDraw()
   },
 }))
 
