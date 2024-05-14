@@ -48,6 +48,8 @@ class _Application {
   textureSupport: SupportedTextureInfo
   systemConstraints: SystemConstraints
 
+  drawing: boolean
+
   constructor() {
     this.gl = {} as WebGL2RenderingContext
     this.currentLayer = {} as ILayer
@@ -71,6 +73,7 @@ class _Application {
       maxSamples: 0,
     }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
+    this.drawing = false
   }
 
   private getExtensions = () => {
@@ -103,7 +106,6 @@ class _Application {
   private getSupportedTextureInfo = () => {
     const gl = this.gl
     // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
-    // Not sure what devices will need these then
 
     this.textureSupport.pixelType = gl.HALF_FLOAT
     this.textureSupport.imageFormat = this.extensions.colorBufferHalfFloat?.RGBA16F_EXT || gl.RGBA16F

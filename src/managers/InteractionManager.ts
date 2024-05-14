@@ -145,16 +145,10 @@ class _InteractionManager {
 
   public process = (pointerState: MouseState) => {
     const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     this.prepareOperation(pointerState)
-
-    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-
-    this.executeOperation(Application.currentOperation)
   }
 
   /**
@@ -184,7 +178,7 @@ class _InteractionManager {
     }
     DrawingManager.clearSpecific(scratchLayer)
 
-    DrawingManager.render()
+    DrawingManager.recomposite()
     DrawingManager.pauseDraw()
 
     DrawingManager.waitUntilInteractionEnd = false

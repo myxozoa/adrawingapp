@@ -1,8 +1,8 @@
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { throttleRAF, CanvasSizeCache } from "@/utils.ts"
+import { CanvasSizeCache } from "@/utils.ts"
 
-import { AvailableTools, MouseState, RenderInfo } from "@/types.ts"
+import { AvailableTools, RenderInfo } from "@/types.ts"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -18,7 +18,6 @@ import layerCompositionVertex from "@/shaders/LayerComposition/layerComposition.
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
-import { InteractionManager } from "@/managers/InteractionManager"
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { IBrush } from "@/types.ts"
@@ -42,9 +41,6 @@ export function gridRenderUniforms(gl: WebGL2RenderingContext, reference: Render
   renderUniforms(gl, reference)
 }
 
-const startThrottle = throttleRAF()
-const renderThrottle = throttleRAF()
-
 // const doubleColorAttachments = [36064, 36065]
 // const singleColorAttachment = [36064]
 
@@ -66,6 +62,7 @@ class _DrawingManager {
   needRedraw: boolean
   pixelInterpolation: pixelInterpolation
   initialized: boolean
+  shouldRecomposite: boolean
 
   state: {
     renderInfo: RenderInfo
@@ -126,7 +123,11 @@ class _DrawingManager {
 
     this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
-    this.compositeLayers()
+    if (this.shouldRecomposite) {
+      this.compositeLayers()
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
     this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
 
@@ -533,8 +534,6 @@ class _DrawingManager {
     if (overrides?.programInfo?.program) {
       gl.useProgram(overrides.programInfo?.program)
     } else if (renderInfo.programInfo?.program) gl.useProgram(renderInfo.programInfo?.program)
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
     if (renderInfo.bufferInfo?.textures.length) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo?.textures[0])
 
