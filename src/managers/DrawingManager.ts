@@ -396,7 +396,7 @@ class _DrawingManager {
         prefs.canvasHeight,
         layerCompositionFragment,
         layerCompositionVertex,
-        true,
+        false,
         ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
       ),
     )
