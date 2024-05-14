@@ -60,6 +60,7 @@ const white = new Float32Array([1, 1, 1, 1])
 class _DrawingManager {
   waitUntilInteractionEnd: boolean
   needRedraw: boolean
+  endDrawNextFrame: boolean
   pixelInterpolation: pixelInterpolation
   initialized: boolean
   shouldRecomposite: boolean
@@ -70,7 +71,8 @@ class _DrawingManager {
 
   constructor() {
     this.waitUntilInteractionEnd = false
-    this.needRedraw = false
+    this.needRedraw = true
+    this.endDrawNextFrame = false
 
     this.shouldRecomposite = true
   }
@@ -515,27 +517,31 @@ class _DrawingManager {
 
   public beginDraw = () => {
     this.needRedraw = true
-    requestAnimationFrame(this.renderLoop)
   }
 
   public pauseDraw = () => {
-    this.needRedraw = false
+    this.endDrawNextFrame = true
   }
 
   public start = () => {
-    requestAnimationFrame(this.recomposite)
+    requestAnimationFrame(this.renderLoop)
+    this.pauseDraw()
   }
 
   public renderLoop = () => {
     if (this.needRedraw) {
-      this.recomposite()
-      requestAnimationFrame(this.renderLoop)
+      this.render()
+
+      if (this.endDrawNextFrame) {
+        this.needRedraw = false
+        this.endDrawNextFrame = false
+      }
     }
+    requestAnimationFrame(this.renderLoop)
   }
 
   public recomposite = () => {
     this.shouldRecomposite = true
-    requestAnimationFrame(this.render)
   }
 
   /**
