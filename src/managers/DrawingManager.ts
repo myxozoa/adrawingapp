@@ -265,7 +265,7 @@ class _DrawingManager {
 
     this.compositeLayer(top.bufferInfo.textures[0], bottom.bufferInfo.textures[0])
 
-    this.copy(intermediaryLayer3.bufferInfo.framebuffer!, destination.bufferInfo.textures[0])
+    this.blit(intermediaryLayer3, destination)
 
     this.clearSpecific(intermediaryLayer3)
 
