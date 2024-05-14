@@ -20,10 +20,13 @@ import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
 import { useLayerStore } from "@/stores/LayerStore"
 
+import { InteractionManager } from "@/managers/InteractionManager"
+
 import { IBrush } from "@/types.ts"
 
 import { Layer } from "@/objects/Layer"
 import { useToolStore } from "@/stores/ToolStore"
+import { Cursor } from "@/objects/Cursor"
 
 const isBrush = (tool: AvailableTools): tool is IBrush => {
   return tool.name === "BRUSH"
@@ -63,7 +66,8 @@ class _DrawingManager {
   endDrawNextFrame: boolean
   pixelInterpolation: pixelInterpolation
   initialized: boolean
-  shouldRecomposite: boolean
+  private shouldRecomposite: boolean
+  private shouldShowCursor: boolean
 
   state: {
     renderInfo: RenderInfo
@@ -75,6 +79,8 @@ class _DrawingManager {
     this.endDrawNextFrame = false
 
     this.shouldRecomposite = true
+
+    this.shouldShowCursor = false
   }
 
   public swapPixelInterpolation = () => {
@@ -130,7 +136,10 @@ class _DrawingManager {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
     this.renderToScreen(displayLayer, true, renderUniforms)
-    // Cursor.draw(gl, InteractionManager.currentMousePosition)
+
+    if (this.shouldShowCursor) {
+      Cursor.draw(gl, InteractionManager.currentMousePosition)
+    }
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
@@ -488,6 +497,8 @@ class _DrawingManager {
 
     gl.uniformMatrix3fv(intermediaryLayer3.programInfo?.uniforms.u_matrix, false, intermediaryLayer3.data!.matrix!)
 
+    Cursor.init(gl)
+
     this.initialized = true
 
     framebuffers = [intermediaryLayer, intermediaryLayer2]
@@ -512,6 +523,7 @@ class _DrawingManager {
 
   public beginDraw = () => {
     this.needRedraw = true
+    this.endDrawNextFrame = false
   }
 
   public pauseDraw = () => {
@@ -537,6 +549,14 @@ class _DrawingManager {
 
   public recomposite = () => {
     this.shouldRecomposite = true
+  }
+
+  public hideCursor = () => {
+    this.shouldShowCursor = false
+  }
+
+  public showCursor = () => {
+    this.shouldShowCursor = true
   }
 
   /**

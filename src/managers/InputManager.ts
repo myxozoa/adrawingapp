@@ -140,6 +140,7 @@ function pointerdown(event: Event) {
   ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
+    DrawingManager.hideCursor()
     touches.push(event)
 
     if (touches.length > 2) {
@@ -163,6 +164,8 @@ function pointerdown(event: Event) {
     }
 
     DrawingManager.beginDraw()
+  } else {
+    DrawingManager.showCursor()
   }
 
   if (ModifierKeyManager.has("space")) {
@@ -174,18 +177,18 @@ function pointerdown(event: Event) {
     lastMidPosition.y = event.y
   }
 
+  const position = calculateWorldPosition(event) as MouseState
   if (currentInteractionState === InteractionState.none) {
     Application.drawing = true
 
     currentInteractionState = InteractionState.useTool
 
-    const position = calculateWorldPosition(event) as MouseState
-
     InteractionManager.process(position)
 
     InteractionManager.executeOperation(Application.currentOperation)
   }
-
+  InteractionManager.currentMousePosition.x = position.x
+  InteractionManager.currentMousePosition.y = position.y
   DrawingManager.beginDraw()
 }
 
@@ -205,6 +208,10 @@ function pointermove(event: Event) {
     if (currentInteractionState === InteractionState.touchPanZoom) {
       touchPanZoom()
     }
+
+    DrawingManager.hideCursor()
+  } else {
+    DrawingManager.showCursor()
   }
 
   if (currentInteractionState === InteractionState.pan) {
@@ -238,7 +245,10 @@ function pointerup(event: Event) {
   ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
+    DrawingManager.hideCursor()
     removeEvent(event)
+  } else {
+    DrawingManager.showCursor()
   }
 
   if (currentInteractionState === InteractionState.useTool) {
