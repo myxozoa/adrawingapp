@@ -74,6 +74,8 @@ class _DrawingManager {
   constructor() {
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
+
+    this.shouldRecomposite = true
   }
 
   public swapPixelInterpolation = () => {
@@ -206,6 +208,8 @@ class _DrawingManager {
     }
 
     gl.enable(gl.BLEND)
+
+    this.shouldRecomposite = false
   }
 
   private compositeLayer = (top: WebGLTexture, bottom: WebGLTexture) => {
@@ -487,10 +491,8 @@ class _DrawingManager {
   }
 
   public beginDraw = () => {
-
     this.needRedraw = true
-
-    requestAnimationFrame(this.render)
+    requestAnimationFrame(this.renderLoop)
   }
 
   public pauseDraw = () => {
@@ -498,7 +500,19 @@ class _DrawingManager {
   }
 
   public start = () => {
-    startThrottle(this.render)
+    requestAnimationFrame(this.recomposite)
+  }
+
+  public renderLoop = () => {
+    if (this.needRedraw) {
+      this.recomposite()
+      requestAnimationFrame(this.renderLoop)
+    }
+  }
+
+  public recomposite = () => {
+    this.shouldRecomposite = true
+    requestAnimationFrame(this.render)
   }
 
   /**
