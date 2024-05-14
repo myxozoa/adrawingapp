@@ -105,12 +105,13 @@ class _InteractionManager {
 
     const dist = getDistance(prevPoint, operation.points.currentPoint)
 
-    switch (operation.tool.type) {
-      case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
-          operation.points.currentPoint.active = true
+    if (Application.drawing) {
+      switch (operation.tool.type) {
+        case tool_types.STROKE:
+          if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
+            operation.points.currentPoint.active = true
 
-          operation.points.nextPoint()
+            operation.points.nextPoint()
 
             operation.readyToDraw = true
           } else {
@@ -118,24 +119,30 @@ class _InteractionManager {
           }
           break
 
-      case tool_types.POINT:
-        DrawingManager.waitUntilInteractionEnd = true
+        case tool_types.POINT:
+          DrawingManager.waitUntilInteractionEnd = true
 
           operation.points.updateCurrentPoint(null, relativeMouseState.x, relativeMouseState.y)
 
-        operation.points.currentPoint.active = true
+          operation.points.currentPoint.active = true
 
-        operation.points.nextPoint()
+          operation.points.nextPoint()
 
-        operation.readyToDraw = true
-        break
+          operation.readyToDraw = true
+          break
+      }
     }
   }
 
-  private executeOperation = (operation: IOperation) => {
+  public executeOperation = (operation: IOperation) => {
     if (!operation.readyToDraw) return
 
     const gl = Application.gl
+
+    const prefs = usePreferenceStore.getState().prefs
+
+    Application.gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    Application.gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     // TODO: More elegant solution here
     if (operation.tool.name === "ERASER" || operation.tool.name === "EYEDROPPER") {
