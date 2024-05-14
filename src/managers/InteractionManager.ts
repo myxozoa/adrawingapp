@@ -22,12 +22,11 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "draw" in tool
 }
 
-const pressureFilter = new ExponentialSmoothingFilter(0.6)
-const positionFilter = new ExponentialSmoothingFilter(0.5)
+const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
+const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
 
-const toMergeEvent = { x: 0, y: 0 }
-
-let mergeEvent = false
+const positionArray = positionFilter.getInputArray()
+const pressureArray = pressureFilter.getInputArray()
 
 class _InteractionManager {
   private prepareOperation = (relativeMouseState: MouseState) => {
@@ -68,14 +67,18 @@ class _InteractionManager {
       positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - (1 - Camera.zoom) / 3, 1), 0.1))
     }
 
-    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
+    positionArray[0] = relativeMouseState.x
+    positionArray[1] = relativeMouseState.y
+    const filteredPositions = positionFilter.filter(positionArray)
 
     operation.points.currentPoint.x = filteredPositions[0]
     operation.points.currentPoint.y = filteredPositions[1]
 
     operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-    const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
+    pressureArray[0] = relativeMouseState.pressure
+    const filteredPressure = pressureFilter.filter(pressureArray)
+
     operation.points.currentPoint.pressure = filteredPressure[0]
 
     let pointerTypeLerpAdjustment = 0
