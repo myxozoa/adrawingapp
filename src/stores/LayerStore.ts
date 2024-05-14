@@ -29,8 +29,6 @@ interface Action {
 
 const baseLayer = new Layer("New Layer")
 
-const debounce = throttleRAF()
-
 let currentLayerIndex = 0
 
 const useLayerStoreBase = create<State & Action>((set) => ({
@@ -130,7 +128,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, opacity }, editingLayer: null }
     })
-    debounce(DrawingManager.recomposite)
+    DrawingManager.recomposite()
   },
 }))
 
