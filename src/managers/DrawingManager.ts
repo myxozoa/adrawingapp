@@ -154,9 +154,7 @@ class _DrawingManager {
 
     const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
     const intermediaryLayer3 = ResourceManager.get("IntermediaryLayer3")
-
-    readFramebuffer = 1
-    writeFramebuffer = 0
+    const emptyLayer = ResourceManager.get("EmptyLayer")
 
     const prefs = usePreferenceStore.getState().prefs
     const currentTool = useToolStore.getState().currentTool
@@ -172,6 +170,7 @@ class _DrawingManager {
 
     gl.disable(gl.BLEND)
 
+    // Composite scratch layer with current layer into intermediaryLayer3
     if (isBrush(currentTool)) {
       const scratchLayer = ResourceManager.get("ScratchLayer")
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
@@ -184,8 +183,29 @@ class _DrawingManager {
       this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
     }
 
-    // Layers below current
-    for (const layer of layers) {
+    // Composite First layer against an empty texture
+    const firstLayer = layers[0]
+    const firsLayerResource = ResourceManager.get(`Layer${firstLayer.id}`)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
+
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, firstLayer.blendMode)
+    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
+
+    if (firstLayer.id !== currentLayerID) {
+      this.compositeLayer(firsLayerResource.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
+    } else {
+      this.compositeLayer(intermediaryLayer3.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
+
+      this.clearSpecific(intermediaryLayer3)
+    }
+
+    readFramebuffer = Number(!readFramebuffer)
+    writeFramebuffer = Number(!writeFramebuffer)
+
+    // Layers above first layer
+    for (let i = 1; i < layers.length; i++) {
+      const layer = layers[i]
       const layerResource = ResourceManager.get(`Layer${layer.id}`)
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
