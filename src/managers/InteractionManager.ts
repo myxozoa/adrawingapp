@@ -29,6 +29,16 @@ const positionArray = positionFilter.getInputArray()
 const pressureArray = pressureFilter.getInputArray()
 
 class _InteractionManager {
+  currentMousePosition: { x: number; y: number }
+  mergeEvent: boolean
+  mergeEventCache: { x: number; y: number }
+
+  constructor() {
+    this.currentMousePosition = { x: 0, y: 0 }
+    this.mergeEvent = false
+    this.mergeEventCache = { x: 0, y: 0 }
+  }
+
   private prepareOperation = (relativeMouseState: MouseState) => {
     if (DrawingManager.waitUntilInteractionEnd) return
 
@@ -51,15 +61,15 @@ class _InteractionManager {
 
     const stampSpacing = calculateSpacing(spacing, size)
 
-    if (mergeEvent) {
-      relativeMouseState.x = lerp(toMergeEvent.x, relativeMouseState.x, 0.5)
-      relativeMouseState.y = lerp(toMergeEvent.y, relativeMouseState.y, 0.5)
+    if (this.mergeEvent) {
+      relativeMouseState.x = lerp(this.mergeEventCache.x, relativeMouseState.x, 0.5)
+      relativeMouseState.y = lerp(this.mergeEventCache.y, relativeMouseState.y, 0.5)
 
-      mergeEvent = false
+      this.mergeEvent = false
     }
 
-    toMergeEvent.x = relativeMouseState.x
-    toMergeEvent.y = relativeMouseState.y
+    this.mergeEventCache.x = relativeMouseState.x
+    this.mergeEventCache.y = relativeMouseState.y
 
     // To counteract the fact that the pointer position resolution gets much lower the
     // more zoomed out the canvas becomes we raise filtering to compensate
@@ -102,11 +112,11 @@ class _InteractionManager {
 
           operation.points.nextPoint()
 
-          operation.readyToDraw = true
-        } else {
-          mergeEvent = true
-        }
-        break
+            operation.readyToDraw = true
+          } else {
+            this.mergeEvent = true
+          }
+          break
 
       case tool_types.POINT:
         DrawingManager.waitUntilInteractionEnd = true
@@ -164,7 +174,7 @@ class _InteractionManager {
   public endInteraction = (save = true) => {
     // if (this.currentLayer.noDraw) return
 
-    mergeEvent = false
+    this.mergeEvent = false
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
 
