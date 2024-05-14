@@ -5,42 +5,47 @@
 export class ExponentialSmoothingFilter {
   public smoothAmount: number
   private smoothedValue: number[]
+  private inputArray: number[]
+  private initialState: boolean
 
-  constructor(smoothAmount: number) {
+  constructor(smoothAmount: number, numberOfValues: number) {
     this.smoothAmount = smoothAmount
-    this.smoothedValue = []
+    this.smoothedValue = new Array<number>(numberOfValues).fill(0)
+    this.inputArray = new Array<number>(numberOfValues).fill(0)
+    this.initialState = true
   }
 
   /**
    * Arrays need to be aligned and the same length
-   *
-   * @remarks
-   * If the provided newValues array length does not match the internal smoothedValue array, smoothedValue will be overwritten
-   *
-   * This may be changed in the future if I think of a less lazy way of doing this
    *
    * @example
    * ```
    * const [smoothed] = pressureFilter.filter(interpolatedPoint.pressure)
    * ```
    * */
-  public filter(...newValues: number[]): number[] {
-    if (this.smoothedValue.length !== newValues.length) this.smoothedValue = newValues
-
+  public filter(newValues: number[]): number[] {
     for (let index = 0; index < this.smoothedValue.length; index++) {
-      this.smoothedValue[index] =
-        this.smoothAmount * newValues[index] + (1 - this.smoothAmount) * this.smoothedValue[index]
+      if (this.initialState) {
+        this.smoothedValue[index] = newValues[index]
+      } else {
+        this.smoothedValue[index] =
+          this.smoothAmount * newValues[index] + (1 - this.smoothAmount) * this.smoothedValue[index]
+      }
     }
 
     return this.smoothedValue
   }
 
-  public changeSetting(newValues: number) {
-    this.smoothAmount = newValues
+  public changeSetting(smoothBy: number) {
+    this.smoothAmount = smoothBy
+  }
+
+  public getInputArray() {
+    return this.inputArray
   }
 
   /**  Resets all values at once */
   public reset() {
-    this.smoothedValue = []
+    this.initialState = true
   }
 }

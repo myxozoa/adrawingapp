@@ -1,8 +1,8 @@
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { throttleRAF, CanvasSizeCache } from "@/utils.ts"
+import { CanvasSizeCache } from "@/utils.ts"
 
-import { AvailableTools, MouseState, RenderInfo } from "@/types.ts"
+import { AvailableTools, RenderInfo } from "@/types.ts"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -18,7 +18,6 @@ import layerCompositionVertex from "@/shaders/LayerComposition/layerComposition.
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
-import { InteractionManager } from "@/managers/InteractionManager"
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { IBrush } from "@/types.ts"
@@ -42,9 +41,6 @@ export function gridRenderUniforms(gl: WebGL2RenderingContext, reference: Render
   renderUniforms(gl, reference)
 }
 
-const startThrottle = throttleRAF()
-const renderThrottle = throttleRAF()
-
 // const doubleColorAttachments = [36064, 36065]
 // const singleColorAttachment = [36064]
 
@@ -66,6 +62,7 @@ class _DrawingManager {
   needRedraw: boolean
   pixelInterpolation: pixelInterpolation
   initialized: boolean
+  shouldRecomposite: boolean
 
   state: {
     renderInfo: RenderInfo
@@ -74,6 +71,8 @@ class _DrawingManager {
   constructor() {
     this.waitUntilInteractionEnd = false
     this.needRedraw = false
+
+    this.shouldRecomposite = true
   }
 
   public swapPixelInterpolation = () => {
@@ -87,7 +86,10 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
 
-        gl.bindTexture(gl.TEXTURE_2D, null)
+        gl.bindTexture(gl.TEXTURE_2D, framebuffers[writeFramebuffer].bufferInfo?.textures[0])
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
 
         this.pixelInterpolation = pixelInterpolation.nearest
       }
@@ -98,7 +100,10 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
 
-        gl.bindTexture(gl.TEXTURE_2D, null)
+        gl.bindTexture(gl.TEXTURE_2D, framebuffers[writeFramebuffer].bufferInfo?.textures[0])
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
 
         this.pixelInterpolation = pixelInterpolation.trilinear
       }
@@ -106,43 +111,29 @@ class _DrawingManager {
   }
 
   public render = () => {
-    const prefs = usePreferenceStore.getState().prefs
     const gl = Application.gl
 
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-    const intermediaryLayer2 = ResourceManager.get("IntermediaryLayer2")
-
-    if (framebuffers.length === 0) {
-      framebuffers = [intermediaryLayer, intermediaryLayer2]
-    }
-
-    // Draw Screen
-    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-    gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     this.clearSpecific(framebuffers[readFramebuffer])
+    this.clearSpecific(framebuffers[writeFramebuffer])
 
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.blendEquation(gl.FUNC_ADD)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     this.swapPixelInterpolation()
 
     this.renderToScreen(ResourceManager.get("Background"), false)
 
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-
     this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
-    this.compositeLayers()
+    if (this.shouldRecomposite) {
+      this.compositeLayers()
+    }
 
-    // const currentLayerID = useLayerStore.getState().currentLayer.id
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-    // const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
-
-    // const displayLayer = ResourceManager.get("DisplayLayer")
     this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
-    // this.renderToScreen(displayLayer, true, renderUniforms)
+
+    // Cursor.draw(gl, InteractionManager.currentMousePosition)
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
@@ -156,24 +147,21 @@ class _DrawingManager {
     gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     this.clear(color)
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   public compositeLayers = () => {
     const gl = Application.gl
 
+    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
     const intermediaryLayer3 = ResourceManager.get("IntermediaryLayer3")
-
-    readFramebuffer = 1
-    writeFramebuffer = 0
+    const emptyLayer = ResourceManager.get("EmptyLayer")
 
     const prefs = usePreferenceStore.getState().prefs
     const currentTool = useToolStore.getState().currentTool
 
     const layers = useLayerStore.getState().layers
     const currentLayerID = useLayerStore.getState().currentLayer.id
-
+    gl.useProgram(intermediaryLayer.programInfo?.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
     gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
 
@@ -182,29 +170,48 @@ class _DrawingManager {
 
     gl.disable(gl.BLEND)
 
+    // Composite scratch layer with current layer into intermediaryLayer3
     if (isBrush(currentTool)) {
       const scratchLayer = ResourceManager.get("ScratchLayer")
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
-      gl.useProgram(intermediaryLayer3.programInfo?.program)
 
-      gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
-      gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+      gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
 
       this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
     }
 
-    // Layers below current
-    for (const layer of layers) {
+    // Composite First layer against an empty texture
+    const firstLayer = layers[0]
+    const firsLayerResource = ResourceManager.get(`Layer${firstLayer.id}`)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
+
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, firstLayer.blendMode)
+    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
+
+    if (firstLayer.id !== currentLayerID) {
+      this.compositeLayer(firsLayerResource.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
+    } else {
+      this.compositeLayer(intermediaryLayer3.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
+
+      this.clearSpecific(intermediaryLayer3)
+    }
+
+    readFramebuffer = Number(!readFramebuffer)
+    writeFramebuffer = Number(!writeFramebuffer)
+
+    // Layers above first layer
+    for (let i = 1; i < layers.length; i++) {
+      const layer = layers[i]
       const layerResource = ResourceManager.get(`Layer${layer.id}`)
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
 
-      gl.useProgram(framebuffers[writeFramebuffer].programInfo?.program)
-
-      gl.uniform1i(framebuffers[writeFramebuffer].programInfo.uniforms.u_blend_mode, layer.blendMode)
-      gl.uniform1f(framebuffers[writeFramebuffer].programInfo.uniforms.u_opacity, layer.opacity / 100)
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer.blendMode)
+      gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer.opacity / 100)
 
       if (layer.id !== currentLayerID) {
         this.compositeLayer(layerResource.bufferInfo.textures[0], framebuffers[readFramebuffer].bufferInfo.textures[0])
@@ -223,10 +230,7 @@ class _DrawingManager {
 
     gl.enable(gl.BLEND)
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
-    gl.useProgram(null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    this.shouldRecomposite = false
   }
 
   private compositeLayer = (top: WebGLTexture, bottom: WebGLTexture) => {
@@ -238,8 +242,6 @@ class _DrawingManager {
     gl.bindTexture(gl.TEXTURE_2D, bottom)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    gl.bindTexture(gl.TEXTURE_2D, null)
   }
 
   public commitLayer = (top: RenderInfo, bottom: RenderInfo, destination: RenderInfo) => {
@@ -266,17 +268,11 @@ class _DrawingManager {
 
     this.compositeLayer(top.bufferInfo.textures[0], bottom.bufferInfo.textures[0])
 
-    this.blit(intermediaryLayer3, destination)
+    this.copy(intermediaryLayer3.bufferInfo.framebuffer!, destination.bufferInfo.textures[0])
 
     this.clearSpecific(intermediaryLayer3)
 
     gl.enable(gl.BLEND)
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindVertexArray(null)
-    gl.useProgram(null)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, null)
   }
 
   public blit = (source: RenderInfo, destination: RenderInfo) => {
@@ -298,9 +294,16 @@ class _DrawingManager {
       gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
       gl.NEAREST,
     )
+  }
 
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null)
-    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
+  public copy = (source: WebGLFramebuffer, destination: WebGLTexture) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, source)
+    gl.bindTexture(gl.TEXTURE_2D, destination)
+
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, prefs.canvasWidth, prefs.canvasHeight)
   }
 
   /**
@@ -414,7 +417,7 @@ class _DrawingManager {
         prefs.canvasHeight,
         layerCompositionFragment,
         layerCompositionVertex,
-        true,
+        false,
         ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
       ),
     )
@@ -442,8 +445,6 @@ class _DrawingManager {
 
     gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data!.matrix!)
 
-    gl.useProgram(null)
-
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
 
     // TODO: clean up these assertions
@@ -466,8 +467,6 @@ class _DrawingManager {
     gl.uniform1i(intermediaryLayer2.programInfo?.uniforms.u_top_texture, 1)
 
     gl.uniformMatrix3fv(intermediaryLayer2.programInfo?.uniforms.u_matrix, false, intermediaryLayer2.data!.matrix!)
-
-    gl.useProgram(null)
 
     // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
 
@@ -492,9 +491,9 @@ class _DrawingManager {
 
     gl.uniformMatrix3fv(intermediaryLayer3.programInfo?.uniforms.u_matrix, false, intermediaryLayer3.data!.matrix!)
 
-    gl.useProgram(null)
-
     this.initialized = true
+
+    framebuffers = [intermediaryLayer, intermediaryLayer2]
   }
 
   public newLayer = (layer: Layer) => {
@@ -514,20 +513,29 @@ class _DrawingManager {
     )
   }
 
-  public beginDraw = (pointerState: MouseState) => {
-    InteractionManager.process(pointerState)
-
-    renderThrottle(this.render)
+  public beginDraw = () => {
+    this.needRedraw = true
+    requestAnimationFrame(this.renderLoop)
   }
 
-  public continueDraw = (pointerState: MouseState) => {
-    InteractionManager.process(pointerState)
-
-    renderThrottle(this.render)
+  public pauseDraw = () => {
+    this.needRedraw = false
   }
 
   public start = () => {
-    startThrottle(this.render)
+    requestAnimationFrame(this.recomposite)
+  }
+
+  public renderLoop = () => {
+    if (this.needRedraw) {
+      this.recomposite()
+      requestAnimationFrame(this.renderLoop)
+    }
+  }
+
+  public recomposite = () => {
+    this.shouldRecomposite = true
+    requestAnimationFrame(this.render)
   }
 
   /**
@@ -549,8 +557,6 @@ class _DrawingManager {
       gl.useProgram(overrides.programInfo?.program)
     } else if (renderInfo.programInfo?.program) gl.useProgram(renderInfo.programInfo?.program)
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-
     if (renderInfo.bufferInfo?.textures.length) gl.bindTexture(gl.TEXTURE_2D, renderInfo.bufferInfo?.textures[0])
 
     if (mipmap) gl.generateMipmap(gl.TEXTURE_2D)
@@ -562,11 +568,6 @@ class _DrawingManager {
     else if (setUniforms) setUniforms(gl, renderInfo)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-    // Unbind
-    if (renderInfo.programInfo?.VBO) gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    if (renderInfo.bufferInfo?.textures) gl.bindTexture(gl.TEXTURE_2D, null)
-    if (renderInfo.programInfo?.VAO) gl.bindVertexArray(null)
   }
 
   /** Fill clear on whatever the current WebGL state is */
@@ -584,6 +585,19 @@ class _DrawingManager {
     }
 
     this.render()
+  }
+
+  // This is very slow for ARM processors when dealing with textures that may have inflight draw calls still going
+  public empty = (texture: WebGLTexture) => {
+    const gl = Application.gl
+    const prefs = usePreferenceStore.getState().prefs
+
+    const emptyLayer = ResourceManager.get("EmptyLayer")
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, emptyLayer.bufferInfo.framebuffer)
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, prefs.canvasWidth, prefs.canvasHeight)
   }
 
   // TODO: Reimplement undo

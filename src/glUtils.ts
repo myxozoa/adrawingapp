@@ -90,7 +90,9 @@ export function createTexture(
 
   gl.bindTexture(gl.TEXTURE_2D, texture)
 
-  gl.texImage2D(gl.TEXTURE_2D, 0, imageFormat, width, height, 0, gl.RGBA, type, data)
+  const levels = mipmap ? 5 : 1
+
+  gl.texStorage2D(gl.TEXTURE_2D, levels, imageFormat, width, height)
 
   if (mipmap) {
     gl.generateMipmap(gl.TEXTURE_2D)

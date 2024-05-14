@@ -23,7 +23,12 @@ export class Operation implements IOperation {
 
   public swapTool = (tool: AvailableTools) => {
     this.tool = tool
-    this.points = new Points(tool.numberOfPoints)
+
+    if (tool.numberOfPoints !== this.points.length) {
+      this.points = new Points(tool.numberOfPoints)
+    } else {
+      this.points.reset()
+    }
   }
 
   public addDrawnPoints = (number?: number) => {

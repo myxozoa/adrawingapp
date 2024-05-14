@@ -159,16 +159,27 @@ function pointerdown(event: Event) {
   }
 
   if (currentInteractionState === InteractionState.none) {
+    Application.drawing = true
+
     currentInteractionState = InteractionState.useTool
 
     const position = calculateWorldPosition(event) as MouseState
 
-    DrawingManager.beginDraw(position)
+    InteractionManager.process(position)
+
+    InteractionManager.executeOperation(Application.currentOperation)
   }
+
+  DrawingManager.beginDraw()
 }
 
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
+
+  const position = calculateWorldPosition(event) as MouseState
+
+  InteractionManager.currentMousePosition.x = position.x
+  InteractionManager.currentMousePosition.y = position.y
 
   if (event.pointerType === "touch") {
     const index = findLastIndex(touches, (cachedEvent) => cachedEvent.pointerId === event.pointerId)
@@ -182,47 +193,39 @@ function pointermove(event: Event) {
     }
   }
 
-  if (
-    ((Application.gl.canvas as HTMLCanvasElement).hasPointerCapture(event.pointerId) && !touches[0]) ||
-    (touches[0] && touches[0].pointerId === event.pointerId)
-  ) {
-    if (currentInteractionState === InteractionState.pan) {
-      if ((Application.gl.canvas as HTMLCanvasElement).style.cursor !== "grab") {
-        ;(Application.gl.canvas as HTMLCanvasElement).style.cursor = "grab"
+  if (currentInteractionState === InteractionState.pan) {
+    pan(event)
+    panThrottle(DrawingManager.render)
+
+    return
+  }
+
+  if (currentInteractionState === InteractionState.useTool) {
+    if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
+      const coalesced = event.getCoalescedEvents()
+
+      for (const coalescedEvent of coalesced) {
+        const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
+
+        InteractionManager.process(coalescedRelativeMouseState)
       }
-
-      pan(event)
-      panThrottle(DrawingManager.render)
-
-      return
+    } else {
+      InteractionManager.process(position)
     }
 
-    if ((Application.gl.canvas as HTMLCanvasElement).style.cursor == "grab") {
-      ;(Application.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
-    }
-
-    if (currentInteractionState === InteractionState.useTool) {
-      if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-        const coalesced = event.getCoalescedEvents()
-
-        for (const coalescedEvent of coalesced) {
-          const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
-
-          DrawingManager.continueDraw(coalescedRelativeMouseState)
-        }
-      } else {
-        const position = calculateWorldPosition(event) as MouseState
-
-        DrawingManager.continueDraw(position)
-      }
-    }
+    InteractionManager.executeOperation(Application.currentOperation)
   }
 }
 
 function pointerup(event: Event) {
   if (!isPointerEvent(event)) return
+
+  Application.drawing = false
   ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
-  removeEvent(event)
+
+  if (event.pointerType === "touch") {
+    removeEvent(event)
+  }
 
   if (currentInteractionState === InteractionState.useTool) {
     InteractionManager.endInteraction()
@@ -244,8 +247,6 @@ function keyup(event: Event) {
   if (!isKeyboardEvent(event)) return
 
   if (event.code === "Space" && event.type === "keyup") {
-    ;(Application.gl.canvas as HTMLCanvasElement).style.cursor = "crosshair"
-
     reset()
   }
 }
@@ -312,7 +313,7 @@ function reset() {
   lastMidPosition.y = 0
   midPoint.x = 0
   midPoint.y = 0
-  touches.splice(0, touches.length)
+  touches.length = 0
   prevTouchDistance = -1
 
   currentInteractionState = InteractionState.none

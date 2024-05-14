@@ -22,14 +22,23 @@ const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
   return "draw" in tool
 }
 
-const pressureFilter = new ExponentialSmoothingFilter(0.6)
-const positionFilter = new ExponentialSmoothingFilter(0.5)
+const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
+const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
 
-const toMergeEvent = { x: 0, y: 0 }
-
-let mergeEvent = false
+const positionArray = positionFilter.getInputArray()
+const pressureArray = pressureFilter.getInputArray()
 
 class _InteractionManager {
+  currentMousePosition: { x: number; y: number }
+  mergeEvent: boolean
+  mergeEventCache: { x: number; y: number }
+
+  constructor() {
+    this.currentMousePosition = { x: 0, y: 0 }
+    this.mergeEvent = false
+    this.mergeEventCache = { x: 0, y: 0 }
+  }
+
   private prepareOperation = (relativeMouseState: MouseState) => {
     if (DrawingManager.waitUntilInteractionEnd) return
 
@@ -52,15 +61,15 @@ class _InteractionManager {
 
     const stampSpacing = calculateSpacing(spacing, size)
 
-    if (mergeEvent) {
-      relativeMouseState.x = lerp(toMergeEvent.x, relativeMouseState.x, 0.5)
-      relativeMouseState.y = lerp(toMergeEvent.y, relativeMouseState.y, 0.5)
+    if (this.mergeEvent) {
+      relativeMouseState.x = lerp(this.mergeEventCache.x, relativeMouseState.x, 0.5)
+      relativeMouseState.y = lerp(this.mergeEventCache.y, relativeMouseState.y, 0.5)
 
-      mergeEvent = false
+      this.mergeEvent = false
     }
 
-    toMergeEvent.x = relativeMouseState.x
-    toMergeEvent.y = relativeMouseState.y
+    this.mergeEventCache.x = relativeMouseState.x
+    this.mergeEventCache.y = relativeMouseState.y
 
     // To counteract the fact that the pointer position resolution gets much lower the
     // more zoomed out the canvas becomes we raise filtering to compensate
@@ -68,14 +77,18 @@ class _InteractionManager {
       positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - (1 - Camera.zoom) / 3, 1), 0.1))
     }
 
-    const filteredPositions = positionFilter.filter(relativeMouseState.x, relativeMouseState.y)
+    positionArray[0] = relativeMouseState.x
+    positionArray[1] = relativeMouseState.y
+    const filteredPositions = positionFilter.filter(positionArray)
 
     operation.points.currentPoint.x = filteredPositions[0]
     operation.points.currentPoint.y = filteredPositions[1]
 
     operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-    const filteredPressure = pressureFilter.filter(relativeMouseState.pressure)
+    pressureArray[0] = relativeMouseState.pressure
+    const filteredPressure = pressureFilter.filter(pressureArray)
+
     operation.points.currentPoint.pressure = filteredPressure[0]
 
     let pointerTypeLerpAdjustment = 0
@@ -92,37 +105,44 @@ class _InteractionManager {
 
     const dist = getDistance(prevPoint, operation.points.currentPoint)
 
-    switch (operation.tool.type) {
-      case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
+    if (Application.drawing) {
+      switch (operation.tool.type) {
+        case tool_types.STROKE:
+          if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
+            operation.points.currentPoint.active = true
+
+            operation.points.nextPoint()
+
+            operation.readyToDraw = true
+          } else {
+            this.mergeEvent = true
+          }
+          break
+
+        case tool_types.POINT:
+          DrawingManager.waitUntilInteractionEnd = true
+
+          operation.points.updateCurrentPoint(null, relativeMouseState.x, relativeMouseState.y)
+
           operation.points.currentPoint.active = true
 
           operation.points.nextPoint()
 
           operation.readyToDraw = true
-        } else {
-          mergeEvent = true
-        }
-        break
-
-      case tool_types.POINT:
-        DrawingManager.waitUntilInteractionEnd = true
-
-        operation.points.updateCurrentPoint({}, relativeMouseState.x, relativeMouseState.y)
-
-        operation.points.currentPoint.active = true
-
-        operation.points.nextPoint()
-
-        operation.readyToDraw = true
-        break
+          break
+      }
     }
   }
 
-  private executeOperation = (operation: IOperation) => {
+  public executeOperation = (operation: IOperation) => {
     if (!operation.readyToDraw) return
 
     const gl = Application.gl
+
+    const prefs = usePreferenceStore.getState().prefs
+
+    Application.gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    Application.gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     // TODO: More elegant solution here
     if (operation.tool.name === "ERASER" || operation.tool.name === "EYEDROPPER") {
@@ -141,23 +161,14 @@ class _InteractionManager {
     // const data = new Float32Array(4)
     // this.gl.readPixels(0, 0, 1, 1, format, type, data)
     // console.log(data)
-
-    // Unbind
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   public process = (pointerState: MouseState) => {
     const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
     this.prepareOperation(pointerState)
-
-    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-
-    this.executeOperation(Application.currentOperation)
   }
 
   /**
@@ -170,7 +181,7 @@ class _InteractionManager {
   public endInteraction = (save = true) => {
     // if (this.currentLayer.noDraw) return
 
-    mergeEvent = false
+    this.mergeEvent = false
 
     const scratchLayer = ResourceManager.get("ScratchLayer")
 
@@ -187,14 +198,15 @@ class _InteractionManager {
     }
     DrawingManager.clearSpecific(scratchLayer)
 
+    DrawingManager.recomposite()
+    DrawingManager.pauseDraw()
+
     DrawingManager.waitUntilInteractionEnd = false
-    DrawingManager.needRedraw = true
     positionFilter.reset()
     pressureFilter.reset()
     Application.currentOperation.reset()
 
     Application.currentTool.reset()
-    DrawingManager.render()
   }
 }
 

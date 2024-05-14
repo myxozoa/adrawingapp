@@ -75,7 +75,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, currentLayer: newLayer, layers: [...state.layers, newLayer] }
     })
 
-    DrawingManager.render()
+    DrawingManager.recomposite()
   },
   removeLayer: () => {
     set((state) => {
@@ -95,7 +95,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return state
     })
 
-    DrawingManager.render()
+    DrawingManager.recomposite()
   },
   setCurrentLayer: (id: LayerID) => {
     set((state) => {
@@ -106,7 +106,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, currentLayer: state.layers[_currentLayerIndex] }
     })
 
-    DrawingManager.render()
+    DrawingManager.recomposite()
   },
   saveNewName: (id: LayerID, name: LayerName) =>
     set((state) => {
@@ -130,7 +130,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, opacity }, editingLayer: null }
     })
-    debounce(DrawingManager.render)
+    debounce(DrawingManager.recomposite)
   },
 }))
 

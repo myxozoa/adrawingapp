@@ -44,8 +44,8 @@ export interface IPoints {
   length: number
   at: (index: number) => IPoint | undefined
   getPoint: (index: number) => IPoint
-  updatePoint: (index: number, newInfo: Exclude<Partial<IPoint>, "location">, x?: number, y?: number) => void
-  updateCurrentPoint: (newInfo: Exclude<Partial<IPoint>, "location">, x?: number, y?: number) => void
+  updatePoint: (index: number, newInfo: Exclude<Partial<IPoint>, "location"> | null, x?: number, y?: number) => void
+  updateCurrentPoint: (newInfo: Exclude<Partial<IPoint>, "location"> | null, x?: number, y?: number) => void
   nextPoint: () => void
   prevPoint: () => void
   reset: () => void

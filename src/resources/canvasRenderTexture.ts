@@ -60,9 +60,11 @@ export function createCanvasRenderTexture(
   renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
   gl.bindVertexArray(renderInfo.programInfo.VAO)
 
+  gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
+  gl.enableVertexAttribArray(attributes.a_position)
+
   const uvBuffer = setupUVBuffer(gl)
   gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
-
   gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
   gl.enableVertexAttribArray(attributes.a_tex_coord)
 
