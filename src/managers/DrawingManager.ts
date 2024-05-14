@@ -115,12 +115,8 @@ class _DrawingManager {
   public render = () => {
     const gl = Application.gl
 
-    const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
-    const intermediaryLayer2 = ResourceManager.get("IntermediaryLayer2")
-
-    if (framebuffers.length === 0) {
-      framebuffers = [intermediaryLayer, intermediaryLayer2]
-    }
+    this.clearSpecific(framebuffers[readFramebuffer])
+    this.clearSpecific(framebuffers[writeFramebuffer])
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -139,9 +135,7 @@ class _DrawingManager {
 
     this.renderToScreen(framebuffers[readFramebuffer], true, renderUniforms, ResourceManager.get("DisplayLayer"))
 
-    if (this.needRedraw) {
-      requestAnimationFrame(this.render)
-    }
+    // Cursor.draw(gl, InteractionManager.currentMousePosition)
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
