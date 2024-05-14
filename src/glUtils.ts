@@ -76,8 +76,6 @@ export function createTexture(
   width: number,
   height: number,
   imageFormat: number,
-  type: number,
-  data: ArrayBufferView | null,
   mipmap: boolean,
   minFilterType?: number,
   magFilterType?: number,

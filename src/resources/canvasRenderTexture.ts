@@ -32,8 +32,6 @@ export function createCanvasRenderTexture(
       width,
       height,
       Application.textureSupport.imageFormat,
-      Application.textureSupport.pixelType,
-      null,
       mipMap,
       Application.textureSupport.minFilterType,
       Application.textureSupport.magFilterType,
