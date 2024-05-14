@@ -125,9 +125,9 @@ class _DrawingManager {
 
     this.renderToScreen(ResourceManager.get("TransparencyGrid"), false, gridRenderUniforms)
 
-    if (this.shouldRecomposite) {
-      this.compositeLayers()
-    }
+    // if (this.shouldRecomposite) {
+    this.compositeLayers()
+    // }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
