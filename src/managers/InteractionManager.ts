@@ -156,6 +156,8 @@ class _InteractionManager {
     if (useIfPossible(operation.tool)) operation.tool.use(gl, operation)
     if (drawIfPossible(operation.tool)) operation.tool.draw(gl, operation)
 
+    DrawingManager.recomposite()
+
     // const format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
     // const type = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
     // const data = new Float32Array(4)
