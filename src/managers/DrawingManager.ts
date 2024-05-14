@@ -203,7 +203,7 @@ class _DrawingManager {
           framebuffers[readFramebuffer].bufferInfo.textures[0],
         )
 
-        this.empty(intermediaryLayer3.bufferInfo.textures[0])
+        this.clearSpecific(intermediaryLayer3)
       }
 
       readFramebuffer = Number(!readFramebuffer)
@@ -252,7 +252,7 @@ class _DrawingManager {
 
     this.copy(intermediaryLayer3.bufferInfo.framebuffer!, destination.bufferInfo.textures[0])
 
-    this.empty(intermediaryLayer3.bufferInfo.textures[0])
+    this.clearSpecific(intermediaryLayer3)
 
     gl.enable(gl.BLEND)
   }
@@ -567,6 +567,7 @@ class _DrawingManager {
     this.render()
   }
 
+  // This is very slow for ARM processors when dealing with textures that may have inflight draw calls still going
   public empty = (texture: WebGLTexture) => {
     const gl = Application.gl
     const prefs = usePreferenceStore.getState().prefs
