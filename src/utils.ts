@@ -137,7 +137,9 @@ export function initializeCanvas(
     resize: false,
     contextType: "webgl2",
     powerPreference: "high-performance",
-    alpha: false, // Setting this to false is known to have strange performance implications on some platforms (eg. intel iGPU macbooks)
+    // Setting alpha to false is known to have strange performance implications on some platforms (eg. intel iGPU macbooks) (possibly fixed when metal backed ANGLE was released?)
+    // However it is required to be false for desynchronized to work and have DOM elements composited above the canvas
+    alpha: false,
     premultipliedAlpha: true,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
