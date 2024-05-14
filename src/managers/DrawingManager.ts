@@ -86,7 +86,11 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
 
-        // gl.bindTexture(gl.TEXTURE_2D, null)
+        gl.bindTexture(gl.TEXTURE_2D, framebuffers[writeFramebuffer].bufferInfo?.textures[0])
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST)
+
 
         this.pixelInterpolation = pixelInterpolation.nearest
       }
@@ -97,7 +101,11 @@ class _DrawingManager {
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
         gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
 
-        // gl.bindTexture(gl.TEXTURE_2D, null)
+        gl.bindTexture(gl.TEXTURE_2D, framebuffers[writeFramebuffer].bufferInfo?.textures[0])
+
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Application.textureSupport.magFilterType)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Application.textureSupport.minFilterType)
+
 
         this.pixelInterpolation = pixelInterpolation.trilinear
       }
