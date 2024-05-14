@@ -35,6 +35,19 @@ const startMidPosition = { x: 0, y: 0 }
 const lastMidPosition = { x: 0, y: 0 }
 const midPoint = { x: 0, y: 0 }
 
+let idleTime = 0
+
+function incrementIdleTimer() {
+  idleTime++
+
+  // Pause rendering while idle
+  if (idleTime > 10) {
+    DrawingManager.pauseDraw()
+  }
+}
+
+setInterval(incrementIdleTimer, 100)
+
 function removeEvent(event: PointerEvent) {
   const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
   touches.splice(index, 1)
@@ -123,6 +136,7 @@ function touchPanZoom() {
 
 function pointerdown(event: Event) {
   if (!isPointerEvent(event)) return
+  idleTime = 0
   ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
@@ -177,6 +191,7 @@ function pointerdown(event: Event) {
 
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
+  idleTime = 0
 
   const position = calculateWorldPosition(event) as MouseState
 
@@ -217,6 +232,7 @@ function pointermove(event: Event) {
 
 function pointerup(event: Event) {
   if (!isPointerEvent(event)) return
+  idleTime = 0
 
   Application.drawing = false
   ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
@@ -235,6 +251,7 @@ function pointerup(event: Event) {
 
 function wheel(event: Event) {
   currentInteractionState = InteractionState.zoom
+  idleTime = 0
 
   DrawingManager.beginDraw()
   wheelZoom(event)
@@ -251,10 +268,31 @@ function keyup(event: Event) {
   }
 }
 
+function pointercancel(event: Event) {
+  if (!isPointerEvent(event)) return
+
+  DrawingManager.pauseDraw()
+}
+
+function pointerout(event: Event) {
+  if (!isPointerEvent(event)) return
+
+  DrawingManager.pauseDraw()
+}
+
+function pointerleave(event: Event) {
+  if (!isPointerEvent(event)) return
+
+  DrawingManager.pauseDraw()
+}
+
 const listeners = {
   pointerdown,
   pointermove,
   pointerup,
+  pointercancel,
+  pointerleave,
+  pointerout,
   wheel,
   keyup,
 }
@@ -278,6 +316,8 @@ const touch_listeners = {
 }
 
 function resize() {
+  idleTime = 0
+
   Application.resize()
 
   Camera.updateViewProjectionMatrix()
