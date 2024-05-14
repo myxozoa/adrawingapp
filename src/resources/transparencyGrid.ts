@@ -30,14 +30,14 @@ export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number
   renderInfo.programInfo.uniforms = uniforms
   renderInfo.programInfo.attributes = attributes
 
-  gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
-  gl.enableVertexAttribArray(attributes.a_tex_coord)
-
   renderInfo.programInfo.VBO = setupVBO(gl, width, height)
   gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
 
   renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
   gl.bindVertexArray(renderInfo.programInfo.VAO)
+
+  gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
+  gl.enableVertexAttribArray(attributes.a_position)
 
   // Unbind
   gl.bindBuffer(gl.ARRAY_BUFFER, null)
