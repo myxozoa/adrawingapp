@@ -34,6 +34,8 @@ export class Points implements IPoints {
     this.list.forEach((point) => {
       point.reset()
     })
+
+    this.currentPointIndex = 0
   }
 
   public at = (index: number) => {
@@ -46,8 +48,8 @@ export class Points implements IPoints {
 
   public updatePoint = (index: number, newInfo: Partial<IPoint> | null, x?: number, y?: number) => {
     if (newInfo) {
-    if (newInfo.location) throw Error("Dont add location to updatePoint")
-    Object.assign(this.list[index], newInfo)
+      if (newInfo.location) throw Error("Dont add location to updatePoint")
+      Object.assign(this.list[index], newInfo)
     }
 
     if (x) this.list[index].x = x
