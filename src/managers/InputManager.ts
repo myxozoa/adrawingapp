@@ -17,9 +17,7 @@ import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 import type { MouseState } from "@/types"
 
-const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
-const panThrottle = throttleRAF()
 
 enum InteractionState {
   none,
@@ -30,7 +28,7 @@ enum InteractionState {
 }
 
 let currentInteractionState: InteractionState = InteractionState.none
-let touches: PointerEvent[] = []
+const touches: PointerEvent[] = []
 let prevTouchDistance = -1
 
 const startMidPosition = { x: 0, y: 0 }
@@ -132,7 +130,7 @@ function pointerdown(event: Event) {
 
     if (touches.length > 2) {
       InteractionManager.endInteraction(false)
-      touches = []
+      touches.length = 0
 
       return
     }
@@ -145,17 +143,21 @@ function pointerdown(event: Event) {
       lastMidPosition.x = startMidPosition.x
       lastMidPosition.y = startMidPosition.y
 
+      DrawingManager.beginDraw()
+
       return
     }
-  } else if (ModifierKeyManager.has("space")) {
+
+    DrawingManager.beginDraw()
+  }
+
+  if (ModifierKeyManager.has("space")) {
     currentInteractionState = InteractionState.pan
 
     startMidPosition.x = event.x
     startMidPosition.y = event.y
     lastMidPosition.x = event.x
     lastMidPosition.y = event.y
-
-    return
   }
 
   if (currentInteractionState === InteractionState.none) {
@@ -187,17 +189,11 @@ function pointermove(event: Event) {
 
     if (currentInteractionState === InteractionState.touchPanZoom) {
       touchPanZoom()
-      panThrottle(DrawingManager.render)
-
-      return
     }
   }
 
   if (currentInteractionState === InteractionState.pan) {
     pan(event)
-    panThrottle(DrawingManager.render)
-
-    return
   }
 
   if (currentInteractionState === InteractionState.useTool) {
@@ -215,6 +211,8 @@ function pointermove(event: Event) {
 
     InteractionManager.executeOperation(Application.currentOperation)
   }
+
+  DrawingManager.beginDraw()
 }
 
 function pointerup(event: Event) {
@@ -230,6 +228,7 @@ function pointerup(event: Event) {
   if (currentInteractionState === InteractionState.useTool) {
     InteractionManager.endInteraction()
   }
+  DrawingManager.pauseDraw()
 
   reset()
 }
@@ -237,8 +236,9 @@ function pointerup(event: Event) {
 function wheel(event: Event) {
   currentInteractionState = InteractionState.zoom
 
+  DrawingManager.beginDraw()
   wheelZoom(event)
-  wheelThrottle(DrawingManager.render)
+  DrawingManager.pauseDraw()
 
   currentInteractionState = InteractionState.none
 }
