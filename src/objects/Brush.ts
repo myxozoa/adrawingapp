@@ -350,10 +350,10 @@ export class Brush extends Tool implements IBrush {
   }
 
   public reset = () => {
-    this.previouslyDrawnPoint = new Point()
+    this.previouslyDrawnPoint.reset()
 
-    this.interpolationPoint = new Point()
+    this.interpolationPoint.reset()
 
-    this.drawnPoints = new Map()
+    this.drawnPoints.clear()
   }
 }
