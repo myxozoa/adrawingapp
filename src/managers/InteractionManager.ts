@@ -108,7 +108,7 @@ class _InteractionManager {
       case tool_types.POINT:
         DrawingManager.waitUntilInteractionEnd = true
 
-        operation.points.updateCurrentPoint({}, relativeMouseState.x, relativeMouseState.y)
+          operation.points.updateCurrentPoint(null, relativeMouseState.x, relativeMouseState.y)
 
         operation.points.currentPoint.active = true
 

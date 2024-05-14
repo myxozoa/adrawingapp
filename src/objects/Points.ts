@@ -44,15 +44,17 @@ export class Points implements IPoints {
     return this.list[(this.currentPointIndex + this.list.length + index) % this.list.length]!
   }
 
-  public updatePoint = (index: number, newInfo: Partial<IPoint>, x?: number, y?: number) => {
+  public updatePoint = (index: number, newInfo: Partial<IPoint> | null, x?: number, y?: number) => {
+    if (newInfo) {
     if (newInfo.location) throw Error("Dont add location to updatePoint")
     Object.assign(this.list[index], newInfo)
+    }
 
     if (x) this.list[index].x = x
     if (y) this.list[index].y = y
   }
 
-  public updateCurrentPoint = (newInfo: Partial<IPoint>, x?: number, y?: number) => {
+  public updateCurrentPoint = (newInfo: Partial<IPoint> | null, x?: number, y?: number) => {
     this.updatePoint(this.currentPointIndex, newInfo, x, y)
   }
 
