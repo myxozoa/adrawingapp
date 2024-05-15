@@ -54,7 +54,7 @@ export class Eyedropper extends Tool implements IEyedropper {
     })
 
     const unPremultipliedColor = color.map((num) => {
-      return Math.floor((num / color[3]) * 255)
+      return Math.floor((num / color[3]) * 255) || 0
     })
 
     setColor(unPremultipliedColor.slice(0, 3) as ColorArray)
