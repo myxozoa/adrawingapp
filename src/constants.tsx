@@ -14,7 +14,8 @@ export const tool_types: Record<ToolType, ToolType> = {
 }
 
 export enum blend_modes {
-  normal = 0,
+  clear = 0,
+  normal,
   multiply,
   screen,
   overlay,

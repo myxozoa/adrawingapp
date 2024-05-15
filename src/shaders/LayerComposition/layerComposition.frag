@@ -26,6 +26,10 @@ vec3 pdOver(vec3 base, vec3 blend, float opacity) {
   //Cr = (1 - αb) x Cs + αb x B(Cb, Cs)
   switch(u_blend_mode) {
     case 0:
+      result = base * (1.0 - opacity);
+
+      break;
+    case 1:
       result = normal(base, blend) + (base * (1.0 - opacity));
 
       break;
@@ -49,8 +53,13 @@ vec4 blendColor(vec4 base, vec4 blend, float opacity) {
   // Co = αs x Fa x Cs + αb x Fb x Cb
 
   // Fa = 1; Fb = 1 – αs
+  float alpha = 1.;
 
-  float alpha = (blend.a + (1. - blend.a) * base.a);
+  if (u_blend_mode == 0) {
+    alpha = base.a - blend.a;
+  } else {
+    alpha = (blend.a + (1. - blend.a) * base.a);
+  }
 
   vec3 blended = pdOver(base.rgb, blend.rgb, blend.a);
 
@@ -69,7 +78,11 @@ void main() {
   }
 
   vec4 outColor;
-  
+
+  if (u_blend_mode == 0) {
+    outColor = blendColor(bottom, top, u_opacity);
+
+  } else 
   if (bottom.a == 0.) {
     outColor = top * u_opacity;
   } else if (top.a == 0.) {

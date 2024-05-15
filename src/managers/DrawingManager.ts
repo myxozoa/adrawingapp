@@ -2,7 +2,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { CanvasSizeCache } from "@/utils/utils"
 
-import { AvailableTools, RenderInfo } from "@/types.ts"
+import { AvailableTools, RenderInfo, type IEraser, type IFill } from "@/types.ts"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -30,6 +30,9 @@ import { Cursor } from "@/objects/Cursor"
 
 const isBrush = (tool: AvailableTools): tool is IBrush => {
   return tool.name === "BRUSH"
+}
+const isEraser = (tool: AvailableTools): tool is IEraser => {
+  return tool.name === "ERASER"
 }
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
@@ -183,10 +186,13 @@ class _DrawingManager {
     gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
 
     if (isBrush(currentTool)) {
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 1)
+      gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+    } else if (isEraser(currentTool)) {
       gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
       gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
     } else {
-      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 1)
       gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
     }
 
@@ -271,8 +277,14 @@ class _DrawingManager {
     gl.disable(gl.BLEND)
 
     if (isBrush(currentTool)) {
+      gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 1)
+      gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+    } else if (isEraser(currentTool)) {
       gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
       gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+    } else {
+      gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 1)
+      gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, 1)
     }
 
     this.compositeLayer(top.bufferInfo.textures[0], bottom.bufferInfo.textures[0])

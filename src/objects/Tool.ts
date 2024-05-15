@@ -32,7 +32,7 @@ export const toolProperties: toolProperties = {
     numberOfPoints: 8,
   },
   ERASER: {
-    availableSettings: ["size", "hardness", "flow", "spacing"],
+    availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
     numberOfPoints: 8,
@@ -64,11 +64,11 @@ export const toolDefaults: ToolDefaults = {
     spacing: 5,
   },
   ERASER: {
-    size: 5,
+    size: 20,
     opacity: 100,
     flow: 100,
     hardness: 100,
-    spacing: 20,
+    spacing: 5,
   },
   FILL: {
     flood: true,

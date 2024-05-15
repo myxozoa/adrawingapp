@@ -182,11 +182,7 @@ class _InteractionManager {
     const scratchLayer = ResourceManager.get("ScratchLayer")
 
     // TODO: More elegant solution here
-    if (
-      save &&
-      Application.currentOperation.tool.name !== "ERASER" &&
-      Application.currentOperation.tool.name !== "EYEDROPPER"
-    ) {
+    if (save && Application.currentOperation.tool.name !== "EYEDROPPER") {
       const currentLayerID = useLayerStore.getState().currentLayer.id
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
