@@ -1,6 +1,6 @@
 import { Modifier, ModifierState } from "@/types"
 import { key_modifers } from "@/constants"
-import { isKeyboardEvent } from "@/utils"
+import { isKeyboardEvent } from "@/utils/utils"
 
 export const ModifierKeyManager: ModifierState = new Set()
 

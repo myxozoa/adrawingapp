@@ -1,12 +1,12 @@
 import cursorFragment from "@/shaders/Cursor/cursor.frag?raw"
 import cursorVertex from "@/shaders/Cursor/cursor.vert?raw"
 
-import * as glUtils from "@/glUtils"
+import * as glUtils from "@/utils/glUtils"
 import { useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { mat3, vec2 } from "gl-matrix"
 
-import { CanvasSizeCache } from "@/utils"
+import { CanvasSizeCache } from "@/utils/utils"
 
 export class _Cursor {
   programInfo: {

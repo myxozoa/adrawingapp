@@ -1,4 +1,4 @@
-import { initializeCanvas, resizeCanvasToDisplaySize } from "@/utils"
+import { initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
 
 import { DrawingManager } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"

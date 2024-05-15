@@ -1,4 +1,10 @@
-import { createBuffer, createFramebuffer, createTexture, createVAO, setupProgramAttributesUniforms } from "@/glUtils.ts"
+import {
+  createBuffer,
+  createFramebuffer,
+  createTexture,
+  createVAO,
+  setupProgramAttributesUniforms,
+} from "@/utils/glUtils"
 import { RenderInfo } from "@/types"
 import { mat3 } from "gl-matrix"
 import { Application } from "@/managers/ApplicationManager"

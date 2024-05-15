@@ -1,6 +1,6 @@
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { CanvasSizeCache } from "@/utils.ts"
+import { CanvasSizeCache } from "@/utils/utils"
 
 import { AvailableTools, RenderInfo } from "@/types.ts"
 

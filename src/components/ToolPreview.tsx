@@ -1,8 +1,8 @@
 import { useRef, useLayoutEffect } from "react"
 
-import { initializeCanvas } from "@/utils"
+import { initializeCanvas } from "@/utils/utils"
 
-import * as glUtils from "@/glUtils"
+import * as glUtils from "@/utils/glUtils"
 
 import { toolPreviewSize } from "@/constants"
 

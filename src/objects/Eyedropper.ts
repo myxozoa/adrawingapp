@@ -3,7 +3,7 @@ import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
-import { glPickPosition } from "@/utils"
+import { glPickPosition } from "@/utils/utils"
 
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#use_non-blocking_async_data_readback
 function clientWaitAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: number, interval_ms: number) {

@@ -18,9 +18,9 @@ import {
   calculateFromPressure,
   calculateCurveLength,
   calculateSpacing,
-} from "@/utils"
+} from "@/utils/utils"
 
-import * as glUtils from "@/glUtils"
+import * as glUtils from "@/utils/glUtils"
 import { tool_list } from "@/constants"
 
 export class Brush extends Tool implements IBrush {

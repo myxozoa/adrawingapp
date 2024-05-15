@@ -9,7 +9,7 @@ import {
   isKeyboardEvent,
   calculateWorldPosition,
   CanvasSizeCache,
-} from "@/utils"
+} from "@/utils/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 

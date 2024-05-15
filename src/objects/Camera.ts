@@ -2,7 +2,7 @@ import { mat3, vec2 } from "gl-matrix"
 
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { CanvasSizeCache, toClipSpace } from "@/utils"
+import { CanvasSizeCache, toClipSpace } from "@/utils/utils"
 
 const one = vec2.fromValues(1, 1)
 
