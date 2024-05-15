@@ -3,7 +3,6 @@ import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
-import { glPickPosition } from "@/utils/utils"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 

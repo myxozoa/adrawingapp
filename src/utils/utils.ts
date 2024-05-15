@@ -450,12 +450,6 @@ export function maintainPointSpacing(point0: IPoint, point1: IPoint, distance: n
   point1.y = point0.y + normalizedY * targetDistance
 }
 
-export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
-  const rect = (gl.canvas as HTMLCanvasElement).getBoundingClientRect()
-
-  return { x: point.x, y: rect.bottom - rect.top - point.y - 1 }
-}
-
 /**
  * Interpolates a cubic bezier curve based on the one dimension of `start` `end` and two `control points`
  *
