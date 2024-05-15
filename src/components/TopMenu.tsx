@@ -9,74 +9,169 @@ import {
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-// import { ResourceManager } from "@/managers/resourceManager"
-// import { DrawingManager } from "@/managers/drawingManager"
+import { ResourceManager } from "@/managers/ResourceManager"
 import { Slider } from "@/components/ui/slider"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { DrawingManager } from "@/managers/DrawingManager"
+import { Application } from "@/managers/ApplicationManager"
 
-// const saveImage = async () => {
-//   const prefs = usePreferenceStore.getState().prefs
-//   const gl = DrawingManager.gl
+function uint16ToFloat16(uint16: number) {
+  const exponent = (uint16 >> 10) & 0x1f
+  const fraction = uint16 & 0x3ff
+  const sign = (uint16 >> 15) & 0x1
 
-//   DrawingManager.renderToScreen()
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("CanvasRenderTexture").bufferInfo.framebuffer)
+  if (exponent === 0) {
+    return (sign ? -1 : 1) * Math.pow(2, -14) * (fraction / Math.pow(2, 10))
+  } else if (exponent === 31) {
+    return fraction === 0 ? (sign ? -Infinity : Infinity) : NaN
+  }
 
-//   const downloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
+  // Normalize
+  return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10))
+}
 
-//   const canvas = document.createElement("canvas")
-//   canvas.width = prefs.canvasWidth
-//   canvas.height = prefs.canvasHeight
-//   const context = canvas.getContext("bitmaprenderer")!
+//https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#use_non-blocking_async_data_readback
+function clientWaitAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: GLint, interval_ms: number) {
+  return new Promise<void>((resolve, reject) => {
+    function test() {
+      const res = gl.clientWaitSync(sync, flags, 0)
+      if (res === gl.WAIT_FAILED) {
+        reject()
+        return
+      }
+      if (res === gl.TIMEOUT_EXPIRED) {
+        setTimeout(test, interval_ms)
+        return
+      }
+      resolve()
+    }
+    test()
+  })
+}
 
-//   const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
-//   const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+async function getBufferSubDataAsync(
+  gl: WebGL2RenderingContext,
+  target: GLint,
+  buffer: WebGLBuffer,
+  srcByteOffset: number,
+  dstBuffer: ArrayBufferView,
+  /* optional */ dstOffset?: number,
+  /* optional */ length?: number,
+) {
+  const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
 
-//   const data = new Float32Array(prefs.canvasWidth * prefs.canvasHeight * 4)
-//   gl.readPixels(0, 0, prefs.canvasWidth, prefs.canvasHeight, format, type, data)
+  if (!sync) throw new Error("Unable to create sync to save image")
 
-//   const data8Bit = Uint8ClampedArray.from(data)
+  gl.flush()
 
-//   const imageData = new ImageData(prefs.canvasWidth, prefs.canvasHeight)
-//   imageData.data.set(data8Bit)
+  await clientWaitAsync(gl, sync, 0, 10)
+  gl.deleteSync(sync)
 
-//   const imageBitmap = await createImageBitmap(imageData)
-//   context.transferFromImageBitmap(imageBitmap)
+  gl.bindBuffer(target, buffer)
+  gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length)
+  gl.bindBuffer(target, null)
 
-//   console.log(imageData)
+  return dstBuffer
+}
 
-//   canvas.toBlob(
-//     function (blob) {
-//       if (!blob) {
-//         console.error("Unable to create blob and save image")
-//         return
-//       }
+async function readPixelsAsync(
+  gl: WebGL2RenderingContext,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  format: GLint,
+  type: GLint,
+  dest: ArrayBufferView,
+) {
+  const buf = gl.createBuffer()
 
-//       const data = new File([blob], "image.png", { type: "png" })
-//       const url = URL.createObjectURL(data)
+  if (!buf) throw new Error("Unable to create buffer to save image")
 
-//       downloadLink.id = "local_filesaver"
-//       downloadLink.download = "image.png"
-//       downloadLink.target = "_blank"
-//       downloadLink.rel = "noopener"
-//       downloadLink.style.display = "none"
-//       document.body.appendChild(downloadLink)
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf)
+  gl.bufferData(gl.PIXEL_PACK_BUFFER, dest.byteLength, gl.STREAM_READ)
+  gl.readPixels(x, y, w, h, format, type, 0)
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null)
 
-//       downloadLink.setAttribute("href", url)
+  await getBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, buf, 0, dest)
 
-//       downloadLink.click()
+  gl.deleteBuffer(buf)
+  return dest
+}
 
-//       URL.revokeObjectURL(url)
-//       document.body.removeChild(downloadLink)
-//     },
-//     "image/png",
-//     1.0,
-//   )
+function flipVertically(imageData: ImageData) {
+  const width = imageData.width
+  const height = imageData.height
+  const data = imageData.data
+  const bytesPerPixel = 4 // RGBA
+  const rowSize = width * bytesPerPixel
+  const tempRow = new Uint8ClampedArray(rowSize)
 
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-//   canvas.remove()
-//   downloadLink.remove()
-// }
+  for (let y = 0; y < height / 2; y++) {
+    const topRowStart = y * rowSize
+    const bottomRowStart = (height - 1 - y) * rowSize
+
+    // Save the top row to the temp row
+    tempRow.set(data.subarray(topRowStart, topRowStart + rowSize))
+
+    // Copy the bottom row to the top row
+    data.copyWithin(topRowStart, bottomRowStart, bottomRowStart + rowSize)
+
+    // Copy the saved top row to the bottom row
+    data.set(tempRow, bottomRowStart)
+  }
+
+  return imageData
+}
+
+const saveImage = async () => {
+  const prefs = usePreferenceStore.getState().prefs
+  const gl = Application.gl
+
+  const displayLayer = ResourceManager.get("DisplayLayer")
+
+  DrawingManager.pauseDraw()
+  DrawingManager.clearSpecific(displayLayer)
+  DrawingManager.recomposite()
+  DrawingManager.render()
+  gl.bindFramebuffer(gl.FRAMEBUFFER, displayLayer.bufferInfo.framebuffer)
+
+  const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
+  const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+
+  gl.readBuffer(gl.COLOR_ATTACHMENT0)
+
+  const data = new Uint16Array(prefs.canvasWidth * prefs.canvasHeight * 4)
+  await readPixelsAsync(gl, 0, 0, prefs.canvasWidth, prefs.canvasHeight, format, type, data)
+
+  // Data is 16 bit float values stored in a uint16 array
+  const data8bit = Uint8ClampedArray.from(data, (num) => {
+    return uint16ToFloat16(num) * 255
+  })
+
+  const imageData = new ImageData(data8bit, prefs.canvasWidth, prefs.canvasHeight)
+
+  flipVertically(imageData)
+
+  const imageBitmap = await createImageBitmap(imageData)
+  Application.exportCanvasContext.transferFromImageBitmap(imageBitmap)
+
+  const blob = await Application.exportCanvas.convertToBlob({ type: "image/png", quality: 1.0 })
+
+  if (!blob) {
+    console.error("Unable to create blob and save image")
+    return
+  }
+
+  const fileData = new File([blob], "image.png", { type: "png" })
+  const url = URL.createObjectURL(fileData)
+
+  Application.exportDownloadLink.setAttribute("href", url)
+  Application.exportDownloadLink.download = "image.png"
+  Application.exportDownloadLink.click()
+
+  URL.revokeObjectURL(url)
+}
 
 const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
   const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
@@ -105,7 +200,7 @@ function _TopMenu() {
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
               <MenubarItem disabled>New</MenubarItem>
-              {/* <MenubarItem onClick={() => void saveImage()}>Save Image</MenubarItem> */}
+              <MenubarItem onClick={() => void saveImage()}>Save Image</MenubarItem>
               <MenubarItem disabled>Exit</MenubarItem>
             </MenubarContent>
           </MenubarMenu>

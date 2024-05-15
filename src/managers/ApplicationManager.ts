@@ -7,6 +7,8 @@ import { tools } from "@/stores/ToolStore.ts"
 import { Camera } from "@/objects/Camera"
 import { Operation } from "@/objects/Operation.ts"
 
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+
 import { ILayer, IOperation, AvailableTools } from "@/types.ts"
 
 interface SupportedExtensions {
@@ -47,6 +49,10 @@ class _Application {
   extensions: SupportedExtensions
   textureSupport: SupportedTextureInfo
   systemConstraints: SystemConstraints
+
+  exportCanvas: OffscreenCanvas
+  exportCanvasContext: ImageBitmapRenderingContext
+  exportDownloadLink: HTMLAnchorElement
 
   drawing: boolean
 
@@ -139,6 +145,7 @@ class _Application {
 
   public init = () => {
     const gl = this.gl
+    const prefs = usePreferenceStore.getState().prefs
 
     this.getExtensions()
     this.getSupportedTextureInfo()
@@ -150,6 +157,16 @@ class _Application {
     this.currentOperation = new Operation(this.currentTool)
 
     this.resize()
+
+    this.exportCanvas = new OffscreenCanvas(prefs.canvasWidth, prefs.canvasHeight)
+    this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
+
+    this.exportDownloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
+    this.exportDownloadLink.id = "local_filesaver"
+    this.exportDownloadLink.target = "_blank"
+    this.exportDownloadLink.rel = "noopener"
+    this.exportDownloadLink.style.display = "none"
+    document.body.appendChild(this.exportDownloadLink)
 
     Camera.init()
 
