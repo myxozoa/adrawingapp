@@ -42,7 +42,7 @@ function incrementIdleTimer() {
 
   // Pause rendering while idle
   if (idleTime > 10) {
-    DrawingManager.pauseDraw()
+    DrawingManager.pauseDrawNextFrame()
   }
 }
 
@@ -254,7 +254,7 @@ function pointerup(event: Event) {
   if (currentInteractionState === InteractionState.useTool) {
     InteractionManager.endInteraction()
   }
-  DrawingManager.pauseDraw()
+  DrawingManager.pauseDrawNextFrame()
 
   reset()
 }
@@ -265,7 +265,7 @@ function wheel(event: Event) {
 
   DrawingManager.beginDraw()
   wheelZoom(event)
-  DrawingManager.pauseDraw()
+  DrawingManager.pauseDrawNextFrame()
 
   currentInteractionState = InteractionState.none
 }
@@ -281,19 +281,19 @@ function keyup(event: Event) {
 function pointercancel(event: Event) {
   if (!isPointerEvent(event)) return
 
-  DrawingManager.pauseDraw()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 function pointerout(event: Event) {
   if (!isPointerEvent(event)) return
 
-  DrawingManager.pauseDraw()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 function pointerleave(event: Event) {
   if (!isPointerEvent(event)) return
 
-  DrawingManager.pauseDraw()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 const listeners = {

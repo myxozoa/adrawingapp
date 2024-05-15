@@ -195,7 +195,7 @@ class _InteractionManager {
     DrawingManager.clearSpecific(scratchLayer)
 
     DrawingManager.recomposite()
-    DrawingManager.pauseDraw()
+    DrawingManager.pauseDrawNextFrame()
 
     DrawingManager.waitUntilInteractionEnd = false
     positionFilter.reset()

@@ -529,13 +529,13 @@ class _DrawingManager {
     this.endDrawNextFrame = false
   }
 
-  public pauseDraw = () => {
+  public pauseDrawNextFrame = () => {
     this.endDrawNextFrame = true
   }
 
   public start = () => {
     requestAnimationFrame(this.renderLoop)
-    this.pauseDraw()
+    this.pauseDrawNextFrame()
   }
 
   public renderLoop = () => {

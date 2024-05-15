@@ -63,7 +63,7 @@ const saveImage = async () => {
 
   const displayLayer = ResourceManager.get("DisplayLayer")
 
-  DrawingManager.pauseDraw()
+  DrawingManager.pauseDrawNextFrame()
   DrawingManager.clearSpecific(displayLayer)
   DrawingManager.recomposite()
   DrawingManager.render()

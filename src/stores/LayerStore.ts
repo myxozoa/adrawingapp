@@ -130,7 +130,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     })
     DrawingManager.recomposite()
     DrawingManager.beginDraw()
-    DrawingManager.pauseDraw()
+    DrawingManager.pauseDrawNextFrame()
   },
 }))
 
