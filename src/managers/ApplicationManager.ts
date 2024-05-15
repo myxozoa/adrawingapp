@@ -161,6 +161,8 @@ class _Application {
     this.exportCanvas = new OffscreenCanvas(prefs.canvasWidth, prefs.canvasHeight)
     this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
 
+    if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
+
     this.exportDownloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
     this.exportDownloadLink.id = "local_filesaver"
     this.exportDownloadLink.target = "_blank"
