@@ -54,6 +54,13 @@ class _Application {
   exportCanvasContext: ImageBitmapRenderingContext
   exportDownloadLink: HTMLAnchorElement
 
+  supportedExportImageTypes: {
+    png: boolean
+    jpeg: boolean
+    webp: boolean
+    bmp: boolean
+  }
+
   drawing: boolean
 
   constructor() {
@@ -80,6 +87,31 @@ class _Application {
     }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
+
+    this.supportedExportImageTypes = {
+      png: true,
+      jpeg: false,
+      webp: false,
+      bmp: false,
+    }
+  }
+
+  private getSupportedExportImageTypes = () => {
+    // Browsers are required to support PNG but not necessarily anything else
+
+    const tempCanvas = document.createElement("canvas")
+    tempCanvas.width = 1
+    tempCanvas.height = 1
+
+    for (const type of Object.keys(this.supportedExportImageTypes) as (keyof typeof this.supportedExportImageTypes)[]) {
+      const typeString = `image/${type}`
+
+      const dataURL = tempCanvas.toDataURL(typeString, 1.0)
+
+      this.supportedExportImageTypes[type] = dataURL.startsWith(`data:${typeString}`)
+    }
+
+    tempCanvas.remove()
   }
 
   private getExtensions = () => {
@@ -146,6 +178,8 @@ class _Application {
   public init = () => {
     const gl = this.gl
     const prefs = usePreferenceStore.getState().prefs
+
+    this.getSupportedExportImageTypes()
 
     this.getExtensions()
     this.getSupportedTextureInfo()
