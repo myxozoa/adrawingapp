@@ -145,7 +145,7 @@ class _InteractionManager {
     Application.gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
 
     // TODO: More elegant solution here
-    if (operation.tool.name === "ERASER" || operation.tool.name === "EYEDROPPER") {
+    if (operation.tool.name === "EYEDROPPER") {
       gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("DisplayLayer").bufferInfo?.framebuffer)
     } else {
       gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("ScratchLayer").bufferInfo?.framebuffer)
@@ -157,12 +157,6 @@ class _InteractionManager {
     if (drawIfPossible(operation.tool)) operation.tool.draw(gl, operation)
 
     DrawingManager.recomposite()
-
-    // const format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
-    // const type = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
-    // const data = new Float32Array(4)
-    // this.gl.readPixels(0, 0, 1, 1, format, type, data)
-    // console.log(data)
   }
 
   public process = (pointerState: MouseState) => {

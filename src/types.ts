@@ -143,7 +143,8 @@ export interface IEraser extends ITool {
   draw: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
-export type EyeDropperSampleSizes = "1x1" | "2x2" | "3x3"
+export type EyeDropperSampleSizeLabels = "1x1" | "2x2" | "3x3"
+export type EyeDropperSampleSizes = 1 | 2 | 3
 
 export interface IEyedropper extends ITool {
   settings: {

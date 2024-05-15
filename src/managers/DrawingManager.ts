@@ -177,17 +177,20 @@ class _DrawingManager {
     gl.disable(gl.BLEND)
 
     // Composite scratch layer with current layer into intermediaryLayer3
+    const scratchLayer = ResourceManager.get("ScratchLayer")
+    const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
+
     if (isBrush(currentTool)) {
-      const scratchLayer = ResourceManager.get("ScratchLayer")
-      const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
-
-      gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
-
       gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
       gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
-
-      this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
+    } else {
+      gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+      gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
     }
+
+    this.compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
 
     // Composite First layer against an empty texture
     const firstLayer = layers[0]

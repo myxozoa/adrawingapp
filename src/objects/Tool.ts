@@ -74,7 +74,7 @@ export const toolDefaults: ToolDefaults = {
     flood: true,
   },
   EYEDROPPER: {
-    sampleSize: "1x1",
+    sampleSize: 1,
   },
 }
 

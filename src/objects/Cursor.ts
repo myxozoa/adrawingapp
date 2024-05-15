@@ -104,12 +104,14 @@ export class _Cursor {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
 
-    gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-    gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-
-    // @ts-expect-error i dont care about this rn
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const size = useToolStore.getState().currentTool.settings.size as number
+    const size = Math.max(
+      // @ts-expect-error TODO: Fix this
+      ((useToolStore.getState().currentTool.settings.size as number | undefined) ||
+        // @ts-expect-error TODO: Fix this
+        (useToolStore.getState().currentTool.settings.sampleSize as number | undefined) ||
+        10) / 2,
+      3,
+    )
 
     gl.uniform3f(this.programInfo.uniforms.u_point_size, point.x, CanvasSizeCache.height - point.y, size)
 
