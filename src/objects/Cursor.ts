@@ -1,5 +1,3 @@
-import { usePreferenceStore } from "@/stores/PreferenceStore"
-
 import cursorFragment from "@/shaders/Cursor/cursor.frag?raw"
 import cursorVertex from "@/shaders/Cursor/cursor.vert?raw"
 
@@ -102,8 +100,6 @@ export class _Cursor {
    * Moves quad around and draws it based on brush settings and point info
    */
   public draw = (gl: WebGL2RenderingContext, point: { x: number; y: number }) => {
-    const prefs = usePreferenceStore.getState().prefs
-
     gl.useProgram(this.programInfo.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
@@ -114,13 +110,6 @@ export class _Cursor {
     // @ts-expect-error i dont care about this rn
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const size = useToolStore.getState().currentTool.settings.size as number
-    // const size = calculateFromPressure(this.settings.size / 2, point.pressure, point.pointerType === "pen")
-
-    // const startScissorX = point.x - size
-    // const startScissorY = size - point.y
-
-    // Internals
-    // gl.scissor(startScissorX, startScissorY, size * 2 + 4, size * 2 + 4)
 
     gl.uniform3f(this.programInfo.uniforms.u_point_size, point.x, CanvasSizeCache.height - point.y, size)
 
