@@ -84,6 +84,8 @@ class _Application {
     this.drawing = false
 
     this.supportedExportImageFormats = ["png"]
+
+    this.initialized = false
   }
 
   private getSupportedExportImageTypes = () => {
@@ -158,6 +160,8 @@ class _Application {
   }
 
   public createCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
+    if (this.initialized) return
+
     const context = initializeCanvas(canvas, width, height, {
       resize: true,
     })
@@ -170,6 +174,8 @@ class _Application {
   }
 
   public init = () => {
+    InputManager.init()
+
     if (this.initialized) return
 
     const gl = this.gl
@@ -181,12 +187,11 @@ class _Application {
     this.getSupportedTextureInfo()
     this.getSystemConstraints()
 
-    DrawingManager.init()
-    InputManager.init()
-
     this.currentOperation = new Operation(this.currentTool)
 
     this.resize()
+
+    DrawingManager.init()
 
     this.exportCanvas = new OffscreenCanvas(prefs.canvasWidth, prefs.canvasHeight)
     this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!

@@ -325,7 +325,8 @@ function resize() {
   Application.resize()
 
   Camera.updateViewProjectionMatrix()
-  DrawingManager.render()
+  DrawingManager.beginDraw()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 function windowResize() {
