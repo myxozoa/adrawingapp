@@ -54,13 +54,9 @@ class _Application {
   exportCanvasContext: ImageBitmapRenderingContext
   exportDownloadLink: HTMLAnchorElement
 
-  supportedExportImageTypes: {
-    png: boolean
-    jpeg: boolean
-    webp: boolean
-    bmp: boolean
-  }
+  supportedExportImageFormats: ExportImageFormatsMIME[]
 
+  initialized: boolean
   drawing: boolean
 
   constructor() {
@@ -176,6 +172,8 @@ class _Application {
   }
 
   public init = () => {
+    if (this.initialized) return
+
     const gl = this.gl
     const prefs = usePreferenceStore.getState().prefs
 
@@ -210,6 +208,8 @@ class _Application {
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
     })
+
+    this.initialized = true
 
     DrawingManager.start()
   }

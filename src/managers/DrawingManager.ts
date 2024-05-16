@@ -68,7 +68,6 @@ class _DrawingManager {
   needRedraw: boolean
   endDrawNextFrame: boolean
   pixelInterpolation: pixelInterpolation
-  initialized: boolean
   private shouldRecomposite: boolean
   private shouldShowCursor: boolean
 
@@ -333,8 +332,6 @@ class _DrawingManager {
    * This should be called before starting the render loop
    */
   public init = () => {
-    if (this.initialized) return
-
     const prefs = usePreferenceStore.getState().prefs
     const layers = useLayerStore.getState().layers
     const gl = Application.gl
@@ -513,8 +510,6 @@ class _DrawingManager {
     gl.uniformMatrix3fv(intermediaryLayer3.programInfo?.uniforms.u_matrix, false, intermediaryLayer3.data!.matrix!)
 
     Cursor.init(gl)
-
-    this.initialized = true
 
     framebuffers = [intermediaryLayer, intermediaryLayer2]
   }
