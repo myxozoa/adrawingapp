@@ -1,4 +1,15 @@
-import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
+import {
+  Maybe,
+  HexColor,
+  ColorArray,
+  ColorValue,
+  ColorValueString,
+  IPoint,
+  MouseState,
+  IPoints,
+  ExportImageFormatsMIME,
+  ExportImageFormats,
+} from "@/types"
 import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
@@ -697,4 +708,14 @@ export function uint16ToFloat16(uint16: number) {
 
   // Normalize
   return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10))
+}
+
+export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
+  const fileExtension = string.replace(/^(image\/)/g, "")
+
+  return fileExtension
+}
+
+export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
+  return `image/${string}`
 }

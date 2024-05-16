@@ -197,3 +197,6 @@ export interface RenderInfo {
   bufferInfo: BufferInfo
   data?: PossibleData
 }
+
+export type ExportImageFormatsMIME = "image/png" | "image/jpeg" | "image/webp" | "image/bmp"
+export type ExportImageFormats = "png" | "jpeg" | "webp" | "bmp"

@@ -1,4 +1,4 @@
-import { initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
+import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
 
 import { DrawingManager } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
@@ -10,6 +10,8 @@ import { Operation } from "@/objects/Operation.ts"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { ILayer, IOperation, AvailableTools } from "@/types.ts"
+
+import { ExportImageFormats } from "@/types.ts"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -36,7 +38,6 @@ interface SystemConstraints {
   maxColorAttachments: number
   maxSamples: number
 }
-
 class _Application {
   offscreenCanvas: OffscreenCanvas
   gl: WebGL2RenderingContext
@@ -54,7 +55,7 @@ class _Application {
   exportCanvasContext: ImageBitmapRenderingContext
   exportDownloadLink: HTMLAnchorElement
 
-  supportedExportImageFormats: ExportImageFormatsMIME[]
+  supportedExportImageFormats: ExportImageFormats[]
 
   initialized: boolean
   drawing: boolean
@@ -84,27 +85,26 @@ class _Application {
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
 
-    this.supportedExportImageTypes = {
-      png: true,
-      jpeg: false,
-      webp: false,
-      bmp: false,
-    }
+    this.supportedExportImageFormats = ["png"]
   }
 
   private getSupportedExportImageTypes = () => {
     // Browsers are required to support PNG but not necessarily anything else
-
+    // so we don't need to check png
+    const possibleImageFormats: ExportImageFormats[] = ["jpeg", "webp", "bmp"]
     const tempCanvas = document.createElement("canvas")
     tempCanvas.width = 1
     tempCanvas.height = 1
 
-    for (const type of Object.keys(this.supportedExportImageTypes) as (keyof typeof this.supportedExportImageTypes)[]) {
-      const typeString = `image/${type}`
+    for (const format of possibleImageFormats) {
+      const formatMIME = getMIMEFromImageExtension(format)
+      const dataURL = tempCanvas.toDataURL(formatMIME, 1.0)
 
-      const dataURL = tempCanvas.toDataURL(typeString, 1.0)
+      if (dataURL.startsWith(`data:${formatMIME}`)) {
+        this.supportedExportImageFormats.push(format)
+      }
 
-      this.supportedExportImageTypes[type] = dataURL.startsWith(`data:${typeString}`)
+      URL.revokeObjectURL(dataURL)
     }
 
     tempCanvas.remove()
