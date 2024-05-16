@@ -100,7 +100,7 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
 
 export function ExportDialog() {
   const [quality, setQuality] = useState(1)
-  const [filename, setFilename] = useState("export")
+  const [filename, setFilename] = useState("New Image")
   const [format, setFormat] = useState(Application.supportedExportImageFormats[0]) // PNG is always supported
 
   return (
