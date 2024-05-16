@@ -5,20 +5,9 @@ import Container from "@/components/Container"
 
 import { useToolStore } from "@/stores/ToolStore"
 
-import { Slider } from "@/components/ui/slider"
 import { AvailableTools } from "@/types"
 
-const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
-  const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
-
-  return (
-    <div key={`${name}_setting`} className="flex h-full flex-row items-center justify-center">
-      <p className="pr-2 text-sm text-foreground">{name}:</p>
-      <Slider className="mr-4 w-28" {...props} value={[value]} onValueChange={onValueChange} />
-      <p className="min-w-[3ch] text-sm text-foreground">{value}</p>
-    </div>
-  )
-}
+import { SettingSlider } from "@/components/SettingSlider"
 
 function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
@@ -130,35 +119,35 @@ function _ToolSettings() {
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
     size:
       toolState.size !== undefined
-        ? SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), {
+        ? SettingSlider("Size", toolState.size, (size) => changeToolSetting({ size }), 0, {
             min: 1,
             max: 500,
           })
         : null,
     hardness:
       toolState.hardness !== undefined
-        ? SliderSetting("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), {
+        ? SettingSlider("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), 0, {
             min: 1,
             max: 100,
           })
         : null,
     opacity:
       toolState.opacity !== undefined
-        ? SliderSetting("opacity", toolState.opacity, (opacity) => changeToolSetting({ opacity }), {
+        ? SettingSlider("opacity", toolState.opacity, (opacity) => changeToolSetting({ opacity }), 0, {
             min: 1,
             max: 100,
           })
         : null,
     flow:
       toolState.flow !== undefined
-        ? SliderSetting("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), {
+        ? SettingSlider("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), 0, {
             min: 1,
             max: 100,
           })
         : null,
     spacing:
       toolState.spacing !== undefined
-        ? SliderSetting("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), {
+        ? SettingSlider("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), 0, {
             min: 1,
             max: 100,
           })
