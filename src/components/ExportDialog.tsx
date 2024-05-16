@@ -106,33 +106,35 @@ export function ExportDialog() {
   return (
     <DialogHeader>
       <DialogTitle>Save Image</DialogTitle>
-      <div className="flex flex-row items-center justify-between">
+      <div className="!mt-4 flex flex-col items-center justify-between sm:flex-row">
         {SettingSlider("Quality", quality, (value) => setQuality(value), 1, { min: 0, max: 1, step: 0.1 })}
 
-        <Input
-          type="string"
-          className="w-[15ch]"
-          placeholder="Your Filename"
-          value={filename}
-          onChange={(event) => setFilename(event.target.value)}
-        />
-
-        <Select defaultValue={format} onValueChange={(value) => setFormat(value as ExportImageFormats)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Format" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {Application.supportedExportImageFormats.map((imageFormat, index) => (
-                <SelectItem key={`exportFormat${index}`} value={imageFormat}>
-                  {imageFormat.toUpperCase()}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <div className="mt-2 flex w-fit flex-row sm:mt-0">
+          <Input
+            type="string"
+            className="w-[15ch]"
+            placeholder="Your Filename"
+            value={filename}
+            onChange={(event) => setFilename(event.target.value)}
+          />
+          <p className="mx-3 pt-2">.</p>
+          <Select defaultValue={format} onValueChange={(value) => setFormat(value as ExportImageFormats)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Application.supportedExportImageFormats.map((imageFormat, index) => (
+                  <SelectItem key={`exportFormat${index}`} value={imageFormat}>
+                    {imageFormat.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <Button variant="outline" size="sm" className="" onClick={() => void saveImage(filename, format, quality)}>
+      <Button variant="outline" size="sm" className="!mt-4" onClick={() => void saveImage(filename, format, quality)}>
         Save Image
       </Button>
     </DialogHeader>
