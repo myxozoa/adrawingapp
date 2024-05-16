@@ -1,6 +1,6 @@
 import { tool_list } from "@/constants"
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
+import type { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 

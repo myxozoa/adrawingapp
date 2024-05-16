@@ -1,4 +1,4 @@
-import { AvailableTools, IOperation, IPoints } from "@/types"
+import type { AvailableTools, IOperation, IPoints } from "@/types"
 
 import { Points } from "@/objects/Points"
 

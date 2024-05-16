@@ -2,7 +2,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { CanvasSizeCache } from "@/utils/utils"
 
-import { RenderInfo } from "@/types.ts"
+import type { RenderInfo } from "@/types"
 
 import { mat3, vec2 } from "gl-matrix"
 

@@ -1,4 +1,4 @@
-import { MouseState, PointerType } from "@/types"
+import type { MouseState, PointerType } from "@/types"
 import { isPointerEvent } from "@/utils/typeguards"
 
 export const PointerManager: MouseState = {

@@ -1,4 +1,4 @@
-import { IBrush, IEyedropper, IFill, IPen, ITool, ToolName, ToolSetting, ToolType, WithoutMethods } from "@/types"
+import type { IBrush, IEyedropper, IFill, IPen, ITool, ToolName, ToolSetting, ToolType, WithoutMethods } from "@/types"
 
 import { tool_types } from "@/constants"
 

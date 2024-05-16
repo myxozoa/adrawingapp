@@ -1,4 +1,4 @@
-import { AvailableTools, IBrush, IEraser, IEyedropper, IFill, IPoint } from "@/types"
+import type { AvailableTools, IBrush, IEraser, IEyedropper, IFill, IPoint } from "@/types"
 
 export function isPointerEvent(event: Event): event is PointerEvent {
   return event instanceof PointerEvent

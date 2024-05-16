@@ -1,4 +1,4 @@
-import { MouseState, IOperation } from "@/types.ts"
+import type { MouseState, IOperation } from "@/types"
 import { tool_types } from "@/constants.tsx"
 import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"

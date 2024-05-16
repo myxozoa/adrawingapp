@@ -1,7 +1,7 @@
 import { tool_list } from "@/constants"
 import { Brush } from "@/objects/Brush"
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
-import { IBrush, IOperation, IEraser } from "@/types"
+import type { IBrush, IOperation, IEraser } from "@/types"
 
 // The Eraser behaves almost exactly like the brush aside from the differing blend states
 // so this passthrough thing is what im going with for the time being

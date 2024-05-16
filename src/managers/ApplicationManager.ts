@@ -3,15 +3,13 @@ import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize 
 import { DrawingManager } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
 
-import { tools } from "@/stores/ToolStore.ts"
+import { tools } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
-import { Operation } from "@/objects/Operation.ts"
+import { Operation } from "@/objects/Operation"
 
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import { ILayer, IOperation, AvailableTools } from "@/types.ts"
-
-import { ExportImageFormats } from "@/types.ts"
+import type { ILayer, IOperation, AvailableTools, ExportImageFormats } from "@/types"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null

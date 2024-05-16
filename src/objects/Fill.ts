@@ -1,7 +1,7 @@
 import { tool_list } from "@/constants"
 import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import { useMainStore } from "@/stores/MainStore"
-import { IFill } from "@/types"
+import type { IFill } from "@/types"
 
 export class Fill extends Tool implements IFill {
   settings: {

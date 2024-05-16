@@ -2,7 +2,7 @@ import fragment from "@/shaders/Background/background.frag?raw"
 import vertex from "@/shaders/Background/background.vert?raw"
 
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/utils/glUtils"
-import { RenderInfo } from "@/types"
+import type { RenderInfo } from "@/types"
 
 export function createFullscreenQuad(gl: WebGL2RenderingContext) {
   const renderInfo: RenderInfo = {

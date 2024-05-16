@@ -1,4 +1,4 @@
-import { Modifier, ModifierState } from "@/types"
+import type { Modifier, ModifierState } from "@/types"
 import { key_modifers } from "@/constants"
 import { isKeyboardEvent } from "@/utils/typeguards"
 

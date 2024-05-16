@@ -5,7 +5,7 @@ import {
   createVAO,
   setupProgramAttributesUniforms,
 } from "@/utils/glUtils"
-import { RenderInfo } from "@/types"
+import type { RenderInfo } from "@/types"
 import { mat3 } from "gl-matrix"
 import { Application } from "@/managers/ApplicationManager"
 

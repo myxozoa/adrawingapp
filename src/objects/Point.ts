@@ -1,4 +1,4 @@
-import { IPoint, PointerType } from "@/types"
+import type { IPoint, PointerType } from "@/types"
 import { vec2 } from "gl-matrix"
 
 export class Point implements IPoint {

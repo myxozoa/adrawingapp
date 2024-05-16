@@ -5,7 +5,7 @@ import Container from "@/components/Container"
 
 import { useToolStore } from "@/stores/ToolStore"
 
-import { AvailableTools } from "@/types"
+import type { AvailableTools } from "@/types"
 
 import { SettingSlider } from "@/components/SettingSlider"
 

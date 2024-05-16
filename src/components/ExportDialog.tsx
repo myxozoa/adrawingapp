@@ -14,7 +14,7 @@ import { readPixelsAsync } from "@/utils/asyncReadback"
 
 import { getMIMEFromImageExtension, uint16ToFloat16 } from "@/utils/utils"
 
-import { ExportImageFormats } from "@/types.ts"
+import type { ExportImageFormats } from "@/types"
 
 import { Input } from "@/components/ui/input"
 

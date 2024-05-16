@@ -1,6 +1,6 @@
 import { blend_modes } from "../constants"
 
-import { ILayer, LayerID, LayerName, Box } from "@/types"
+import type { ILayer, LayerID, LayerName, Box } from "@/types"
 
 // TODO: Fix this
 export class Layer implements ILayer {
