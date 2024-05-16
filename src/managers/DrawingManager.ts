@@ -2,7 +2,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { CanvasSizeCache } from "@/utils/utils"
 
-import { AvailableTools, RenderInfo, type IEraser, type IFill } from "@/types.ts"
+import { RenderInfo } from "@/types.ts"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -22,18 +22,10 @@ import { useLayerStore } from "@/stores/LayerStore"
 
 import { InteractionManager } from "@/managers/InteractionManager"
 
-import { IBrush } from "@/types.ts"
-
 import { Layer } from "@/objects/Layer"
 import { useToolStore } from "@/stores/ToolStore"
 import { Cursor } from "@/objects/Cursor"
-
-const isBrush = (tool: AvailableTools): tool is IBrush => {
-  return tool.name === "BRUSH"
-}
-const isEraser = (tool: AvailableTools): tool is IEraser => {
-  return tool.name === "ERASER"
-}
+import { isBrush, isEraser } from "@/utils/typeguards"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))

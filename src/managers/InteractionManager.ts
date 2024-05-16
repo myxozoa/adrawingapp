@@ -1,4 +1,4 @@
-import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
+import { MouseState, IOperation } from "@/types.ts"
 import { tool_types } from "@/constants.tsx"
 import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
@@ -9,18 +9,7 @@ import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
-
-const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-  return "switchTo" in tool
-}
-
-const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
-  return "use" in tool
-}
-
-const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-  return "draw" in tool
-}
+import { drawIfPossible, switchIfPossible, useIfPossible } from "@/utils/typeguards"
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
 const positionFilter = new ExponentialSmoothingFilter(0.5, 2)

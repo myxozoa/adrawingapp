@@ -1,15 +1,9 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import {
-  isPointerEvent,
-  throttleRAF,
-  getDistance,
-  isWheelEvent,
-  isKeyboardEvent,
-  calculateWorldPosition,
-  CanvasSizeCache,
-} from "@/utils/utils"
+import { throttleRAF, getDistance, calculateWorldPosition, CanvasSizeCache } from "@/utils/utils"
+
+import { isPointerEvent, isWheelEvent, isKeyboardEvent } from "@/utils/typeguards"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
