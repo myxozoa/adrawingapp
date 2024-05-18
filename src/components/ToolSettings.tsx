@@ -5,9 +5,16 @@ import Container from "@/components/Container"
 
 import { useToolStore } from "@/stores/ToolStore"
 
-import type { AvailableTools } from "@/types"
+import type { AvailableTools, EyeDropperSampleSizes } from "@/types"
 
 import { SettingSlider } from "@/components/SettingSlider"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const sampleSizes: EyeDropperSampleSizes[] = [1, 3, 5]
+
+function getSampleSizeLabel(sampleSize: EyeDropperSampleSizes) {
+  return `${sampleSize}x${sampleSize}`
+}
 
 function _ToolSettings() {
   const currentTool = useToolStore.use.currentTool()
@@ -25,6 +32,8 @@ function _ToolSettings() {
     flow: currentTool.settings.flow as number | undefined,
     // @ts-expect-error spent too long on this
     spacing: currentTool.settings.spacing as number | undefined,
+    // @ts-expect-error spent too long on this
+    sampleSize: currentTool.settings.sampleSize as number | undefined,
   })
 
   const changeToolSetting = useCallback(
@@ -113,6 +122,8 @@ function _ToolSettings() {
       flow: currentTool.settings.flow as number | undefined,
       // @ts-expect-error spent too long on this
       spacing: currentTool.settings.spacing as number | undefined,
+      // @ts-expect-error spent too long on this
+      sampleSize: currentTool.settings.sampleSize as number | undefined,
     })
   }, [currentTool])
 
@@ -152,6 +163,33 @@ function _ToolSettings() {
             max: 100,
           })
         : null,
+    sampleSize:
+      toolState.sampleSize !== undefined ? (
+        <div key={`sampleSize_setting`} className="flex w-fit flex-row items-center justify-center">
+          <p className="pr-2 text-sm text-muted-foreground">Sample Size</p>
+
+          <Select
+            defaultValue={getSampleSizeLabel(toolState.sampleSize as EyeDropperSampleSizes)}
+            onValueChange={(sampleSize) => changeToolSetting({ sampleSize })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {sampleSizes.map((size, index) => {
+                  const label = getSampleSizeLabel(size)
+                  return (
+                    <SelectItem key={`eyedropperSampleSizes${index}`} value={label}>
+                      {label}
+                    </SelectItem>
+                  )
+                })}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null,
   }
 
   return (

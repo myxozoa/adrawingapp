@@ -44,7 +44,7 @@ export const toolProperties: toolProperties = {
     numberOfPoints: 1,
   },
   EYEDROPPER: {
-    availableSettings: [],
+    availableSettings: ["sampleSize"],
     type: tool_types.POINT,
     continuous: false,
     numberOfPoints: 1,
