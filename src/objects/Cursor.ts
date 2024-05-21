@@ -1,5 +1,5 @@
-import cursorFragment from "@/shaders/Cursor/cursor.frag?raw"
-import cursorVertex from "@/shaders/Cursor/cursor.vert?raw"
+import cursorFragment from "@/shaders/Cursor/cursor.frag"
+import cursorVertex from "@/shaders/Cursor/cursor.vert"
 
 import * as glUtils from "@/utils/glUtils"
 import { useToolStore } from "@/stores/ToolStore"

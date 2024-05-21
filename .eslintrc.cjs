@@ -2,6 +2,8 @@ module.exports = {
   root: true,
   env: { browser: true, es2020: true },
   extends: [
+    "prettier",
+    "next/core-web-vitals",
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended-type-checked",
     "plugin:@typescript-eslint/stylistic-type-checked",
@@ -32,7 +34,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
-    project: ["./tsconfig.json", "./tsconfig.node.json"],
+    project: ["./tsconfig.json"],
     tsconfigRootDir: __dirname,
     ecmaFeatures: {
       jsx: true,

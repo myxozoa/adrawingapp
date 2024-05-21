@@ -238,7 +238,7 @@ class _Application {
 
 export const Application = new _Application()
 
-if (import.meta.env.DEV) {
+if (process.env.NODE_ENV !== "production") {
   // @ts-expect-error Adding global for debugging purposes
   window.__Application = Application
 }
