@@ -2,7 +2,6 @@ import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
 import type { IBrush, IOperation, IPoint } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { Point } from "@/objects/Point"
 
@@ -22,6 +21,7 @@ import {
 
 import * as glUtils from "@/utils/glUtils"
 import { tool_list } from "@/constants"
+import { Application } from "@/managers/ApplicationManager"
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
@@ -267,8 +267,6 @@ export class Brush extends Tool implements IBrush {
    * Moves quad around and draws it based on brush settings and point info
    */
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
-    const prefs = usePreferenceStore.getState().prefs
-
     this.previouslyDrawnPoint.copy(point)
 
     const size = calculateFromPressure(this.settings.size / 2, point.pressure, point.pointerType === "pen")
@@ -280,14 +278,19 @@ export class Brush extends Tool implements IBrush {
     const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
 
     const startScissorX = point.x - size
-    const startScissorY = prefs.canvasHeight - size - point.y
+    const startScissorY = Application.canvasInfo.height - size - point.y
 
     // Internals
     gl.scissor(startScissorX, startScissorY, size * 2 + 4, size * 2 + 4)
 
     gl.uniform4f(this.programInfo.uniforms.u_brush_qualities, flow, hardness, base_roughness - roughness, size)
 
-    gl.uniform3f(this.programInfo.uniforms.u_point_random, point.x, prefs.canvasHeight - point.y, Math.random())
+    gl.uniform3f(
+      this.programInfo.uniforms.u_point_random,
+      point.x,
+      Application.canvasInfo.height - point.y,
+      Math.random(),
+    )
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }

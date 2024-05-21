@@ -128,10 +128,8 @@ class _InteractionManager {
 
     const gl = Application.gl
 
-    const prefs = usePreferenceStore.getState().prefs
-
-    Application.gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    Application.gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    Application.gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+    Application.gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
     // TODO: More elegant solution here
     if (operation.tool.name === "EYEDROPPER") {

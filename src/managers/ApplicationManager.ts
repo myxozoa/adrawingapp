@@ -36,6 +36,12 @@ interface SystemConstraints {
   maxColorAttachments: number
   maxSamples: number
 }
+
+interface CanvasInfo {
+  width: number
+  height: number
+}
+
 class _Application {
   offscreenCanvas: OffscreenCanvas
   gl: WebGL2RenderingContext
@@ -54,6 +60,8 @@ class _Application {
   exportDownloadLink: HTMLAnchorElement
 
   supportedExportImageFormats: ExportImageFormats[]
+
+  canvasInfo: CanvasInfo
 
   initialized: boolean
   drawing: boolean
@@ -79,6 +87,13 @@ class _Application {
       maxDrawBuffers: 0,
       maxColorAttachments: 0,
       maxSamples: 0,
+    }
+
+    const prefs = usePreferenceStore.getState().prefs
+
+    this.canvasInfo = {
+      width: prefs.canvasWidth,
+      height: prefs.canvasHeight,
     }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
@@ -179,7 +194,6 @@ class _Application {
     if (this.initialized) return
 
     const gl = this.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     this.getSupportedExportImageTypes()
 
@@ -193,7 +207,7 @@ class _Application {
 
     DrawingManager.init()
 
-    this.exportCanvas = new OffscreenCanvas(prefs.canvasWidth, prefs.canvasHeight)
+    this.exportCanvas = new OffscreenCanvas(this.canvasInfo.width, this.canvasInfo.height)
     this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
 
     if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")

@@ -2,7 +2,6 @@ import { useState } from "react"
 
 import { Application } from "@/managers/ApplicationManager"
 import { ResourceManager } from "@/managers/ResourceManager"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { DrawingManager } from "@/managers/DrawingManager"
 import { Button } from "@/components/ui/button"
 
@@ -46,7 +45,6 @@ function flipVertically(imageData: ImageData) {
 }
 
 const saveImage = async (filename: string, exportFormat: ExportImageFormats, exportQuality: number) => {
-  const prefs = usePreferenceStore.getState().prefs
   const gl = Application.gl
 
   const displayLayer = ResourceManager.get("DisplayLayer")
@@ -62,15 +60,24 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
 
   gl.readBuffer(gl.COLOR_ATTACHMENT0)
 
-  const data = new Uint16Array(prefs.canvasWidth * prefs.canvasHeight * 4)
-  await readPixelsAsync(gl, 0, 0, prefs.canvasWidth, prefs.canvasHeight, glReadbackFormat, glReadbackType, data)
+  const data = new Uint16Array(Application.canvasInfo.width * Application.canvasInfo.height * 4)
+  await readPixelsAsync(
+    gl,
+    0,
+    0,
+    Application.canvasInfo.width,
+    Application.canvasInfo.height,
+    glReadbackFormat,
+    glReadbackType,
+    data,
+  )
 
   // Data is 16 bit float values stored in a uint16 array
   const data8bit = Uint8ClampedArray.from(data, (num) => {
     return uint16ToFloat16(num) * 255
   })
 
-  const imageData = new ImageData(data8bit, prefs.canvasWidth, prefs.canvasHeight)
+  const imageData = new ImageData(data8bit, Application.canvasInfo.width, Application.canvasInfo.height)
 
   flipVertically(imageData)
 

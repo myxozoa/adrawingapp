@@ -1,5 +1,3 @@
-import { usePreferenceStore } from "@/stores/PreferenceStore"
-
 import { CanvasSizeCache } from "@/utils/utils"
 
 import type { RenderInfo } from "@/types"
@@ -32,8 +30,7 @@ export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo
 }
 
 export function gridRenderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
-  const prefs = usePreferenceStore.getState().prefs
-  const size = prefs.canvasWidth * 0.01
+  const size = Application.canvasInfo.width * 0.01
 
   gl.uniform1f(reference.programInfo?.uniforms.u_size, size)
   renderUniforms(gl, reference)
@@ -137,14 +134,12 @@ class _DrawingManager {
   }
 
   public clearSpecific = (renderInfo: RenderInfo, color?: Float32Array) => {
-    const prefs = usePreferenceStore.getState().prefs
-
     const gl = Application.gl
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
 
     gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
     this.clear(color)
   }
@@ -156,7 +151,6 @@ class _DrawingManager {
     const intermediaryLayer3 = ResourceManager.get("IntermediaryLayer3")
     const emptyLayer = ResourceManager.get("EmptyLayer")
 
-    const prefs = usePreferenceStore.getState().prefs
     const currentTool = useToolStore.getState().currentTool
 
     const layers = useLayerStore.getState().layers
@@ -165,8 +159,8 @@ class _DrawingManager {
     gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
     gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
 
-    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+    gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
     gl.disable(gl.BLEND)
 
@@ -255,15 +249,13 @@ class _DrawingManager {
     const intermediaryLayer3 = ResourceManager.get("IntermediaryLayer3")
     const currentTool = useToolStore.getState().currentTool
 
-    const prefs = usePreferenceStore.getState().prefs
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
     gl.useProgram(intermediaryLayer3.programInfo?.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer3.programInfo?.VBO)
     gl.bindVertexArray(intermediaryLayer3.programInfo?.VAO)
 
-    gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+    gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
     gl.disable(gl.BLEND)
 
@@ -289,7 +281,6 @@ class _DrawingManager {
 
   public blit = (source: RenderInfo, destination: RenderInfo) => {
     const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, source.bufferInfo?.framebuffer)
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, destination.bufferInfo?.framebuffer)
@@ -297,12 +288,12 @@ class _DrawingManager {
     gl.blitFramebuffer(
       0,
       0,
-      prefs.canvasWidth,
-      prefs.canvasHeight,
+      Application.canvasInfo.width,
+      Application.canvasInfo.height,
       0,
       0,
-      prefs.canvasWidth,
-      prefs.canvasHeight,
+      Application.canvasInfo.width,
+      Application.canvasInfo.height,
       gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
       gl.NEAREST,
     )
@@ -310,12 +301,11 @@ class _DrawingManager {
 
   public copy = (source: WebGLFramebuffer, destination: WebGLTexture) => {
     const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, source)
     gl.bindTexture(gl.TEXTURE_2D, destination)
 
-    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
   }
 
   /**
@@ -324,7 +314,6 @@ class _DrawingManager {
    * This should be called before starting the render loop
    */
   public init = () => {
-    const prefs = usePreferenceStore.getState().prefs
     const layers = useLayerStore.getState().layers
     const gl = Application.gl
 
@@ -343,7 +332,10 @@ class _DrawingManager {
 
     gl.hint(gl.GENERATE_MIPMAP_HINT, gl.NICEST)
 
-    ResourceManager.create("TransparencyGrid", createTransparencyGrid(gl, prefs.canvasWidth, prefs.canvasHeight))
+    ResourceManager.create(
+      "TransparencyGrid",
+      createTransparencyGrid(gl, Application.canvasInfo.width, Application.canvasInfo.height),
+    )
 
     ResourceManager.create("Background", createFullscreenQuad(gl))
 
@@ -351,8 +343,8 @@ class _DrawingManager {
       "ScratchLayer",
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         renderTextureFragment,
         renderTextureVertex,
         false,
@@ -363,8 +355,8 @@ class _DrawingManager {
       "EmptyLayer",
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         renderTextureFragment,
         renderTextureVertex,
         false,
@@ -375,8 +367,8 @@ class _DrawingManager {
       "DisplayLayer",
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         renderTextureFragment,
         renderTextureVertex,
         true,
@@ -397,8 +389,8 @@ class _DrawingManager {
       "IntermediaryLayer",
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         layerCompositionFragment,
         layerCompositionVertex,
         false,
@@ -410,8 +402,8 @@ class _DrawingManager {
       "IntermediaryLayer2",
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         layerCompositionFragment,
         layerCompositionVertex,
         false,
@@ -423,8 +415,8 @@ class _DrawingManager {
       "IntermediaryLayer3",
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         layerCompositionFragment,
         layerCompositionVertex,
         false,
@@ -438,13 +430,13 @@ class _DrawingManager {
     mat3.scale(
       intermediaryLayer.data!.matrix!,
       intermediaryLayer.data!.matrix!,
-      vec2.fromValues(1 / (prefs.canvasWidth / 2), 1 / (prefs.canvasHeight / 2)),
+      vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
     )
 
     mat3.translate(
       intermediaryLayer.data!.matrix!,
       intermediaryLayer.data!.matrix!,
-      vec2.fromValues(-prefs.canvasWidth / 2, -prefs.canvasHeight / 2),
+      vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
     )
 
     gl.useProgram(intermediaryLayer.programInfo?.program)
@@ -461,13 +453,13 @@ class _DrawingManager {
     mat3.scale(
       intermediaryLayer2.data!.matrix!,
       intermediaryLayer2.data!.matrix!,
-      vec2.fromValues(1 / (prefs.canvasWidth / 2), 1 / (prefs.canvasHeight / 2)),
+      vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
     )
 
     mat3.translate(
       intermediaryLayer2.data!.matrix!,
       intermediaryLayer2.data!.matrix!,
-      vec2.fromValues(-prefs.canvasWidth / 2, -prefs.canvasHeight / 2),
+      vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
     )
 
     gl.useProgram(intermediaryLayer2.programInfo?.program)
@@ -484,13 +476,13 @@ class _DrawingManager {
     mat3.scale(
       intermediaryLayer3.data!.matrix!,
       intermediaryLayer3.data!.matrix!,
-      vec2.fromValues(1 / (prefs.canvasWidth / 2), 1 / (prefs.canvasHeight / 2)),
+      vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
     )
 
     mat3.translate(
       intermediaryLayer3.data!.matrix!,
       intermediaryLayer3.data!.matrix!,
-      vec2.fromValues(-prefs.canvasWidth / 2, -prefs.canvasHeight / 2),
+      vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
     )
 
     gl.useProgram(intermediaryLayer3.programInfo?.program)
@@ -508,14 +500,13 @@ class _DrawingManager {
 
   public newLayer = (layer: Layer) => {
     const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     ResourceManager.create(
       `Layer${layer.id}`,
       createCanvasRenderTexture(
         gl,
-        prefs.canvasWidth,
-        prefs.canvasHeight,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
         renderTextureFragment,
         renderTextureVertex,
         false,
@@ -613,14 +604,13 @@ class _DrawingManager {
   // This is very slow for ARM processors when dealing with textures that may have inflight draw calls still going
   public empty = (texture: WebGLTexture) => {
     const gl = Application.gl
-    const prefs = usePreferenceStore.getState().prefs
 
     const emptyLayer = ResourceManager.get("EmptyLayer")
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, emptyLayer.bufferInfo.framebuffer)
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
-    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
   }
 
   // TODO: Reimplement undo
