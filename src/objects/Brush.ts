@@ -5,8 +5,8 @@ import { useMainStore } from "@/stores/MainStore"
 
 import { Point } from "@/objects/Point"
 
-import brushFragment from "@/shaders/Brush/brush.frag?raw"
-import brushVertex from "@/shaders/Brush/brush.vert?raw"
+import brushFragment from "@/shaders/Brush/brush.frag"
+import brushVertex from "@/shaders/Brush/brush.vert"
 
 import {
   getDistance,

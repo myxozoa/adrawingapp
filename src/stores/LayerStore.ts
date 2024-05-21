@@ -7,7 +7,6 @@ import { DrawingManager } from "@/managers/DrawingManager"
 
 import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
-import { throttleRAF } from "@/utils/utils"
 
 interface State {
   layers: Layer[]

@@ -1,5 +1,5 @@
-import fragment from "@/shaders/Background/background.frag?raw"
-import vertex from "@/shaders/Background/background.vert?raw"
+import fragment from "@/shaders/Background/background.frag"
+import vertex from "@/shaders/Background/background.vert"
 
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/utils/glUtils"
 import type { RenderInfo } from "@/types"

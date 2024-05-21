@@ -1,5 +1,5 @@
-import fragment from "@/shaders/TransparencyGrid/transparencyGrid.frag?raw"
-import vertex from "@/shaders/TransparencyGrid/transparencyGrid.vert?raw"
+import fragment from "@/shaders/TransparencyGrid/transparencyGrid.frag"
+import vertex from "@/shaders/TransparencyGrid/transparencyGrid.vert"
 
 import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/utils/glUtils"
 import type { RenderInfo } from "@/types"

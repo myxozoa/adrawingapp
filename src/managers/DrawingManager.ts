@@ -8,10 +8,10 @@ import { Camera } from "@/objects/Camera"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { createCanvasRenderTexture } from "@/resources/canvasRenderTexture"
 
-import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag?raw"
-import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert?raw"
-import layerCompositionFragment from "@/shaders/LayerComposition/layerComposition.frag?raw"
-import layerCompositionVertex from "@/shaders/LayerComposition/layerComposition.vert?raw"
+import renderTextureFragment from "@/shaders/TexToScreen/texToScreen.frag"
+import renderTextureVertex from "@/shaders/TexToScreen/texToScreen.vert"
+import layerCompositionFragment from "@/shaders/LayerComposition/layerComposition.frag"
+import layerCompositionVertex from "@/shaders/LayerComposition/layerComposition.vert"
 
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
@@ -624,7 +624,7 @@ class _DrawingManager {
 
 export const DrawingManager = new _DrawingManager()
 
-if (import.meta.env.DEV) {
+if (process.env.NODE_ENV !== "production") {
   // @ts-expect-error Adding global for debugging purposes
   window.__DrawingManager = DrawingManager
 }
