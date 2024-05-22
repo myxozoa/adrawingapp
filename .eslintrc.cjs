@@ -12,13 +12,13 @@ module.exports = {
     "plugin:react/jsx-runtime",
     "plugin:tailwindcss/recommended",
   ],
-  ignorePatterns: ["dist", ".eslintrc.cjs"],
+  ignorePatterns: ["dist", ".eslintrc.cjs", "next.config.js", "postcss.config.js", "tailwind.config.js"],
   parser: "@typescript-eslint/parser",
   plugins: ["react-refresh", "react", "eslint-plugin-tailwindcss"],
   rules: {
     "react-hooks/exhaustive-deps": "off",
     "@typescript-eslint/no-explicit-any": "off",
-    "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+    "react-refresh/only-export-components": "off",
     "@typescript-eslint/prefer-nullish-coalescing": "off",
     "@typescript-eslint/consistent-indexed-object-style": "off",
     "@typescript-eslint/no-unused-vars": [
