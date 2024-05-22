@@ -9,11 +9,6 @@ const nextConfig = {
 
     return config
   },
-  compiler: {
-    removeConsole: {
-      exclude: ["error"],
-    },
-  },
 }
 
 export default nextConfig
