@@ -4,7 +4,7 @@ import { tool_list } from "@/constants"
 
 import { Brush, Eraser, PaintBucket, Pipette } from "lucide-react"
 
-const tools = {
+const toolIcons = {
   [tool_list.BRUSH]: <Brush className="h-5 w-5" strokeWidth={1.5} />,
   [tool_list.ERASER]: <Eraser className="h-5 w-5" strokeWidth={1.5} />,
   [tool_list.FILL]: <PaintBucket className="h-5 w-5" strokeWidth={1.5} />,
@@ -15,7 +15,7 @@ const tools = {
 function Tool({ name, select, selected }: { name: ToolName; select: (name: ToolName) => void; selected: boolean }) {
   return (
     <PanelElement className="h-10" selected={selected} select={select} id={name}>
-      {tools[name]}
+      {toolIcons[name]}
     </PanelElement>
   )
 }
