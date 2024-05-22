@@ -93,6 +93,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     })
 
     DrawingManager.recomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
   },
   setCurrentLayer: (id: LayerID) => {
     set((state) => {
@@ -104,6 +106,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     })
 
     DrawingManager.recomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
   },
   saveNewName: (id: LayerID, name: LayerName) =>
     set((state) => {
