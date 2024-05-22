@@ -114,7 +114,15 @@ export function ExportDialog() {
     <DialogHeader>
       <DialogTitle>Save Image</DialogTitle>
       <div className="!mt-4 flex flex-col items-center justify-between sm:flex-row">
-        {SettingSlider("Quality", quality, (value) => setQuality(value), 1, { min: 0, max: 1, step: 0.1 })}
+        <SettingSlider
+          name={"Quality"}
+          value={quality}
+          onValueChange={(value) => setQuality(value)}
+          fractionDigits={1}
+          min={0}
+          max={1}
+          step={0.1}
+        />
 
         <div className="mt-2 flex w-fit flex-row sm:mt-0">
           <Input

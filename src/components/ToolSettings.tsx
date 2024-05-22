@@ -129,40 +129,60 @@ function _ToolSettings() {
 
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
     size:
-      toolState.size !== undefined
-        ? SettingSlider("Size", toolState.size, (size) => changeToolSetting({ size }), 0, {
-            min: 1,
-            max: 500,
-          })
-        : null,
+      toolState.size !== undefined ? (
+        <SettingSlider
+          name={"Size"}
+          value={toolState.size}
+          onValueChange={(size) => changeToolSetting({ size })}
+          fractionDigits={0}
+          min={1}
+          max={500}
+        />
+      ) : null,
     hardness:
-      toolState.hardness !== undefined
-        ? SettingSlider("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), 0, {
-            min: 1,
-            max: 100,
-          })
-        : null,
+      toolState.hardness !== undefined ? (
+        <SettingSlider
+          name={"Hardness"}
+          value={toolState.hardness}
+          onValueChange={(hardness) => changeToolSetting({ hardness })}
+          fractionDigits={0}
+          min={1}
+          max={100}
+        />
+      ) : null,
     opacity:
-      toolState.opacity !== undefined
-        ? SettingSlider("opacity", toolState.opacity, (opacity) => changeToolSetting({ opacity }), 0, {
-            min: 1,
-            max: 100,
-          })
-        : null,
+      toolState.opacity !== undefined ? (
+        <SettingSlider
+          name={"Opacity"}
+          value={toolState.opacity}
+          onValueChange={(opacity) => changeToolSetting({ opacity })}
+          fractionDigits={0}
+          min={1}
+          max={100}
+        />
+      ) : null,
     flow:
-      toolState.flow !== undefined
-        ? SettingSlider("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), 0, {
-            min: 1,
-            max: 100,
-          })
-        : null,
+      toolState.flow !== undefined ? (
+        <SettingSlider
+          name={"Flow"}
+          value={toolState.flow}
+          onValueChange={(flow) => changeToolSetting({ flow })}
+          fractionDigits={0}
+          min={1}
+          max={100}
+        />
+      ) : null,
     spacing:
-      toolState.spacing !== undefined
-        ? SettingSlider("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), 0, {
-            min: 1,
-            max: 100,
-          })
-        : null,
+      toolState.spacing !== undefined ? (
+        <SettingSlider
+          name={"Spacing"}
+          value={toolState.spacing}
+          onValueChange={(spacing) => changeToolSetting({ spacing })}
+          fractionDigits={0}
+          min={1}
+          max={100}
+        />
+      ) : null,
     sampleSize:
       toolState.sampleSize !== undefined ? (
         <div key={`sampleSize_setting`} className="flex w-fit flex-row items-center justify-center">

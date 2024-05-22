@@ -23,7 +23,14 @@ function _Layers() {
   return (
     <Container className="absolute right-0 top-1/2 h-1/2 w-48 -translate-y-1/2">
       <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
-        {SettingSlider("Opacity", currentLayer.opacity, (opacity) => setOpacity(currentLayer.id, opacity), 0)}
+        <SettingSlider
+          name={"Opacity"}
+          value={currentLayer.opacity}
+          onValueChange={(opacity) => setOpacity(currentLayer.id, opacity)}
+          fractionDigits={0}
+          min={1}
+          max={100}
+        />
       </Panel>
       <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
         {layers
