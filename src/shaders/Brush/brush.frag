@@ -46,10 +46,11 @@ void main()
     float dist = circle(point);
 
     // Color brush circle with transparent falloff
-    vec4 main_color = vec4(u_brush_color.rgb, u_flow);
-    vec4 transparent = vec4(u_brush_color.rgb, 0.);
+    vec3 main_color = u_brush_color.rgb;
 
-    vec4 color = mix(main_color, transparent, smoothstep(u_softness - ((size) * (4. - sqrt(size))), 1., dist));
+    float brush_alpha = mix(1., 0., smoothstep(u_softness - ((size) * (4. - sqrt(size))), 1., dist)) * u_flow;
+
+    vec4 color = vec4(main_color, brush_alpha);
 
     // Discarding here appears to be faster
     if (color.a == 0.)
@@ -66,7 +67,7 @@ void main()
     color.a = clamp(color.a - alpha, 0., 1.);
     
     // Premultiplied alpha
-    color.rgb = color.rgb * color.a;
+    color.rgb *= color.a;
     
     fragColor = color;
 }
