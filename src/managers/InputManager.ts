@@ -1,7 +1,13 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import { throttleRAF, getDistance, calculateWorldPosition, CanvasSizeCache } from "@/utils/utils"
+import {
+  throttleRAF,
+  getDistance,
+  calculateWorldPosition,
+  CanvasSizeCache,
+  calculatePointerWorldPosition,
+} from "@/utils/utils"
 
 import { isPointerEvent, isWheelEvent, isKeyboardEvent } from "@/utils/typeguards"
 
@@ -81,16 +87,20 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
   const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
+  const mouseXBeforeZoom = mousePositionBeforeZoom[0]
+  const mouseYBeforeZoom = mousePositionBeforeZoom[1]
 
   Camera.zoom = Math.max(0.001, Math.min(100, zoomTarget))
 
   Camera.updateViewProjectionMatrix()
 
   const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
+  const mouseXAfterZoom = mousePositionAfterZoom[0]
+  const mouseYAfterZoom = mousePositionAfterZoom[1]
 
   // Repositioning to make the pointer closer to the world space position it had before the zoom
-  const dx = mousePositionAfterZoom.x - mousePositionBeforeZoom.x
-  const dy = mousePositionAfterZoom.y - mousePositionBeforeZoom.y
+  const dx = mouseXAfterZoom - mouseXBeforeZoom
+  const dy = mouseYAfterZoom - mouseYBeforeZoom
 
   Camera.x -= dx
   Camera.y -= dy
