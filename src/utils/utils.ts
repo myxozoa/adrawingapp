@@ -1,8 +1,20 @@
-import { Maybe, HexColor, ColorArray, ColorValue, ColorValueString, IPoint, MouseState, IPoints } from "@/types"
+import {
+  Maybe,
+  HexColor,
+  ColorArray,
+  ColorValue,
+  ColorValueString,
+  IPoint,
+  MouseState,
+  IPoints,
+  ExportImageFormatsMIME,
+  ExportImageFormats,
+} from "@/types"
 import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
+import { isPoint, isPointerEventOrLocation } from "@/utils/typeguards"
 
 interface CanvasSizeCache {
   width: number
@@ -43,10 +55,6 @@ export function throttle(func: (...args: any[]) => void, delay = 250): () => voi
       shouldWait = false
     }, delay)
   }
-}
-
-const isPoint = (point: IPoint | { x: number; y: number }): point is IPoint => {
-  return "location" in point
 }
 
 /**
@@ -450,12 +458,6 @@ export function maintainPointSpacing(point0: IPoint, point1: IPoint, distance: n
   point1.y = point0.y + normalizedY * targetDistance
 }
 
-export function glPickPosition(gl: WebGL2RenderingContext, point: IPoint) {
-  const rect = (gl.canvas as HTMLCanvasElement).getBoundingClientRect()
-
-  return { x: point.x, y: rect.bottom - rect.top - point.y - 1 }
-}
-
 /**
  * Interpolates a cubic bezier curve based on the one dimension of `start` `end` and two `control points`
  *
@@ -519,89 +521,6 @@ export function toClipSpace(point: { x: number; y: number }): vec2 {
   return vec2.set(tempVec2, clipX, clipY)
 }
 
-// /**
-//  * @example
-//  * ```
-//  * debugPoints(this.gl, this.renderBufferInfo, this.currentOperation!.points, "1., 0., 1., 1.")
-//  * ```
-//  */
-// export const debugPoints = (
-//   gl: WebGL2RenderingContext,
-//   renderBufferInfo: any,
-//   points: IPoints,
-//   color: string,
-// ): void => {
-//   // Bind to draw to render texture
-
-//   // // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-//   // gl.bindTexture(gl.TEXTURE_2D, renderBufferInfo.targetTexture)
-//   // // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-//   // gl.bindFramebuffer(gl.FRAMEBUFFER, renderBufferInfo.framebuffer)
-
-//   // Transform points to clip space
-//   // const vertices = points.list.reduce((acc: number[], point: IPoint) => {
-//   //   const clipSpace = toClipSpace(point, gl.canvas)
-//   //   return [...acc, clipSpace.x, clipSpace.y]
-//   // }, [] as number[])
-
-//   const vertices = [100, 100, 200, 200, 300, 300, 400, 400]
-
-//   const vertex_buffer = gl.createBuffer()
-//   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
-//   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
-
-//   // Vert Shader
-
-//   const vertexShaderCode = `#version 300 es
-//   #pragma vscode_glsllint_stage : vert
-//   in vec2 a_Position;
-//   void main() {
-//     gl_Position = vec4(a_Position, 0., 1.);
-//     gl_PointSize = 10.0;
-//   }`
-
-//   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderCode)
-
-//   // Frag Shader
-
-//   const fragmentShaderCode = `#version 300 es
-//   #pragma vscode_glsllint_stage : frag
-//   precision mediump float;
-//   out vec4 fragColor;
-//   void main() {
-//     fragColor = vec4(${color});
-//   }`
-
-//   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderCode)
-
-//   const shaderProgram = createProgram(gl, vertexShader, fragmentShader)
-
-//   gl.useProgram(shaderProgram)
-
-//   // VAO
-
-//   const vao = gl.createVertexArray()
-//   gl.bindVertexArray(vao)
-
-//   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
-
-//   const coord = gl.getAttribLocation(shaderProgram, "a_Position")
-
-//   gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0)
-//   gl.enableVertexAttribArray(coord)
-
-//   // Draw
-
-//   gl.drawArrays(gl.POINTS, 0, vertices.length / 2)
-
-//   // Unbind
-
-//   gl.bindVertexArray(null)
-//   gl.bindBuffer(gl.ARRAY_BUFFER, null)
-//   gl.bindTexture(gl.TEXTURE_2D, null)
-//   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-// }
-
 type CB = () => void
 
 // https://nolanlawson.com/2019/08/11/high-performance-input-handling-on-the-web/
@@ -616,15 +535,6 @@ export function throttleRAF() {
       })
     }
     queuedCallback = callback
-  }
-}
-
-export function debounceRAF() {
-  let queued: number | undefined
-  return function (callback: CB) {
-    if (queued) cancelAnimationFrame(queued)
-
-    queued = requestAnimationFrame(callback)
   }
 }
 
@@ -651,26 +561,6 @@ export function calculateCurveLength(start: IPoint, control: IPoint, control2: I
   return estimatedArcLength
 }
 
-export function isPointerEvent(event: Event): event is PointerEvent {
-  return event instanceof PointerEvent
-}
-
-export function isPointerEventOrLocation(event: PointerEvent | { x: number; y: number }): event is PointerEvent {
-  return event instanceof PointerEvent
-}
-
-export function isKeyboardEvent(event: Event): event is KeyboardEvent {
-  return event instanceof KeyboardEvent
-}
-
-export function isTouchEvent(event: Event): event is TouchEvent {
-  return event instanceof TouchEvent
-}
-
-export function isWheelEvent(event: Event): event is WheelEvent {
-  return event instanceof WheelEvent
-}
-
 export function calculateWorldPosition(
   event: PointerEvent | { x: number; y: number },
 ): MouseState | { x: number; y: number } {
@@ -688,4 +578,29 @@ export function calculateWorldPosition(
 
 export function calculateSpacing(spacing: number, size: number) {
   return Math.max(0.5, size * 2 * (spacing / 100))
+}
+
+export function uint16ToFloat16(uint16: number) {
+  const exponent = (uint16 >> 10) & 0x1f
+  const fraction = uint16 & 0x3ff
+  const sign = (uint16 >> 15) & 0x1
+
+  if (exponent === 0) {
+    return (sign ? -1 : 1) * Math.pow(2, -14) * (fraction / Math.pow(2, 10))
+  } else if (exponent === 31) {
+    return fraction === 0 ? (sign ? -Infinity : Infinity) : NaN
+  }
+
+  // Normalize
+  return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10))
+}
+
+export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
+  const fileExtension = string.replace(/^(image\/)/g, "")
+
+  return fileExtension
+}
+
+export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
+  return `image/${string}`
 }

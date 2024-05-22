@@ -1,5 +1,5 @@
 import { Application } from "@/managers/ApplicationManager"
-import { RenderInfo } from "@/types"
+import type { RenderInfo } from "@/types"
 
 type TResources = Map<string, RenderInfo>
 

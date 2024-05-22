@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { AvailableTools, ToolName } from "@/types"
+import type { AvailableTools, ToolName } from "@/types"
 
 import { createSelectors } from "@/stores/selectors"
 

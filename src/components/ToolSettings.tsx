@@ -5,19 +5,15 @@ import Container from "@/components/Container"
 
 import { useToolStore } from "@/stores/ToolStore"
 
-import { Slider } from "@/components/ui/slider"
-import { AvailableTools } from "@/types"
+import type { AvailableTools, EyeDropperSampleSizes } from "@/types"
 
-const SliderSetting = (name: string, value: number, _onValueChange: (value: number) => void, props: any) => {
-  const onValueChange = (value: number[]) => _onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
+import { SettingSlider } from "@/components/SettingSlider"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-  return (
-    <div key={`${name}_setting`} className="flex h-full flex-row items-center justify-center">
-      <p className="pr-2 text-sm text-foreground">{name}:</p>
-      <Slider className="mr-4 w-28" {...props} value={[value]} onValueChange={onValueChange} />
-      <p className="min-w-[3ch] text-sm text-foreground">{value}</p>
-    </div>
-  )
+const sampleSizes: EyeDropperSampleSizes[] = [1, 3, 5]
+
+function getSampleSizeLabel(sampleSize: EyeDropperSampleSizes) {
+  return `${sampleSize}x${sampleSize}`
 }
 
 function _ToolSettings() {
@@ -36,6 +32,8 @@ function _ToolSettings() {
     flow: currentTool.settings.flow as number | undefined,
     // @ts-expect-error spent too long on this
     spacing: currentTool.settings.spacing as number | undefined,
+    // @ts-expect-error spent too long on this
+    sampleSize: currentTool.settings.sampleSize as number | undefined,
   })
 
   const changeToolSetting = useCallback(
@@ -124,45 +122,74 @@ function _ToolSettings() {
       flow: currentTool.settings.flow as number | undefined,
       // @ts-expect-error spent too long on this
       spacing: currentTool.settings.spacing as number | undefined,
+      // @ts-expect-error spent too long on this
+      sampleSize: currentTool.settings.sampleSize as number | undefined,
     })
   }, [currentTool])
 
   const elements: Record<keyof typeof currentTool, React.ReactNode> = {
     size:
       toolState.size !== undefined
-        ? SliderSetting("Size", toolState.size, (size) => changeToolSetting({ size }), {
+        ? SettingSlider("Size", toolState.size, (size) => changeToolSetting({ size }), 0, {
             min: 1,
             max: 500,
           })
         : null,
     hardness:
       toolState.hardness !== undefined
-        ? SliderSetting("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), {
+        ? SettingSlider("Hardness", toolState.hardness, (hardness) => changeToolSetting({ hardness }), 0, {
             min: 1,
             max: 100,
           })
         : null,
     opacity:
       toolState.opacity !== undefined
-        ? SliderSetting("opacity", toolState.opacity, (opacity) => changeToolSetting({ opacity }), {
+        ? SettingSlider("opacity", toolState.opacity, (opacity) => changeToolSetting({ opacity }), 0, {
             min: 1,
             max: 100,
           })
         : null,
     flow:
       toolState.flow !== undefined
-        ? SliderSetting("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), {
+        ? SettingSlider("Flow", toolState.flow, (flow) => changeToolSetting({ flow }), 0, {
             min: 1,
             max: 100,
           })
         : null,
     spacing:
       toolState.spacing !== undefined
-        ? SliderSetting("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), {
+        ? SettingSlider("Spacing", toolState.spacing, (spacing) => changeToolSetting({ spacing }), 0, {
             min: 1,
             max: 100,
           })
         : null,
+    sampleSize:
+      toolState.sampleSize !== undefined ? (
+        <div key={`sampleSize_setting`} className="flex w-fit flex-row items-center justify-center">
+          <p className="pr-2 text-sm text-muted-foreground">Sample Size</p>
+
+          <Select
+            defaultValue={getSampleSizeLabel(toolState.sampleSize as EyeDropperSampleSizes)}
+            onValueChange={(sampleSize) => changeToolSetting({ sampleSize })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {sampleSizes.map((size, index) => {
+                  const label = getSampleSizeLabel(size)
+                  return (
+                    <SelectItem key={`eyedropperSampleSizes${index}`} value={label}>
+                      {label}
+                    </SelectItem>
+                  )
+                })}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null,
   }
 
   return (

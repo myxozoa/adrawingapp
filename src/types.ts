@@ -143,7 +143,7 @@ export interface IEraser extends ITool {
   draw: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
-export type EyeDropperSampleSizes = "1x1" | "2x2" | "3x3"
+export type EyeDropperSampleSizes = 1 | 3 | 5
 
 export interface IEyedropper extends ITool {
   settings: {
@@ -196,3 +196,6 @@ export interface RenderInfo {
   bufferInfo: BufferInfo
   data?: PossibleData
 }
+
+export type ExportImageFormatsMIME = "image/png" | "image/jpeg" | "image/webp" | "image/bmp"
+export type ExportImageFormats = "png" | "jpeg" | "webp" | "bmp"

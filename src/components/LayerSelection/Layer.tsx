@@ -4,7 +4,7 @@ import PanelElement from "@/components/PanelElement"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
-import { LayerName, LayerID } from "@/types"
+import type { LayerName, LayerID } from "@/types"
 
 function Layer({
   name,

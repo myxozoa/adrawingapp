@@ -7,7 +7,6 @@ import { DrawingManager } from "@/managers/DrawingManager"
 
 import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
-import { throttleRAF } from "@/utils"
 
 interface State {
   layers: Layer[]
@@ -28,8 +27,6 @@ interface Action {
 }
 
 const baseLayer = new Layer("New Layer")
-
-const debounce = throttleRAF()
 
 let currentLayerIndex = 0
 
@@ -96,6 +93,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     })
 
     DrawingManager.recomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
   },
   setCurrentLayer: (id: LayerID) => {
     set((state) => {
@@ -107,6 +106,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     })
 
     DrawingManager.recomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
   },
   saveNewName: (id: LayerID, name: LayerName) =>
     set((state) => {
@@ -130,7 +131,9 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, layers: newLayers, currentLayer: { ...state.currentLayer, opacity }, editingLayer: null }
     })
-    debounce(DrawingManager.recomposite)
+    DrawingManager.recomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
   },
 }))
 

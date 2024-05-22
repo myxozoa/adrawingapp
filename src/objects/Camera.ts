@@ -1,8 +1,7 @@
 import { mat3, vec2 } from "gl-matrix"
 
-import { usePreferenceStore } from "@/stores/PreferenceStore"
-
-import { CanvasSizeCache, toClipSpace } from "@/utils"
+import { CanvasSizeCache, toClipSpace } from "@/utils/utils"
+import { Application } from "@/managers/ApplicationManager"
 
 const one = vec2.fromValues(1, 1)
 
@@ -93,8 +92,6 @@ class _Camera {
   }
 
   public fitToView = () => {
-    const prefs = usePreferenceStore.getState().prefs
-
     // Minimum space between canvas edges and screen edges
     // Should be greater than the UI width (TODO: Automate)
     const margin = (Math.max(CanvasSizeCache.width, CanvasSizeCache.height) / 100) * 4
@@ -102,7 +99,10 @@ class _Camera {
     // Start with a zoom that allows the whole canvas to be in view
     const widthZoomTarget = CanvasSizeCache.width - margin * 2
     const heightZoomTarget = CanvasSizeCache.height - margin * 2
-    Camera.zoom = Math.min(widthZoomTarget / prefs.canvasWidth, heightZoomTarget / prefs.canvasHeight)
+    Camera.zoom = Math.min(
+      widthZoomTarget / Application.canvasInfo.width,
+      heightZoomTarget / Application.canvasInfo.height,
+    )
 
     const screenMiddle = {
       x: CanvasSizeCache.width / 2,
@@ -112,8 +112,8 @@ class _Camera {
     const screenMiddleWorldPosition = this.getWorldPosition(screenMiddle)
 
     // Start with a camera position that centers the canvas in view
-    Camera.x = -Math.max(margin, margin + screenMiddleWorldPosition[0] - prefs.canvasWidth / 2)
-    Camera.y = -Math.max(margin, margin + screenMiddleWorldPosition[1] - prefs.canvasHeight / 2)
+    Camera.x = -Math.max(margin, margin + screenMiddleWorldPosition[0] - Application.canvasInfo.width / 2)
+    Camera.y = -Math.max(margin, margin + screenMiddleWorldPosition[1] - Application.canvasInfo.height / 2)
 
     Camera.updateViewProjectionMatrix()
   }
@@ -121,7 +121,7 @@ class _Camera {
 
 export const Camera = new _Camera()
 
-if (import.meta.env.DEV) {
+if (process.env.NODE_ENV !== "production") {
   // @ts-expect-error Adding camera global for debugging purposes
   window.__Camera = Camera
 }

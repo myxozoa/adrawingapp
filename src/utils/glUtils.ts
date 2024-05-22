@@ -88,6 +88,8 @@ export function createTexture(
 
   gl.bindTexture(gl.TEXTURE_2D, texture)
 
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+
   const levels = mipmap ? 5 : 1
 
   gl.texStorage2D(gl.TEXTURE_2D, levels, imageFormat, width, height)

@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { ColorArray } from "@/types"
+import type { ColorArray } from "@/types"
 
 import { createSelectors } from "@/stores/selectors"
 

@@ -1,16 +1,16 @@
 import { useRef, useLayoutEffect } from "react"
 
-import { initializeCanvas } from "@/utils"
+import { initializeCanvas } from "@/utils/utils"
 
-import * as glUtils from "@/glUtils"
+import * as glUtils from "@/utils/glUtils"
 
 import { toolPreviewSize } from "@/constants"
 
 import { useToolStore } from "@/stores/ToolStore"
 import { useMainStore } from "@/stores/MainStore"
 
-import fragment from "@/shaders/BrushPreview/brushPreview.frag?raw"
-import vertex from "@/shaders/BrushPreview/brushPreview.vert?raw"
+import fragment from "@/shaders/BrushPreview/brushPreview.frag"
+import vertex from "@/shaders/BrushPreview/brushPreview.vert"
 
 let cache: {
   program: WebGLProgram

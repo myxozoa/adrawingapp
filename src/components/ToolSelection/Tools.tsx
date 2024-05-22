@@ -8,7 +8,7 @@ import { useToolStore } from "@/stores/ToolStore"
 
 import { tools } from "@/stores/ToolStore"
 
-import { hexToRgb, rgbToHex } from "@/utils"
+import { hexToRgb, rgbToHex } from "@/utils/utils"
 import { useMainStore } from "@/stores/MainStore"
 
 function _Tools() {

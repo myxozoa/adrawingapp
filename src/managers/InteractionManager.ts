@@ -1,6 +1,6 @@
-import { MouseState, IOperation, AvailableTools, IBrush, IEraser, IEyedropper, IFill } from "@/types.ts"
+import type { MouseState, IOperation } from "@/types"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils.ts"
+import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -9,18 +9,7 @@ import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
-
-const switchIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-  return "switchTo" in tool
-}
-
-const useIfPossible = (tool: AvailableTools): tool is IEyedropper & IFill => {
-  return "use" in tool
-}
-
-const drawIfPossible = (tool: AvailableTools): tool is IBrush & IEraser => {
-  return "draw" in tool
-}
+import { drawIfPossible, switchIfPossible, useIfPossible } from "@/utils/typeguards"
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
 const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
@@ -139,13 +128,11 @@ class _InteractionManager {
 
     const gl = Application.gl
 
-    const prefs = usePreferenceStore.getState().prefs
-
-    Application.gl.viewport(0, 0, prefs.canvasWidth, prefs.canvasHeight)
-    Application.gl.scissor(0, 0, prefs.canvasWidth, prefs.canvasHeight)
+    Application.gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+    Application.gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
     // TODO: More elegant solution here
-    if (operation.tool.name === "ERASER" || operation.tool.name === "EYEDROPPER") {
+    if (operation.tool.name === "EYEDROPPER") {
       gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("DisplayLayer").bufferInfo?.framebuffer)
     } else {
       gl.bindFramebuffer(gl.FRAMEBUFFER, ResourceManager.get("ScratchLayer").bufferInfo?.framebuffer)
@@ -156,11 +143,7 @@ class _InteractionManager {
     if (useIfPossible(operation.tool)) operation.tool.use(gl, operation)
     if (drawIfPossible(operation.tool)) operation.tool.draw(gl, operation)
 
-    // const format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
-    // const type = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
-    // const data = new Float32Array(4)
-    // this.gl.readPixels(0, 0, 1, 1, format, type, data)
-    // console.log(data)
+    DrawingManager.recomposite()
   }
 
   public process = (pointerState: MouseState) => {
@@ -186,11 +169,7 @@ class _InteractionManager {
     const scratchLayer = ResourceManager.get("ScratchLayer")
 
     // TODO: More elegant solution here
-    if (
-      save &&
-      Application.currentOperation.tool.name !== "ERASER" &&
-      Application.currentOperation.tool.name !== "EYEDROPPER"
-    ) {
+    if (save && Application.currentOperation.tool.name !== "EYEDROPPER") {
       const currentLayerID = useLayerStore.getState().currentLayer.id
       const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
@@ -199,7 +178,7 @@ class _InteractionManager {
     DrawingManager.clearSpecific(scratchLayer)
 
     DrawingManager.recomposite()
-    DrawingManager.pauseDraw()
+    DrawingManager.pauseDrawNextFrame()
 
     DrawingManager.waitUntilInteractionEnd = false
     positionFilter.reset()

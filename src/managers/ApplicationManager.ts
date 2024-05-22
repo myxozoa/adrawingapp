@@ -1,13 +1,15 @@
-import { initializeCanvas, resizeCanvasToDisplaySize } from "@/utils"
+import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
 
 import { DrawingManager } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
 
-import { tools } from "@/stores/ToolStore.ts"
+import { tools } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
-import { Operation } from "@/objects/Operation.ts"
+import { Operation } from "@/objects/Operation"
 
-import { ILayer, IOperation, AvailableTools } from "@/types.ts"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+
+import type { ILayer, IOperation, AvailableTools, ExportImageFormats } from "@/types"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -35,6 +37,11 @@ interface SystemConstraints {
   maxSamples: number
 }
 
+interface CanvasInfo {
+  width: number
+  height: number
+}
+
 class _Application {
   offscreenCanvas: OffscreenCanvas
   gl: WebGL2RenderingContext
@@ -48,6 +55,15 @@ class _Application {
   textureSupport: SupportedTextureInfo
   systemConstraints: SystemConstraints
 
+  exportCanvas: OffscreenCanvas
+  exportCanvasContext: ImageBitmapRenderingContext
+  exportDownloadLink: HTMLAnchorElement
+
+  supportedExportImageFormats: ExportImageFormats[]
+
+  canvasInfo: CanvasInfo
+
+  initialized: boolean
   drawing: boolean
 
   constructor() {
@@ -72,8 +88,41 @@ class _Application {
       maxColorAttachments: 0,
       maxSamples: 0,
     }
+
+    const prefs = usePreferenceStore.getState().prefs
+
+    this.canvasInfo = {
+      width: prefs.canvasWidth,
+      height: prefs.canvasHeight,
+    }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
+
+    this.supportedExportImageFormats = ["png"]
+
+    this.initialized = false
+  }
+
+  private getSupportedExportImageTypes = () => {
+    // Browsers are required to support PNG but not necessarily anything else
+    // so we don't need to check png
+    const possibleImageFormats: ExportImageFormats[] = ["jpeg", "webp", "bmp"]
+    const tempCanvas = document.createElement("canvas")
+    tempCanvas.width = 1
+    tempCanvas.height = 1
+
+    for (const format of possibleImageFormats) {
+      const formatMIME = getMIMEFromImageExtension(format)
+      const dataURL = tempCanvas.toDataURL(formatMIME, 1.0)
+
+      if (dataURL.startsWith(`data:${formatMIME}`)) {
+        this.supportedExportImageFormats.push(format)
+      }
+
+      URL.revokeObjectURL(dataURL)
+    }
+
+    tempCanvas.remove()
   }
 
   private getExtensions = () => {
@@ -126,6 +175,8 @@ class _Application {
   }
 
   public createCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
+    if (this.initialized) return
+
     const context = initializeCanvas(canvas, width, height, {
       resize: true,
     })
@@ -138,18 +189,35 @@ class _Application {
   }
 
   public init = () => {
+    InputManager.init()
+
+    if (this.initialized) return
+
     const gl = this.gl
+
+    this.getSupportedExportImageTypes()
 
     this.getExtensions()
     this.getSupportedTextureInfo()
     this.getSystemConstraints()
 
-    DrawingManager.init()
-    InputManager.init()
-
     this.currentOperation = new Operation(this.currentTool)
 
     this.resize()
+
+    DrawingManager.init()
+
+    this.exportCanvas = new OffscreenCanvas(this.canvasInfo.width, this.canvasInfo.height)
+    this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
+
+    if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
+
+    this.exportDownloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
+    this.exportDownloadLink.id = "local_filesaver"
+    this.exportDownloadLink.target = "_blank"
+    this.exportDownloadLink.rel = "noopener"
+    this.exportDownloadLink.style.display = "none"
+    document.body.appendChild(this.exportDownloadLink)
 
     Camera.init()
 
@@ -157,6 +225,8 @@ class _Application {
     Object.values(tools).forEach((tool) => {
       if (tool.init) tool.init(gl)
     })
+
+    this.initialized = true
 
     DrawingManager.start()
   }
@@ -168,7 +238,7 @@ class _Application {
 
 export const Application = new _Application()
 
-if (import.meta.env.DEV) {
+if (process.env.NODE_ENV !== "production") {
   // @ts-expect-error Adding global for debugging purposes
   window.__Application = Application
 }

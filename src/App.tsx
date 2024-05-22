@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { Board } from "@/components/Board"
 import { TopMenu } from "@/components/TopMenu"
 import { Layers } from "@/components/LayerSelection/Layers"
@@ -7,9 +6,6 @@ import { ToolSettings } from "@/components/ToolSettings"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 function App() {
-  useEffect(() => {
-    window.document.documentElement.classList.add("dark")
-  }, [])
   return (
     <div className="flex max-h-[100dvh] min-h-[100dvh] flex-col">
       <TopMenu />

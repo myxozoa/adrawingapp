@@ -1,15 +1,9 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import {
-  isPointerEvent,
-  throttleRAF,
-  getDistance,
-  isWheelEvent,
-  isKeyboardEvent,
-  calculateWorldPosition,
-  CanvasSizeCache,
-} from "@/utils"
+import { throttleRAF, getDistance, calculateWorldPosition, CanvasSizeCache } from "@/utils/utils"
+
+import { isPointerEvent, isWheelEvent, isKeyboardEvent } from "@/utils/typeguards"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
@@ -17,9 +11,7 @@ import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 import type { MouseState } from "@/types"
 
-const wheelThrottle = throttleRAF()
 const resizeThrottle = throttleRAF()
-const panThrottle = throttleRAF()
 
 enum InteractionState {
   none,
@@ -30,12 +22,25 @@ enum InteractionState {
 }
 
 let currentInteractionState: InteractionState = InteractionState.none
-let touches: PointerEvent[] = []
+const touches: PointerEvent[] = []
 let prevTouchDistance = -1
 
 const startMidPosition = { x: 0, y: 0 }
 const lastMidPosition = { x: 0, y: 0 }
 const midPoint = { x: 0, y: 0 }
+
+let idleTime = 0
+
+function incrementIdleTimer() {
+  idleTime++
+
+  // Pause rendering while idle
+  if (idleTime > 10) {
+    DrawingManager.pauseDrawNextFrame()
+  }
+}
+
+setInterval(incrementIdleTimer, 100)
 
 function removeEvent(event: PointerEvent) {
   const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
@@ -125,14 +130,16 @@ function touchPanZoom() {
 
 function pointerdown(event: Event) {
   if (!isPointerEvent(event)) return
+  idleTime = 0
   ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
+    DrawingManager.hideCursor()
     touches.push(event)
 
     if (touches.length > 2) {
       InteractionManager.endInteraction(false)
-      touches = []
+      touches.length = 0
 
       return
     }
@@ -145,36 +152,43 @@ function pointerdown(event: Event) {
       lastMidPosition.x = startMidPosition.x
       lastMidPosition.y = startMidPosition.y
 
+      DrawingManager.beginDraw()
+
       return
     }
-  } else if (ModifierKeyManager.has("space")) {
+
+    DrawingManager.beginDraw()
+  } else {
+    DrawingManager.showCursor()
+  }
+
+  if (ModifierKeyManager.has("space")) {
     currentInteractionState = InteractionState.pan
 
     startMidPosition.x = event.x
     startMidPosition.y = event.y
     lastMidPosition.x = event.x
     lastMidPosition.y = event.y
-
-    return
   }
 
+  const position = calculateWorldPosition(event) as MouseState
   if (currentInteractionState === InteractionState.none) {
     Application.drawing = true
 
     currentInteractionState = InteractionState.useTool
 
-    const position = calculateWorldPosition(event) as MouseState
-
     InteractionManager.process(position)
 
     InteractionManager.executeOperation(Application.currentOperation)
   }
-
+  InteractionManager.currentMousePosition.x = position.x
+  InteractionManager.currentMousePosition.y = position.y
   DrawingManager.beginDraw()
 }
 
 function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
+  idleTime = 0
 
   const position = calculateWorldPosition(event) as MouseState
 
@@ -187,17 +201,15 @@ function pointermove(event: Event) {
 
     if (currentInteractionState === InteractionState.touchPanZoom) {
       touchPanZoom()
-      panThrottle(DrawingManager.render)
-
-      return
     }
+
+    DrawingManager.hideCursor()
+  } else {
+    DrawingManager.showCursor()
   }
 
   if (currentInteractionState === InteractionState.pan) {
     pan(event)
-    panThrottle(DrawingManager.render)
-
-    return
   }
 
   if (currentInteractionState === InteractionState.useTool) {
@@ -215,30 +227,39 @@ function pointermove(event: Event) {
 
     InteractionManager.executeOperation(Application.currentOperation)
   }
+
+  DrawingManager.beginDraw()
 }
 
 function pointerup(event: Event) {
   if (!isPointerEvent(event)) return
+  idleTime = 0
 
   Application.drawing = false
   ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
+    DrawingManager.hideCursor()
     removeEvent(event)
+  } else {
+    DrawingManager.showCursor()
   }
 
   if (currentInteractionState === InteractionState.useTool) {
     InteractionManager.endInteraction()
   }
+  DrawingManager.pauseDrawNextFrame()
 
   reset()
 }
 
 function wheel(event: Event) {
   currentInteractionState = InteractionState.zoom
+  idleTime = 0
 
+  DrawingManager.beginDraw()
   wheelZoom(event)
-  wheelThrottle(DrawingManager.render)
+  DrawingManager.pauseDrawNextFrame()
 
   currentInteractionState = InteractionState.none
 }
@@ -251,10 +272,31 @@ function keyup(event: Event) {
   }
 }
 
+function pointercancel(event: Event) {
+  if (!isPointerEvent(event)) return
+
+  DrawingManager.pauseDrawNextFrame()
+}
+
+function pointerout(event: Event) {
+  if (!isPointerEvent(event)) return
+
+  DrawingManager.pauseDrawNextFrame()
+}
+
+function pointerleave(event: Event) {
+  if (!isPointerEvent(event)) return
+
+  DrawingManager.pauseDrawNextFrame()
+}
+
 const listeners = {
   pointerdown,
   pointermove,
   pointerup,
+  pointercancel,
+  pointerleave,
+  pointerout,
   wheel,
   keyup,
 }
@@ -278,10 +320,13 @@ const touch_listeners = {
 }
 
 function resize() {
+  idleTime = 0
+
   Application.resize()
 
   Camera.updateViewProjectionMatrix()
-  DrawingManager.render()
+  DrawingManager.beginDraw()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 function windowResize() {
