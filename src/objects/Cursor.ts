@@ -5,8 +5,10 @@ import * as glUtils from "@/utils/glUtils"
 import { useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { mat3, vec2 } from "gl-matrix"
-
 import { CanvasSizeCache } from "@/utils/utils"
+
+const hoverOpacity = 1
+const drawingOpacity = 0.2
 
 export class _Cursor {
   programInfo: {
@@ -20,6 +22,7 @@ export class _Cursor {
   matrix: mat3
   location: vec2
   size: vec2
+  opacity: number
 
   constructor() {
     this.programInfo = {} as unknown as typeof this.programInfo
@@ -27,6 +30,8 @@ export class _Cursor {
     this.matrix = mat3.create()
     this.location = vec2.create()
     this.size = vec2.create()
+
+    this.opacity = 1
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -39,7 +44,7 @@ export class _Cursor {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_point_size", "u_matrix"]
+    const uniformNames = ["u_opacity", "u_point_size", "u_matrix"]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -96,6 +101,14 @@ export class _Cursor {
     return vao
   }
 
+  public goTransparent = () => {
+    this.opacity = drawingOpacity
+  }
+
+  public goOpaque = () => {
+    this.opacity = hoverOpacity
+  }
+
   /**
    * Moves quad around and draws it based on brush settings and point info
    */
@@ -110,9 +123,8 @@ export class _Cursor {
         // @ts-expect-error TODO: Fix this
         (useToolStore.getState().currentTool.settings.sampleSize as number | undefined) ||
         10) / 2,
-      3,
+      1,
     )
-
     gl.uniform3f(this.programInfo.uniforms.u_point_size, point.x, CanvasSizeCache.height - point.y, size)
 
     this.location[0] = point.x
@@ -124,6 +136,7 @@ export class _Cursor {
     mat3.fromTranslation(this.matrix, this.location)
     mat3.scale(this.matrix, this.matrix, this.size)
 
+    gl.uniform1f(this.programInfo.uniforms.u_opacity, this.opacity)
     gl.uniformMatrix3fv(this.programInfo.uniforms.u_matrix, false, Camera.project(this.matrix))
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
