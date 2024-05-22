@@ -14,7 +14,7 @@ import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import { isPoint, isPointerEventOrLocation } from "@/utils/typeguards"
+import { isPoint } from "@/utils/typeguards"
 
 interface CanvasSizeCache {
   width: number
@@ -30,17 +30,11 @@ export const CanvasSizeCache: CanvasSizeCache = {
   offsetWidth: 0,
 }
 
-export function getRelativePosition(
-  mouseState: MouseState | { x: number; y: number },
-): MouseState | { x: number; y: number } {
-  const state = {
-    ...mouseState,
+export function getRelativePosition<T extends MouseState | { x: number; y: number }>(mouseState: T): T {
+  mouseState.x = mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth)
+  mouseState.y = mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight)
 
-    x: mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth),
-    y: mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight),
-  }
-
-  return state
+  return mouseState
 }
 
 export function throttle(func: (...args: any[]) => void, delay = 250): () => void {
@@ -561,19 +555,23 @@ export function calculateCurveLength(start: IPoint, control: IPoint, control2: I
   return estimatedArcLength
 }
 
-export function calculateWorldPosition(
-  event: PointerEvent | { x: number; y: number },
-): MouseState | { x: number; y: number } {
-  const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
-
-  const relativeMouseState = getRelativePosition(pointerState)
+export function calculateWorldPosition(data: { x: number; y: number }): vec2 {
+  const relativeMouseState = getRelativePosition(data)
 
   const worldPosition = Camera.getWorldPosition(relativeMouseState)
 
-  relativeMouseState.x = worldPosition[0]
-  relativeMouseState.y = worldPosition[1]
+  return worldPosition
+}
 
-  return relativeMouseState
+export function calculatePointerWorldPosition(event: PointerEvent): MouseState {
+  const pointerState = updatePointer(event)
+
+  const worldPosition = calculateWorldPosition(pointerState)
+
+  pointerState.x = worldPosition[0]
+  pointerState.y = worldPosition[1]
+
+  return pointerState
 }
 
 export function calculateSpacing(spacing: number, size: number) {
