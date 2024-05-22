@@ -143,7 +143,7 @@ function pointerdown(event: Event) {
   ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
-    DrawingManager.hideCursor()
+    DrawingManager.disableCursor()
     touches.push(event)
 
     if (touches.length > 2) {
@@ -167,8 +167,6 @@ function pointerdown(event: Event) {
     }
 
     DrawingManager.beginDraw()
-  } else {
-    DrawingManager.showCursor()
   }
 
   if (ModifierKeyManager.has("space")) {
@@ -180,7 +178,7 @@ function pointerdown(event: Event) {
     lastMidPosition.y = event.y
   }
 
-  const position = calculateWorldPosition(event) as MouseState
+  const position = calculatePointerWorldPosition(event)
   if (currentInteractionState === InteractionState.none) {
     Application.drawing = true
 
@@ -192,6 +190,7 @@ function pointerdown(event: Event) {
   }
   InteractionManager.currentMousePosition.x = position.x
   InteractionManager.currentMousePosition.y = position.y
+  DrawingManager.hideCursor()
   DrawingManager.beginDraw()
 }
 
@@ -199,7 +198,7 @@ function pointermove(event: Event) {
   if (!isPointerEvent(event)) return
   idleTime = 0
 
-  const position = calculateWorldPosition(event) as MouseState
+  const position = calculatePointerWorldPosition(event)
 
   InteractionManager.currentMousePosition.x = position.x
   InteractionManager.currentMousePosition.y = position.y
@@ -211,10 +210,6 @@ function pointermove(event: Event) {
     if (currentInteractionState === InteractionState.touchPanZoom) {
       touchPanZoom()
     }
-
-    DrawingManager.hideCursor()
-  } else {
-    DrawingManager.showCursor()
   }
 
   if (currentInteractionState === InteractionState.pan) {
@@ -226,7 +221,7 @@ function pointermove(event: Event) {
       const coalesced = event.getCoalescedEvents()
 
       for (const coalescedEvent of coalesced) {
-        const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
+        const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
 
         InteractionManager.process(coalescedRelativeMouseState)
       }
