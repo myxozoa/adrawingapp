@@ -16,11 +16,11 @@ function _Board() {
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
     Application.createCanvas(boardRef.current, rect.width, rect.height)
+    Application.resize()
   }, [])
 
   useEffect(() => {
     Application.init()
-
     return () => {
       Application.destroy()
     }
