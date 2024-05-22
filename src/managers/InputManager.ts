@@ -15,7 +15,6 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
-import type { MouseState } from "@/types"
 
 const resizeThrottle = throttleRAF()
 
