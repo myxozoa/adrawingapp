@@ -1,4 +1,7 @@
-function PanelElement({
+import { compareProps } from "@/utils/utils"
+import { memo } from "react"
+
+function _PanelElement({
   id,
   select,
   selected,
@@ -26,4 +29,4 @@ function PanelElement({
   )
 }
 
-export default PanelElement
+export const PanelElement = memo(_PanelElement, compareProps(["className", "selected", "children"]))

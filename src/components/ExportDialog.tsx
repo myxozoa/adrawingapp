@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { memo, useState } from "react"
 
 import { Application } from "@/managers/ApplicationManager"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -105,7 +105,7 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
   URL.revokeObjectURL(url)
 }
 
-export function ExportDialog() {
+function _ExportDialog() {
   const [quality, setQuality] = useState(1)
   const [filename, setFilename] = useState("New Image")
   const [format, setFormat] = useState(Application.supportedExportImageFormats[0]) // PNG is always supported
@@ -155,3 +155,5 @@ export function ExportDialog() {
     </DialogHeader>
   )
 }
+
+export const ExportDialog = memo(_ExportDialog)

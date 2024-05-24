@@ -14,4 +14,4 @@ function _DrawCanvas(_: any, ref: React.ForwardedRef<HTMLCanvasElement>) {
   )
 }
 
-export const DrawCanvas = memo(forwardRef(_DrawCanvas))
+export const DrawCanvas = memo(forwardRef(_DrawCanvas), () => true)
