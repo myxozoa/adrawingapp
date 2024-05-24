@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef, memo } from "react"
 
 import { DrawCanvas } from "@/components/DrawCanvas"
 
@@ -41,4 +41,4 @@ function _Board() {
   )
 }
 
-export const Board = _Board
+export const Board = memo(_Board, () => true)
