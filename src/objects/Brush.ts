@@ -1,5 +1,7 @@
-import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
+import { Tool } from "@/objects/Tool"
 import type { IBrush, IOperation, IPoint } from "@/types"
+
+import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 
 import { useMainStore } from "@/stores/MainStore"
 

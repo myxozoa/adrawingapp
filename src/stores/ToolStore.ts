@@ -1,9 +1,9 @@
 import { create } from "zustand"
-import type { AvailableTools, ToolName } from "@/types"
+import type { AvailableTools, ToolName, WithoutMethods, IBrush, IEyedropper, IFill, ITool, IEraser } from "@/types"
 
 import { createSelectors } from "@/stores/selectors"
 
-import { tool_list } from "@/constants"
+import { tool_list, tool_types } from "@/constants"
 
 import { Brush } from "@/objects/Brush"
 import { Eraser } from "@/objects/Eraser"
@@ -12,18 +12,86 @@ import { Fill } from "@/objects/Fill"
 import { Eyedropper } from "@/objects/Eyedropper"
 
 interface ToolMap {
-  // PEN: Pen
-  BRUSH: Brush
-  ERASER: Eraser
-  FILL: Fill
-  EYEDROPPER: Eyedropper
+  // PEN: IPen
+  BRUSH: IBrush
+  ERASER: IEraser
+  FILL: IFill
+  EYEDROPPER: IEyedropper
 }
 
-type ToolDefaults = {
+type ToolSettings = {
+  [K in ToolName]: K extends keyof ToolMap ? ToolMap[K]["settings"] : never
+}
+
+type Tools = {
   [K in ToolName]: K extends keyof ToolMap ? ToolMap[K] : never
 }
 
-export const tools: ToolDefaults = {
+type ToolProperties = {
+  [K in ToolName]: K extends keyof ToolMap ? WithoutMethods<ITool> : never
+}
+
+export const toolProperties: ToolProperties = {
+  // PEN: {
+  //   availableSettings: ["size"],
+  //   type: tool_types.STROKE,
+  //   continuous: true,
+  //   numberOfPoints: 8,
+  // },
+  BRUSH: {
+    availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
+    type: tool_types.STROKE,
+    continuous: true,
+    numberOfPoints: 8,
+  },
+  ERASER: {
+    availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
+    type: tool_types.STROKE,
+    continuous: true,
+    numberOfPoints: 8,
+  },
+  FILL: {
+    availableSettings: [],
+    type: tool_types.POINT,
+    continuous: false,
+    numberOfPoints: 1,
+  },
+  EYEDROPPER: {
+    availableSettings: ["sampleSize"],
+    type: tool_types.POINT,
+    continuous: false,
+    numberOfPoints: 1,
+  },
+}
+
+export const toolDefaults: ToolSettings = {
+  // PEN: {
+  //   size: 10,
+  //   opacity: 100,
+  // },
+  BRUSH: {
+    size: 10,
+    opacity: 100,
+    flow: 100,
+    hardness: 100,
+    spacing: 5,
+  },
+  ERASER: {
+    size: 20,
+    opacity: 100,
+    flow: 100,
+    hardness: 100,
+    spacing: 5,
+  },
+  FILL: {
+    flood: true,
+  },
+  EYEDROPPER: {
+    sampleSize: 1,
+  },
+}
+
+export const tools: Tools = {
   // PEN: new Pen(),
   BRUSH: new Brush(),
   ERASER: new Eraser(),
@@ -31,26 +99,31 @@ export const tools: ToolDefaults = {
   EYEDROPPER: new Eyedropper(),
 }
 
-interface State {
+interface State extends ToolSettings {
   currentTool: AvailableTools
 }
 
 interface Action {
-  changeToolSetting: (newSettings: any) => void
+  changeToolSetting: <T extends Partial<AvailableTools["settings"]>>(newSettings: T) => void
   setCurrentTool: (name: ToolName) => void
 }
 
-const useToolStoreBase = create<State & Action>((set) => ({
-  currentTool: tools[tool_list.BRUSH],
-  changeToolSetting: (newSettings: Partial<AvailableTools["settings"]>) =>
-    set((state) => {
-      const _state = { ...state }
-      Object.keys(newSettings).forEach((setting) => {
-        // @ts-expect-error spent too long on this
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        _state.currentTool.settings[setting] = newSettings[setting] // TODO: Maybe rearchitect to get better type safety
-      })
+type Keys<T> = (keyof T)[]
 
+function objectKeys<T extends object>(obj: T): Keys<T> {
+  return Object.keys(obj) as Keys<T>
+}
+
+const useToolStoreBase = create<State & Action>((set) => ({
+  ...toolDefaults,
+  currentTool: tools[tool_list.BRUSH],
+  changeToolSetting: <T extends Partial<AvailableTools["settings"]>>(newSettings: T) =>
+    set((state) => {
+      const _state = { ...state, [state.currentTool.name]: { ...state.currentTool.settings, ...newSettings } }
+      objectKeys(newSettings).forEach((setting) => {
+        // @ts-expect-error this is better than it was before at least
+        _state.currentTool.settings[setting] = newSettings[setting]
+      })
       return _state
     }),
   setCurrentTool: (name: ToolName) =>

@@ -1,8 +1,8 @@
 import { tool_list } from "@/constants"
-import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
+import { Tool } from "@/objects/Tool"
 import { useMainStore } from "@/stores/MainStore"
 import type { IFill } from "@/types"
-
+import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 export class Fill extends Tool implements IFill {
   settings: {
     flood: boolean
