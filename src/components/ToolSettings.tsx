@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from "react"
+import { Panel } from "@/components/Panel"
 
-import Panel from "@/components/Panel"
-import Container from "@/components/Container"
+import { Container } from "@/components/Container"
 
 import { useToolStore } from "@/stores/ToolStore"
 
@@ -9,6 +8,7 @@ import type { AvailableTools, EyeDropperSampleSizes } from "@/types"
 
 import { SettingSlider } from "@/components/SettingSlider"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { memo } from "react"
 
 const sampleSizes: EyeDropperSampleSizes[] = [1, 3, 5]
 
@@ -237,4 +237,4 @@ function _ToolSettings() {
   )
 }
 
-export const ToolSettings = _ToolSettings
+export const ToolSettings = memo(_ToolSettings)

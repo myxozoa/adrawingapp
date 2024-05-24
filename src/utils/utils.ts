@@ -602,3 +602,9 @@ export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
 export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
   return `image/${string}`
 }
+export function compareProps<T>(fields: (keyof T)[]) {
+  return (prevProps: T, nextProps: T) =>
+    fields.every((field) => {
+      return prevProps[field] === nextProps[field]
+    })
+}

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { memo, useState } from "react"
 
 import {
   Menubar,
@@ -126,4 +126,4 @@ function _TopMenu() {
   )
 }
 
-export const TopMenu = _TopMenu
+export const TopMenu = memo(_TopMenu)

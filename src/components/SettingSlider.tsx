@@ -1,5 +1,10 @@
 import { Slider } from "@/components/ui/slider"
+import { compareProps } from "@/utils/utils"
 import { SliderProps } from "@radix-ui/react-slider"
+
+import { useCallback } from "react"
+
+import { memo } from "react"
 
 interface SettingSliderProps extends Omit<SliderProps, "value" | "onValueChange"> {
   name: string
@@ -8,8 +13,8 @@ interface SettingSliderProps extends Omit<SliderProps, "value" | "onValueChange"
   fractionDigits: number
 }
 
-export function SettingSlider({ name, value, onValueChange, fractionDigits, ...props }: SettingSliderProps) {
-  const valueChange = (value: number[]) => onValueChange(value[0]) // Radix UI uses values in arrays to support multiple thumbs
+function _SettingSlider({ name, value, onValueChange, fractionDigits, ...props }: SettingSliderProps) {
+  const valueChange = useCallback((value: number[]) => onValueChange(value[0]), []) // Radix UI uses values in arrays to support multiple thumbs
 
   return (
     <div key={`${name}_setting`} className="flex w-fit flex-row items-center justify-center">
@@ -19,3 +24,5 @@ export function SettingSlider({ name, value, onValueChange, fractionDigits, ...p
     </div>
   )
 }
+
+export const SettingSlider = memo(_SettingSlider, compareProps(["value"]))

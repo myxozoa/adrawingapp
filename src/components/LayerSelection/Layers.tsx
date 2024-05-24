@@ -1,6 +1,6 @@
-import Panel from "@/components/Panel"
-import Container from "@/components/Container"
-import Layer from "@/components/LayerSelection/Layer"
+import { Panel } from "@/components/Panel"
+import { Container } from "@/components/Container"
+import { Layer } from "@/components/LayerSelection/Layer"
 
 import { Button } from "@/components/ui/button"
 
@@ -9,6 +9,7 @@ import { Trash2, FilePlus2 } from "lucide-react"
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { SettingSlider } from "@/components/SettingSlider"
+import { memo } from "react"
 
 function _Layers() {
   const layers = useLayerStore.use.layers()
@@ -62,4 +63,4 @@ function _Layers() {
   )
 }
 
-export const Layers = _Layers
+export const Layers = memo(_Layers)
