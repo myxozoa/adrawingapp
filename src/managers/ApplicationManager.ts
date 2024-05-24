@@ -3,7 +3,7 @@ import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize 
 import { DrawingManager } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
 
-import { tools } from "@/stores/ToolStore"
+import { tools, useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { Operation } from "@/objects/Operation"
 
@@ -46,8 +46,6 @@ class _Application {
   offscreenCanvas: OffscreenCanvas
   gl: WebGL2RenderingContext
 
-  currentLayer: ILayer
-  currentTool: AvailableTools
   currentOperation: IOperation
   toolBelt: Record<string, (operation: IOperation) => void>
 
@@ -67,9 +65,7 @@ class _Application {
   drawing: boolean
 
   constructor() {
-    this.gl = {} as WebGL2RenderingContext
-    this.currentLayer = {} as ILayer
-    this.currentTool = {} as AvailableTools
+    this.gl = {} as WebGL2RenderingContextDOM
     this.currentOperation = {} as Operation
     this.extensions = {
       colorBufferFloat: null,
@@ -169,7 +165,6 @@ class _Application {
   }
 
   public swapTool = (tool: AvailableTools) => {
-    this.currentTool = tool
     this.currentOperation.reset()
     this.currentOperation.swapTool(tool)
   }
@@ -201,7 +196,9 @@ class _Application {
     this.getSupportedTextureInfo()
     this.getSystemConstraints()
 
-    this.currentOperation = new Operation(this.currentTool)
+    const currentTool = useToolStore.getState().currentTool
+
+    this.currentOperation = new Operation(currentTool)
 
     this.resize()
 

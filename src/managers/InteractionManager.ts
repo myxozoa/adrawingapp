@@ -10,7 +10,7 @@ import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
 import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
-import { drawIfPossible, switchIfPossible, useIfPossible } from "@/utils/typeguards"
+import { useToolStore } from "@/stores/ToolStore"
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
 const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
@@ -154,8 +154,7 @@ function process(pointerState: MouseState) {
  * @param save this determines whether to add the completed interation to the undo history (defaults to true)
  */
 function endInteraction(save = true) {
-  // if (currentLayer.noDraw) return
-
+  const currentTool = useToolStore.getState().currentTool
   mergeEvent = false
 
   const scratchLayer = ResourceManager.get("ScratchLayer")
@@ -177,7 +176,7 @@ function endInteraction(save = true) {
   pressureFilter.reset()
   Application.currentOperation.reset()
 
-  Application.currentTool.reset()
+  currentTool.reset()
 }
 
 export const InteractionManager = {
