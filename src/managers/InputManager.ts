@@ -9,8 +9,6 @@ import {
   calculatePointerWorldPosition,
 } from "@/utils/utils"
 
-import { isPointerEvent, isWheelEvent, isKeyboardEvent } from "@/utils/typeguards"
-
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
@@ -61,9 +59,7 @@ function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean) {
   return -1
 }
 
-function wheelZoom(event: Event) {
-  if (!isWheelEvent(event)) return
-
+function wheelZoom(event: WheelEvent) {
   const pointerState = updatePointer(event)
 
   const zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
@@ -137,10 +133,9 @@ function touchPanZoom() {
   prevTouchDistance = distance
 }
 
-function pointerdown(event: Event) {
-  if (!isPointerEvent(event)) return
+function pointerdown(event: PointerEvent) {
   idleTime = 0
-  ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
+  Application.gl.canvas.setPointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
     DrawingManager.disableCursor()
@@ -194,8 +189,7 @@ function pointerdown(event: Event) {
   DrawingManager.beginDraw()
 }
 
-function pointermove(event: Event) {
-  if (!isPointerEvent(event)) return
+function pointermove(event: PointerEvent) {
   idleTime = 0
 
   const position = calculatePointerWorldPosition(event)
@@ -235,12 +229,12 @@ function pointermove(event: Event) {
   DrawingManager.beginDraw()
 }
 
-function pointerup(event: Event) {
+function pointerup(event: PointerEvent) {
   if (!isPointerEvent(event)) return
   idleTime = 0
 
   Application.drawing = false
-  ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
+  Application.gl.canvas.releasePointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
     DrawingManager.hideCursor()
@@ -257,7 +251,7 @@ function pointerup(event: Event) {
   reset()
 }
 
-function wheel(event: Event) {
+function wheel(event: WheelEvent) {
   currentInteractionState = InteractionState.zoom
   idleTime = 0
 
@@ -268,59 +262,55 @@ function wheel(event: Event) {
   currentInteractionState = InteractionState.none
 }
 
-function keyup(event: Event) {
-  if (!isKeyboardEvent(event)) return
-
+function keyup(event: KeyboardEvent) {
   if (event.code === "Space" && event.type === "keyup") {
     reset()
   }
 }
 
-function pointercancel(event: Event) {
-  if (!isPointerEvent(event)) return
-
+function pointercancel() {
   DrawingManager.pauseDrawNextFrame()
 }
 
-function pointerout(event: Event) {
-  if (!isPointerEvent(event)) return
-
+function pointerout() {
   DrawingManager.pauseDrawNextFrame()
 }
 
-function pointerleave(event: Event) {
-  if (!isPointerEvent(event)) return
-
+function pointerleave() {
   DrawingManager.pauseDrawNextFrame()
 }
 
-const listeners = {
+const pointer_listeners = {
   pointerdown,
   pointermove,
   pointerup,
   pointercancel,
   pointerleave,
   pointerout,
+}
+
+const wheel_listeners = {
   wheel,
+}
+
+const keyboard_listeners = {
   keyup,
 }
 
-function touchdown(event: Event) {
-  event.preventDefault()
-}
-
-function touchmove(event: Event) {
-  event.preventDefault()
-}
-
-function touchend(event: Event) {
+function ignoreEvent(event: Event) {
   event.preventDefault()
 }
 
 const touch_listeners = {
-  touchdown,
-  touchmove,
-  touchend,
+  touchdown: ignoreEvent,
+  touchmove: ignoreEvent,
+  touchend: ignoreEvent,
+}
+
+const mouse_listeners = {
+  mousedown: ignoreEvent,
+  mousemove: ignoreEvent,
+  mouseend: ignoreEvent,
 }
 
 function resize() {
@@ -342,12 +332,50 @@ function windowResize() {
   })
 }
 
+interface EventEmitter {
+  addEventListener<E extends keyof HTMLElementEventMap>(
+    type: E,
+    listener: (ev: HTMLElementEventMap[E]) => any,
+    options: unknown,
+  ): void
+  removeEventListener<E extends keyof HTMLElementEventMap>(type: E, listener: (ev: HTMLElementEventMap[E]) => any): void
+}
+
+type Entries<T> = {
+  [K in keyof T]: [K, T[K]]
+}[keyof T][]
+
+function objectEntries<T extends object>(obj: T): Entries<T> {
+  return Object.entries(obj) as Entries<T>
+}
+
 function init() {
-  for (const [name, callback] of Object.entries(listeners)) {
-    Application.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
+  for (const [name, callback] of objectEntries(pointer_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).addEventListener(name, callback, {
+      capture: true,
+      passive: true,
+    })
+  }
+
+  for (const [name, callback] of objectEntries(wheel_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).addEventListener(name, callback, {
+      capture: true,
+      passive: true,
+    })
+  }
+
+  for (const [name, callback] of objectEntries(keyboard_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).addEventListener(name, callback, {
+      capture: true,
+      passive: true,
+    })
   }
 
   for (const [name, callback] of Object.entries(touch_listeners)) {
+    Application.gl.canvas.addEventListener(name, callback, { capture: true })
+  }
+
+  for (const [name, callback] of Object.entries(mouse_listeners)) {
     Application.gl.canvas.addEventListener(name, callback, { capture: true })
   }
 
@@ -369,11 +397,21 @@ function reset() {
 }
 
 function destroy() {
-  for (const [name, callback] of Object.entries(listeners)) {
+  for (const [name, callback] of objectEntries(pointer_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
+  }
+  for (const [name, callback] of objectEntries(keyboard_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
+  }
+  for (const [name, callback] of objectEntries(wheel_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
+  }
+
+  for (const [name, callback] of objectEntries(touch_listeners)) {
     Application.gl.canvas.removeEventListener(name, callback)
   }
 
-  for (const [name, callback] of Object.entries(touch_listeners)) {
+  for (const [name, callback] of objectEntries(mouse_listeners)) {
     Application.gl.canvas.removeEventListener(name, callback)
   }
 
