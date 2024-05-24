@@ -9,6 +9,7 @@ import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter
 import { DrawingManager } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
+import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
 import { drawIfPossible, switchIfPossible, useIfPossible } from "@/utils/typeguards"
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
@@ -131,9 +132,8 @@ function executeOperation(operation: IOperation) {
 
   if (switchIfPossible(operation.tool)) operation.tool.switchTo(gl)
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  if (useIfPossible(operation.tool)) operation.tool.use(gl, operation)
-  if (drawIfPossible(operation.tool)) operation.tool.draw(gl, operation)
+  if (canUse(operation.tool)) operation.tool.use(gl, operation)
+  if (canDraw(operation.tool)) operation.tool.draw(gl, operation)
 
   DrawingManager.recomposite()
 }

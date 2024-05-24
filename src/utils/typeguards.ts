@@ -28,11 +28,11 @@ export function switchIfPossible(tool: AvailableTools): tool is IBrush & IEraser
   return "switchTo" in tool
 }
 
-export function useIfPossible(tool: AvailableTools): tool is IEyedropper & IFill {
+export function canUse(tool: AvailableTools): tool is IEyedropper & IFill {
   return "use" in tool
 }
 
-export function drawIfPossible(tool: AvailableTools): tool is IBrush & IEraser {
+export function canDraw(tool: AvailableTools): tool is IBrush & IEraser {
   return "draw" in tool
 }
 
