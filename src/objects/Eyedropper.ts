@@ -8,6 +8,7 @@ import { readPixelsAsync } from "@/utils/asyncReadback"
 
 import { uint16ToFloat16 } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
+import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 
 export class Eyedropper extends Tool implements IEyedropper {
   settings: {
