@@ -29,7 +29,7 @@ function _Layers() {
           value={currentLayer.opacity}
           onValueChange={(opacity) => setOpacity(currentLayer.id, opacity)}
           fractionDigits={0}
-          min={1}
+          min={0}
           max={100}
         />
       </Panel>
