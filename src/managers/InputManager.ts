@@ -15,6 +15,7 @@ import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 
 const resizeThrottle = throttleRAF()
+const wheelThrottle = throttleRAF()
 
 enum InteractionState {
   none,
@@ -257,7 +258,7 @@ function wheel(event: WheelEvent) {
 
   DrawingManager.beginDraw()
   wheelZoom(event)
-  DrawingManager.pauseDrawNextFrame()
+  wheelThrottle(DrawingManager.pauseDrawNextFrame)
 
   currentInteractionState = InteractionState.none
 }
