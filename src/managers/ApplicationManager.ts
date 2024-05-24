@@ -9,7 +9,7 @@ import { Operation } from "@/objects/Operation"
 
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-import type { ILayer, IOperation, AvailableTools, ExportImageFormats } from "@/types"
+import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -42,9 +42,13 @@ interface CanvasInfo {
   height: number
 }
 
+interface WebGL2RenderingContextDOM extends Omit<WebGL2RenderingContext, "canvas"> {
+  canvas: HTMLCanvasElement
+}
+
 class _Application {
   offscreenCanvas: OffscreenCanvas
-  gl: WebGL2RenderingContext
+  gl: WebGL2RenderingContextDOM
 
   currentOperation: IOperation
   toolBelt: Record<string, (operation: IOperation) => void>
@@ -176,11 +180,11 @@ class _Application {
       resize: true,
     })
 
-    this.gl = context
+    this.gl = context as WebGL2RenderingContextDOM
   }
 
   public resize = () => {
-    resizeCanvasToDisplaySize(this.gl.canvas as HTMLCanvasElement)
+    resizeCanvasToDisplaySize(this.gl.canvas)
   }
 
   public init = () => {
