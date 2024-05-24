@@ -129,19 +129,7 @@ export interface IFill extends ITool {
   use: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
-export interface IEraser extends ITool {
-  settings: {
-    size: number
-    flow: number
-    opacity: number
-    hardness: number
-    spacing: number
-  }
-  brush: IBrush
-
-  base: (gl: WebGL2RenderingContext, operation: IOperation) => void
-  draw: (gl: WebGL2RenderingContext, operation: IOperation) => void
-}
+export type IEraser = IBrush
 
 export type EyeDropperSampleSizes = 1 | 3 | 5
 
@@ -153,7 +141,7 @@ export interface IEyedropper extends ITool {
   use: (gl: WebGL2RenderingContext, operation: IOperation) => void
 }
 
-export type AvailableTools = IBrush | IPen | IFill | IEyedropper | IEraser
+export type AvailableTools = IBrush | IPen | IFill | IEyedropper
 
 export type LayerName = string
 export type LayerID = string
