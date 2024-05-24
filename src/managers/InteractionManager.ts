@@ -42,6 +42,7 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const stampSpacing = calculateSpacing(spacing, size)
 
+  // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
   if (mergeEvent) {
     relativeMouseState.x = lerp(mergeEventCache.x, relativeMouseState.x, 0.5)
     relativeMouseState.y = lerp(mergeEventCache.y, relativeMouseState.y, 0.5)
@@ -55,7 +56,15 @@ function prepareOperation(relativeMouseState: MouseState) {
   // To counteract the fact that the pointer position resolution gets much lower the
   // more zoomed out the canvas becomes we raise filtering to compensate
   if (Camera.zoom < 1) {
-    positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - (1 - Camera.zoom) / 3, 1), 0.1))
+    // These values are just tuned to feel right
+    const maxZoomFilteringAdjustment = Math.max(0.7 - (1 - prefs.mouseFiltering), 0)
+
+    let adj = 0.4
+    if (relativeMouseState.pointerType === "mouse") adj += 0.1
+
+    const zoomFilteringAdjustment = Math.min((1 - Camera.zoom) * adj, maxZoomFilteringAdjustment)
+
+    positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - zoomFilteringAdjustment, 1), 0.01))
   }
 
   positionArray[0] = relativeMouseState.x
@@ -72,16 +81,21 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   operation.points.currentPoint.pressure = filteredPressure[0]
 
-  let pointerTypeLerpAdjustment = 0
+  // These values are just tuned to feel right
+  const maxSmoothAdjustment = Math.max(0.8 - (1 - prefs.mouseSmoothing), 0)
 
-  if (relativeMouseState.pointerType === "mouse") pointerTypeLerpAdjustment = 0.3
-  if (relativeMouseState.pointerType === "touch") pointerTypeLerpAdjustment = 0.2
+  let pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
+
+  if (relativeMouseState.pointerType === "mouse")
+    pointerPositionLerpAdjustment = Math.min(pointerPositionLerpAdjustment + 0.3, maxSmoothAdjustment)
+  if (relativeMouseState.pointerType === "touch")
+    pointerPositionLerpAdjustment = Math.min(pointerPositionLerpAdjustment + 0.1, maxSmoothAdjustment)
 
   vec2.lerp(
     operation.points.currentPoint.location,
     prevPoint.location,
     operation.points.currentPoint.location,
-    Math.max(prefs.mouseSmoothing - pointerTypeLerpAdjustment, 0.01),
+    Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment, 0.01), 1),
   )
 
   const dist = getDistance(prevPoint, operation.points.currentPoint)
