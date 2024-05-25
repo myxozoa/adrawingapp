@@ -24,7 +24,7 @@ export function isEraser(tool: AvailableTools): tool is IEraser {
   return tool.name === "ERASER"
 }
 
-export function switchIfPossible(tool: AvailableTools): tool is IBrush & IEraser {
+export function switchIfPossible(tool: AvailableTools): tool is IBrush {
   return "switchTo" in tool
 }
 
@@ -32,7 +32,7 @@ export function canUse(tool: AvailableTools): tool is IEyedropper & IFill {
   return "use" in tool
 }
 
-export function canDraw(tool: AvailableTools): tool is IBrush & IEraser {
+export function canDraw(tool: AvailableTools): tool is IBrush {
   return "draw" in tool
 }
 
