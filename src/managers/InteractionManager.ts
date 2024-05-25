@@ -6,7 +6,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
 import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
-import { DrawingManager } from "@/managers/DrawingManager"
+import { DrawingManager, resetScratchBoundingBox } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
 import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
@@ -189,6 +189,7 @@ function endInteraction(save = true) {
   positionFilter.reset()
   pressureFilter.reset()
   Application.currentOperation.reset()
+  resetScratchBoundingBox()
 
   currentTool.reset()
 }

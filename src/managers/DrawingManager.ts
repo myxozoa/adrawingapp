@@ -1,6 +1,6 @@
 import { CanvasSizeCache } from "@/utils/utils"
 
-import type { RenderInfo } from "@/types"
+import type { Box, RenderInfo } from "@/types"
 
 import { mat3, vec2 } from "gl-matrix"
 
@@ -49,6 +49,8 @@ enum InterpolationType {
   trilinear,
 }
 
+const scratchLayerBoundingBox: Box = { x: 0, y: 0, width: 1, height: 1 }
+
 const transparent = new Float32Array([0, 0, 0, 0])
 const white = new Float32Array([1, 1, 1, 1])
 
@@ -61,6 +63,47 @@ let shouldRecomposite = true
 
 let shouldShowCursor = true
 let pixelInterpolation = InterpolationType.trilinear
+
+let drawnToScratch = false
+function setScratchBoundingBox(x: number, y: number, width: number, height: number) {
+  scratchLayerBoundingBox.x = x
+  scratchLayerBoundingBox.y = y
+  scratchLayerBoundingBox.width = width
+  scratchLayerBoundingBox.height = height
+
+  drawnToScratch = true
+}
+
+export function resetScratchBoundingBox() {
+  scratchLayerBoundingBox.x = 0
+  scratchLayerBoundingBox.y = 0
+  scratchLayerBoundingBox.width = 1
+  scratchLayerBoundingBox.height = 1
+
+  drawnToScratch = false
+}
+
+export function calculateScracthBoundingBox(x: number, y: number, width: number, height: number) {
+  if (!drawnToScratch) {
+    setScratchBoundingBox(x, y, width, height)
+    return
+  }
+
+  const newBottomLeftX = Math.min(scratchLayerBoundingBox.x, x)
+  const newBottomLeftY = Math.min(scratchLayerBoundingBox.y, y)
+
+  const newUpperRightX = Math.max(scratchLayerBoundingBox.x + scratchLayerBoundingBox.width, x + width)
+  const newUpperRightY = Math.max(scratchLayerBoundingBox.y + scratchLayerBoundingBox.height, y + height)
+
+  const newWidth = newUpperRightX - newBottomLeftX
+  const newHeight = newUpperRightY - newBottomLeftY
+
+  scratchLayerBoundingBox.x = newBottomLeftX
+  scratchLayerBoundingBox.y = newBottomLeftY
+
+  scratchLayerBoundingBox.width = newWidth
+  scratchLayerBoundingBox.height = newHeight
+}
 
 function swapPixelInterpolation() {
   const gl = Application.gl
@@ -364,11 +407,17 @@ function init() {
     newLayer(layer)
   }
 
-  const currentLayerId = useLayerStore.getState().currentLayer.id
+  const currentLayer = useLayerStore.getState().currentLayer
 
-  const currentLayer = ResourceManager.get(`Layer${currentLayerId}`)
+  const currentLayerResource = ResourceManager.get(`Layer${currentLayer.id}`)
 
-  clearSpecific(currentLayer, white)
+  clearSpecific(currentLayerResource, white)
+  currentLayer.calculateNewBoundingBox(
+    0,
+    Application.canvasInfo.height,
+    Application.canvasInfo.width,
+    Application.canvasInfo.height,
+  )
 
   const intermediaryLayer = ResourceManager.create(
     "IntermediaryLayer",
