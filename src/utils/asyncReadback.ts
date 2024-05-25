@@ -56,6 +56,8 @@ export async function readPixelsAsync(
 
   if (!buffer) throw new Error("Unable to create buffer to save image")
 
+  gl.pixelStorei(gl.PACK_ALIGNMENT, 1)
+
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer)
   gl.bufferData(gl.PIXEL_PACK_BUFFER, destinationBuffer.byteLength, gl.STREAM_READ)
   gl.readPixels(x, y, width, height, format, type, 0)
