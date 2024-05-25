@@ -20,11 +20,13 @@ interface Action {
 }
 
 export const defaultPreferences = {
-  pressureSensitivity: 0.8,
+  pressureSensitivity: 0.9,
+
   // These preferences are inverted (1-n)
-  pressureFiltering: 0.9,
-  mouseFiltering: 0.7,
-  mouseSmoothing: 0.6,
+  pressureFiltering: 0.6,
+  mouseFiltering: 0.8,
+  mouseSmoothing: 0.7,
+
   canvasWidth: 10 * 300,
   canvasHeight: 8 * 300,
 }

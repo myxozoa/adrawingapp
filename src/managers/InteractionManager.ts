@@ -59,12 +59,9 @@ function prepareOperation(relativeMouseState: MouseState) {
     // These values are just tuned to feel right
     const maxZoomFilteringAdjustment = Math.max(0.7 - (1 - prefs.mouseFiltering), 0)
 
-    let adj = 0.4
-    if (relativeMouseState.pointerType === "mouse") adj += 0.1
+    const zoomFilteringAdjustment = Math.min((1 - Camera.zoom) * 0.3, maxZoomFilteringAdjustment)
 
-    const zoomFilteringAdjustment = Math.min((1 - Camera.zoom) * adj, maxZoomFilteringAdjustment)
-
-    positionFilter.changeSetting(Math.max(Math.min(prefs.mouseFiltering - zoomFilteringAdjustment, 1), 0.01))
+    positionFilter.changeSetting(Math.min(Math.max(prefs.mouseFiltering - zoomFilteringAdjustment, 0.01), 1))
   }
 
   positionArray[0] = relativeMouseState.x
@@ -84,12 +81,7 @@ function prepareOperation(relativeMouseState: MouseState) {
   // These values are just tuned to feel right
   const maxSmoothAdjustment = Math.max(0.8 - (1 - prefs.mouseSmoothing), 0)
 
-  let pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
-
-  if (relativeMouseState.pointerType === "mouse")
-    pointerPositionLerpAdjustment = Math.min(pointerPositionLerpAdjustment + 0.3, maxSmoothAdjustment)
-  if (relativeMouseState.pointerType === "touch")
-    pointerPositionLerpAdjustment = Math.min(pointerPositionLerpAdjustment + 0.1, maxSmoothAdjustment)
+  const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
 
   vec2.lerp(
     operation.points.currentPoint.location,
