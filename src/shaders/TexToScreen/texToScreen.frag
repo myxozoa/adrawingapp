@@ -25,5 +25,7 @@ void main() {
   if (color.a == 0.)
     discard;
 
-  fragColor = vec4(tosRGB(color.rgb), color.a);
+  color.rgb = tosRGB(color.rgb);
+
+  fragColor = color;
 }
