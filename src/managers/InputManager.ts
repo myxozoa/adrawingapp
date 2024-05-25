@@ -186,8 +186,6 @@ function pointerdown(event: PointerEvent) {
 
     queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
   }
-  InteractionManager.currentMousePosition.x = position.x
-  InteractionManager.currentMousePosition.y = position.y
   DrawingManager.hideCursor()
   DrawingManager.beginDraw()
 
