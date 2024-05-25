@@ -228,10 +228,11 @@ function pointermove(event: PointerEvent) {
   }
 
   DrawingManager.beginDraw()
+
+  event.stopPropagation()
 }
 
 function pointerup(event: PointerEvent) {
-  if (!isPointerEvent(event)) return
   idleTime = 0
 
   Application.drawing = false
@@ -250,6 +251,8 @@ function pointerup(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
 
   reset()
+
+  event.stopPropagation()
 }
 
 function wheel(event: WheelEvent) {
@@ -261,6 +264,8 @@ function wheel(event: WheelEvent) {
   wheelThrottle(DrawingManager.pauseDrawNextFrame)
 
   currentInteractionState = InteractionState.none
+
+  event.stopPropagation()
 }
 
 function keyup(event: KeyboardEvent) {
@@ -269,16 +274,22 @@ function keyup(event: KeyboardEvent) {
   }
 }
 
-function pointercancel() {
+function pointercancel(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+
+  event.stopPropagation()
 }
 
-function pointerout() {
+function pointerout(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+
+  event.stopPropagation()
 }
 
-function pointerleave() {
+function pointerleave(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+
+  event.stopPropagation()
 }
 
 const pointer_listeners = {
