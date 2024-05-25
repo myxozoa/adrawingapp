@@ -58,6 +58,8 @@ export function throttle(func: (...args: any[]) => void, delay = 250): () => voi
  *
  * @returns Distance in pixels
  */
+export function getDistance(point0: { x: number; y: number }, point1: { x: number; y: number }): number
+export function getDistance(point0: IPoint, point1: IPoint): number
 export function getDistance(
   point0: IPoint | { x: number; y: number },
   point1: IPoint | { x: number; y: number },
