@@ -175,6 +175,8 @@ function pointerdown(event: PointerEvent) {
   }
 
   const position = calculatePointerWorldPosition(event)
+  InteractionManager.currentMousePosition.x = position.x
+  InteractionManager.currentMousePosition.y = position.y
   if (currentInteractionState === InteractionState.none) {
     Application.drawing = true
 
@@ -188,6 +190,8 @@ function pointerdown(event: PointerEvent) {
   InteractionManager.currentMousePosition.y = position.y
   DrawingManager.hideCursor()
   DrawingManager.beginDraw()
+
+  event.stopPropagation()
 }
 
 function pointermove(event: PointerEvent) {
