@@ -200,6 +200,8 @@ function compositeLayers() {
   const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
+  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
   if (isBrush(currentTool)) {
     gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 1)
@@ -219,6 +221,8 @@ function compositeLayers() {
   const firsLayerResource = ResourceManager.get(`Layer${firstLayer.id}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
+  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
   gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, firstLayer.blendMode)
   gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
@@ -240,6 +244,8 @@ function compositeLayers() {
     const layerResource = ResourceManager.get(`Layer${layer.id}`)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
+    gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+    gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 
     gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer.blendMode)
     gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer.opacity / 100)
