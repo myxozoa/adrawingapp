@@ -6,7 +6,18 @@ in vec2 v_tex_coord;
 out vec4 fragColor;
 
 // With float textures iOS requires explicit precision or it will default to low
-uniform mediump sampler2D textureSampler;
+uniform highp sampler2D textureSampler;
+
+float tosRGBValue(float linearRGBValue) {
+    return linearRGBValue <= 0.0031308 ? linearRGBValue * 12.92 :( 1.055 * pow(linearRGBValue, 1. / 2.4)) - 0.055;
+}
+vec3 tosRGB(vec3 linearRGB) {
+  return vec3(
+    tosRGBValue(linearRGB.r),
+    tosRGBValue(linearRGB.g),
+    tosRGBValue(linearRGB.b)
+  );
+}
 
 void main() {
   vec4 color = texture(textureSampler, v_tex_coord);
@@ -14,5 +25,5 @@ void main() {
   if (color.a == 0.)
     discard;
 
-  fragColor = color;
+  fragColor = vec4(tosRGB(color.rgb), color.a);
 }

@@ -14,7 +14,7 @@ import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import { isPoint, isPointerEventOrLocation } from "@/utils/typeguards"
+import { isPoint } from "@/utils/typeguards"
 
 interface CanvasSizeCache {
   width: number
@@ -30,17 +30,11 @@ export const CanvasSizeCache: CanvasSizeCache = {
   offsetWidth: 0,
 }
 
-export function getRelativePosition(
-  mouseState: MouseState | { x: number; y: number },
-): MouseState | { x: number; y: number } {
-  const state = {
-    ...mouseState,
+export function getRelativePosition<T extends MouseState | { x: number; y: number }>(mouseState: T): T {
+  mouseState.x = mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth)
+  mouseState.y = mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight)
 
-    x: mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth),
-    y: mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight),
-  }
-
-  return state
+  return mouseState
 }
 
 export function throttle(func: (...args: any[]) => void, delay = 250): () => void {
@@ -64,6 +58,8 @@ export function throttle(func: (...args: any[]) => void, delay = 250): () => voi
  *
  * @returns Distance in pixels
  */
+export function getDistance(point0: { x: number; y: number }, point1: { x: number; y: number }): number
+export function getDistance(point0: IPoint, point1: IPoint): number
 export function getDistance(
   point0: IPoint | { x: number; y: number },
   point1: IPoint | { x: number; y: number },
@@ -561,19 +557,23 @@ export function calculateCurveLength(start: IPoint, control: IPoint, control2: I
   return estimatedArcLength
 }
 
-export function calculateWorldPosition(
-  event: PointerEvent | { x: number; y: number },
-): MouseState | { x: number; y: number } {
-  const pointerState = isPointerEventOrLocation(event) ? updatePointer(event) : event
-
-  const relativeMouseState = getRelativePosition(pointerState)
+export function calculateWorldPosition(data: { x: number; y: number }): vec2 {
+  const relativeMouseState = getRelativePosition(data)
 
   const worldPosition = Camera.getWorldPosition(relativeMouseState)
 
-  relativeMouseState.x = worldPosition[0]
-  relativeMouseState.y = worldPosition[1]
+  return worldPosition
+}
 
-  return relativeMouseState
+export function calculatePointerWorldPosition(event: PointerEvent): MouseState {
+  const pointerState = updatePointer(event)
+
+  const worldPosition = calculateWorldPosition(pointerState)
+
+  pointerState.x = worldPosition[0]
+  pointerState.y = worldPosition[1]
+
+  return pointerState
 }
 
 export function calculateSpacing(spacing: number, size: number) {
@@ -603,4 +603,18 @@ export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
 
 export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
   return `image/${string}`
+}
+export function compareProps<T>(fields: (keyof T)[]) {
+  return (prevProps: T, nextProps: T) =>
+    fields.every((field) => {
+      return prevProps[field] === nextProps[field]
+    })
+}
+
+export function sRGBToLinear(sRGB: number) {
+  return sRGB <= 0.04045 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4)
+}
+
+export function linearTosRGB(linearRGB: number) {
+  return linearRGB <= 0.0031308 ? linearRGB * 12.92 : 1.055 * Math.pow(linearRGB, 1 / 2.4) - 0.055
 }

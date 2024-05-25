@@ -1,5 +1,7 @@
-import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
+import { Tool } from "@/objects/Tool"
 import type { IBrush, IOperation, IPoint } from "@/types"
+
+import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 
 import { useMainStore } from "@/stores/MainStore"
 
@@ -22,6 +24,8 @@ import {
 import * as glUtils from "@/utils/glUtils"
 import { tool_list } from "@/constants"
 import { Application } from "@/managers/ApplicationManager"
+import { useLayerStore } from "@/stores/LayerStore"
+import { calculateScracthBoundingBox } from "@/managers/DrawingManager"
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
@@ -267,6 +271,7 @@ export class Brush extends Tool implements IBrush {
    * Moves quad around and draws it based on brush settings and point info
    */
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
+    const currentLayer = useLayerStore.getState().currentLayer
     this.previouslyDrawnPoint.copy(point)
 
     const size = calculateFromPressure(this.settings.size / 2, point.pressure, point.pointerType === "pen")
@@ -280,8 +285,14 @@ export class Brush extends Tool implements IBrush {
     const startScissorX = point.x - size
     const startScissorY = Application.canvasInfo.height - size - point.y
 
+    const scissorWidth = size * 2 + 4
+    const scissorHeight = size * 2 + 4
+
     // Internals
-    gl.scissor(startScissorX, startScissorY, size * 2 + 4, size * 2 + 4)
+    gl.scissor(startScissorX, startScissorY, scissorWidth, scissorHeight)
+
+    calculateScracthBoundingBox(startScissorX, startScissorY, scissorWidth, scissorHeight)
+    currentLayer.calculateNewBoundingBox(startScissorX, startScissorY, scissorWidth, scissorHeight)
 
     gl.uniform4f(this.programInfo.uniforms.u_brush_qualities, flow, hardness, base_roughness - roughness, size)
 

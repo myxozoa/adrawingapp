@@ -207,3 +207,26 @@ export function setupProgramAttributesUniforms(
 // const pixelValues1 = new Uint16Array(4);
 
 // gl.readPixels(0, 0, 1, 1, format1, type1, pixelValues1);
+
+export function clipSumOfBoundingBoxes(
+  gl: WebGL2RenderingContext,
+  x1: number,
+  y1: number,
+  width1: number,
+  height1: number,
+  x2: number,
+  y2: number,
+  width2: number,
+  height2: number,
+) {
+  const newX = Math.min(x1, x2)
+  const newY = Math.min(y1, y2)
+
+  const newUpperRightX = Math.max(x1 + width1, x2 + width2)
+  const newUpperRightY = Math.max(y1 + height1, y2 + height2)
+
+  const newWidth = newUpperRightX - newX
+  const newHeight = newUpperRightY - newY
+
+  gl.scissor(newX, newY, newWidth, newHeight)
+}

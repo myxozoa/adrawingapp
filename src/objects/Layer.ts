@@ -12,6 +12,7 @@ export class Layer implements ILayer {
   noDraw: boolean
   boundingBox: Box
   opacity: number
+  drawnTo: boolean
 
   constructor(name: LayerName) {
     this.blendMode = blend_modes.normal
@@ -20,8 +21,40 @@ export class Layer implements ILayer {
     this.undoSnapshotQueue = []
     this.redoSnapshotQueue = []
     this.noDraw = false
-    this.boundingBox = { x: 0, y: 0, width: 0, height: 0 } //  TODO: Calculate every time drawn to
+    this.boundingBox = { x: 0, y: 0, width: 1, height: 1 } //  TODO: Calculate every time drawn to
     this.opacity = 100
+    this.drawnTo = false
+  }
+
+  setBoundingBox = (x: number, y: number, width: number, height: number) => {
+    this.boundingBox.x = x
+    this.boundingBox.y = y
+    this.boundingBox.width = width
+    this.boundingBox.height = height
+
+    this.drawnTo = true
+  }
+
+  calculateNewBoundingBox = (x: number, y: number, width: number, height: number) => {
+    if (!this.drawnTo) {
+      this.setBoundingBox(x, y, width, height)
+      return
+    }
+
+    const newBottomLeftX = Math.min(this.boundingBox.x, x)
+    const newBottomLeftY = Math.min(this.boundingBox.y, y)
+
+    const newUpperRightX = Math.max(this.boundingBox.x + this.boundingBox.width, x + width)
+    const newUpperRightY = Math.max(this.boundingBox.y + this.boundingBox.height, y + height)
+
+    const newWidth = newUpperRightX - newBottomLeftX
+    const newHeight = newUpperRightY - newBottomLeftY
+
+    this.boundingBox.x = newBottomLeftX
+    this.boundingBox.y = newBottomLeftY
+
+    this.boundingBox.width = newWidth
+    this.boundingBox.height = newHeight
   }
 
   // addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {

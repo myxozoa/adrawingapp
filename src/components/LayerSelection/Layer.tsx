@@ -1,12 +1,13 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, memo } from "react"
 
-import PanelElement from "@/components/PanelElement"
+import { PanelElement } from "@/components/PanelElement"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
 import type { LayerName, LayerID } from "@/types"
+import { compareProps } from "@/utils/utils"
 
-function Layer({
+function _Layer({
   name,
   select,
   selected,
@@ -56,4 +57,4 @@ function Layer({
   )
 }
 
-export default Layer
+export const Layer = memo(_Layer, compareProps(["editing", "name", "selected"]))

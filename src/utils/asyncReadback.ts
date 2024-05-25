@@ -1,14 +1,14 @@
 //https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#use_non-blocking_async_data_readback
-function clientWaitAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: GLint, interval_ms: number) {
+function clientWaitAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: GLint, intervalMs: number) {
   return new Promise<void>((resolve, reject) => {
     function test() {
-      const res = gl.clientWaitSync(sync, flags, 0)
-      if (res === gl.WAIT_FAILED) {
+      const result = gl.clientWaitSync(sync, flags, 0)
+      if (result === gl.WAIT_FAILED) {
         reject()
         return
       }
-      if (res === gl.TIMEOUT_EXPIRED) {
-        setTimeout(test, interval_ms)
+      if (result === gl.TIMEOUT_EXPIRED) {
+        setTimeout(test, intervalMs)
         return
       }
       resolve()
@@ -21,10 +21,10 @@ async function getBufferSubDataAsync(
   gl: WebGL2RenderingContext,
   target: GLint,
   buffer: WebGLBuffer,
-  srcByteOffset: number,
-  dstBuffer: ArrayBufferView,
-  /* optional */ dstOffset?: number,
-  /* optional */ length?: number,
+  sourceByteOffset: number,
+  destinationBuffer: ArrayBufferView,
+  destinationOffset?: number,
+  length?: number,
 ) {
   const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)
 
@@ -36,33 +36,35 @@ async function getBufferSubDataAsync(
   gl.deleteSync(sync)
 
   gl.bindBuffer(target, buffer)
-  gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length)
+  gl.getBufferSubData(target, sourceByteOffset, destinationBuffer, destinationOffset, length)
   gl.bindBuffer(target, null)
 
-  return dstBuffer
+  return destinationBuffer
 }
 
 export async function readPixelsAsync(
   gl: WebGL2RenderingContext,
   x: number,
   y: number,
-  w: number,
-  h: number,
+  width: number,
+  height: number,
   format: GLint,
   type: GLint,
-  dest: ArrayBufferView,
+  destinationBuffer: ArrayBufferView,
 ) {
-  const buf = gl.createBuffer()
+  const buffer = gl.createBuffer()
 
-  if (!buf) throw new Error("Unable to create buffer to save image")
+  if (!buffer) throw new Error("Unable to create buffer to save image")
 
-  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf)
-  gl.bufferData(gl.PIXEL_PACK_BUFFER, dest.byteLength, gl.STREAM_READ)
-  gl.readPixels(x, y, w, h, format, type, 0)
+  gl.pixelStorei(gl.PACK_ALIGNMENT, 1)
+
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer)
+  gl.bufferData(gl.PIXEL_PACK_BUFFER, destinationBuffer.byteLength, gl.STREAM_READ)
+  gl.readPixels(x, y, width, height, format, type, 0)
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null)
 
-  await getBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, buf, 0, dest)
+  await getBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, buffer, 0, destinationBuffer)
 
-  gl.deleteBuffer(buf)
-  return dest
+  gl.deleteBuffer(buffer)
+  return destinationBuffer
 }

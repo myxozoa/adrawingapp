@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { memo, useState } from "react"
 
 import { Application } from "@/managers/ApplicationManager"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -11,7 +11,7 @@ import { SettingSlider } from "@/components/SettingSlider"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { getMIMEFromImageExtension, uint16ToFloat16 } from "@/utils/utils"
+import { getMIMEFromImageExtension, linearTosRGB, uint16ToFloat16 } from "@/utils/utils"
 
 import type { ExportImageFormats } from "@/types"
 
@@ -74,7 +74,7 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
 
   // Data is 16 bit float values stored in a uint16 array
   const data8bit = Uint8ClampedArray.from(data, (num) => {
-    return uint16ToFloat16(num) * 255
+    return linearTosRGB(uint16ToFloat16(num)) * 255
   })
 
   const imageData = new ImageData(data8bit, Application.canvasInfo.width, Application.canvasInfo.height)
@@ -105,7 +105,7 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
   URL.revokeObjectURL(url)
 }
 
-export function ExportDialog() {
+function _ExportDialog() {
   const [quality, setQuality] = useState(1)
   const [filename, setFilename] = useState("New Image")
   const [format, setFormat] = useState(Application.supportedExportImageFormats[0]) // PNG is always supported
@@ -114,7 +114,15 @@ export function ExportDialog() {
     <DialogHeader>
       <DialogTitle>Save Image</DialogTitle>
       <div className="!mt-4 flex flex-col items-center justify-between sm:flex-row">
-        {SettingSlider("Quality", quality, (value) => setQuality(value), 1, { min: 0, max: 1, step: 0.1 })}
+        <SettingSlider
+          name={"Quality"}
+          value={quality}
+          onValueChange={(value) => setQuality(value)}
+          fractionDigits={1}
+          min={0}
+          max={1}
+          step={0.1}
+        />
 
         <div className="mt-2 flex w-fit flex-row sm:mt-0">
           <Input
@@ -147,3 +155,5 @@ export function ExportDialog() {
     </DialogHeader>
   )
 }
+
+export const ExportDialog = memo(_ExportDialog)

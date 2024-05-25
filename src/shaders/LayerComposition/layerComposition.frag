@@ -25,10 +25,12 @@ vec3 pdOver(vec3 base, vec3 blend, float opacity) {
 
   //Cr = (1 - αb) x Cs + αb x B(Cb, Cs)
   switch(u_blend_mode) {
+    // Clear Mode
     case 0:
       result = base * (1.0 - opacity);
 
       break;
+    // Normal Mode
     case 1:
       result = normal(base, blend) + (base * (1.0 - opacity));
 

@@ -1,6 +1,6 @@
-import Panel from "@/components/Panel"
-import Container from "@/components/Container"
-import Layer from "@/components/LayerSelection/Layer"
+import { Panel } from "@/components/Panel"
+import { Container } from "@/components/Container"
+import { Layer } from "@/components/LayerSelection/Layer"
 
 import { Button } from "@/components/ui/button"
 
@@ -9,6 +9,7 @@ import { Trash2, FilePlus2 } from "lucide-react"
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { SettingSlider } from "@/components/SettingSlider"
+import { memo } from "react"
 
 function _Layers() {
   const layers = useLayerStore.use.layers()
@@ -23,7 +24,14 @@ function _Layers() {
   return (
     <Container className="absolute right-0 top-1/2 h-1/2 w-48 -translate-y-1/2">
       <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
-        {SettingSlider("Opacity", currentLayer.opacity, (opacity) => setOpacity(currentLayer.id, opacity), 0)}
+        <SettingSlider
+          name={"Opacity"}
+          value={currentLayer.opacity}
+          onValueChange={(opacity) => setOpacity(currentLayer.id, opacity)}
+          fractionDigits={0}
+          min={0}
+          max={100}
+        />
       </Panel>
       <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
         {layers
@@ -55,4 +63,4 @@ function _Layers() {
   )
 }
 
-export const Layers = _Layers
+export const Layers = memo(_Layers)

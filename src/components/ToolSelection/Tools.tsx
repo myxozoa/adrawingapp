@@ -1,8 +1,8 @@
-import { memo } from "react"
+import { memo, useCallback } from "react"
 
-import Panel from "@/components/Panel"
-import Container from "@/components/Container"
-import Tool from "@/components/ToolSelection/Tool"
+import { Panel } from "@/components/Panel"
+import { Container } from "@/components/Container"
+import { Tool } from "@/components/ToolSelection/Tool"
 
 import { useToolStore } from "@/stores/ToolStore"
 
@@ -10,18 +10,25 @@ import { tools } from "@/stores/ToolStore"
 
 import { hexToRgb, rgbToHex } from "@/utils/utils"
 import { useMainStore } from "@/stores/MainStore"
+import { Application } from "@/managers/ApplicationManager"
+import type { ToolName } from "@/types"
 
 function _Tools() {
   const currentTool = useToolStore.use.currentTool()
-  const setCurrentTool = useToolStore.use.setCurrentTool()
+  const _setCurrentTool = useToolStore.use.setCurrentTool()
   const color = useMainStore.use.color()
   const setColor = useMainStore.use.setColor()
 
-  const changeColor = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const changeColor = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const rgb = hexToRgb(event.target.value)
 
     if (rgb) setColor(rgb)
-  }
+  }, [])
+
+  const setCurrentTool = useCallback((name: ToolName) => {
+    Application.swapTool(tools[name])
+    _setCurrentTool(name)
+  }, [])
 
   return (
     <Container className="absolute top-1/2 z-10 w-11 -translate-y-1/2 shadow-md">

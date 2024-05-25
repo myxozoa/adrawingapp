@@ -1,17 +1,21 @@
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
-import { throttleRAF, getDistance, calculateWorldPosition, CanvasSizeCache } from "@/utils/utils"
-
-import { isPointerEvent, isWheelEvent, isKeyboardEvent } from "@/utils/typeguards"
+import {
+  throttleRAF,
+  getDistance,
+  calculateWorldPosition,
+  CanvasSizeCache,
+  calculatePointerWorldPosition,
+} from "@/utils/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
-import type { MouseState } from "@/types"
 
 const resizeThrottle = throttleRAF()
+const wheelThrottle = throttleRAF()
 
 enum InteractionState {
   none,
@@ -56,14 +60,12 @@ function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean) {
   return -1
 }
 
-function wheelZoom(event: Event) {
-  if (!isWheelEvent(event)) return
-
+function wheelZoom(event: WheelEvent) {
   const pointerState = updatePointer(event)
 
   const zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
 
-  zoom(pointerState, zoomTarget)
+  queueMicrotask(() => zoom(pointerState, zoomTarget))
 }
 
 function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
@@ -72,7 +74,7 @@ function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
 
   const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
 
-  zoom(midPoint, zoomTarget)
+  queueMicrotask(() => zoom(midPoint, zoomTarget))
 }
 
 function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
@@ -81,16 +83,20 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
   const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
+  const mouseXBeforeZoom = mousePositionBeforeZoom[0]
+  const mouseYBeforeZoom = mousePositionBeforeZoom[1]
 
   Camera.zoom = Math.max(0.001, Math.min(100, zoomTarget))
 
   Camera.updateViewProjectionMatrix()
 
   const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
+  const mouseXAfterZoom = mousePositionAfterZoom[0]
+  const mouseYAfterZoom = mousePositionAfterZoom[1]
 
   // Repositioning to make the pointer closer to the world space position it had before the zoom
-  const dx = mousePositionAfterZoom.x - mousePositionBeforeZoom.x
-  const dy = mousePositionAfterZoom.y - mousePositionBeforeZoom.y
+  const dx = mouseXAfterZoom - mouseXBeforeZoom
+  const dy = mouseYAfterZoom - mouseYBeforeZoom
 
   Camera.x -= dx
   Camera.y -= dy
@@ -128,13 +134,12 @@ function touchPanZoom() {
   prevTouchDistance = distance
 }
 
-function pointerdown(event: Event) {
-  if (!isPointerEvent(event)) return
+function pointerdown(event: PointerEvent) {
   idleTime = 0
-  ;(Application.gl.canvas as HTMLCanvasElement).setPointerCapture(event.pointerId)
+  Application.gl.canvas.setPointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
-    DrawingManager.hideCursor()
+    DrawingManager.disableCursor()
     touches.push(event)
 
     if (touches.length > 2) {
@@ -158,8 +163,6 @@ function pointerdown(event: Event) {
     }
 
     DrawingManager.beginDraw()
-  } else {
-    DrawingManager.showCursor()
   }
 
   if (ModifierKeyManager.has("space")) {
@@ -171,7 +174,9 @@ function pointerdown(event: Event) {
     lastMidPosition.y = event.y
   }
 
-  const position = calculateWorldPosition(event) as MouseState
+  const position = calculatePointerWorldPosition(event)
+  InteractionManager.currentMousePosition.x = position.x
+  InteractionManager.currentMousePosition.y = position.y
   if (currentInteractionState === InteractionState.none) {
     Application.drawing = true
 
@@ -179,18 +184,18 @@ function pointerdown(event: Event) {
 
     InteractionManager.process(position)
 
-    InteractionManager.executeOperation(Application.currentOperation)
+    queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
   }
-  InteractionManager.currentMousePosition.x = position.x
-  InteractionManager.currentMousePosition.y = position.y
+  DrawingManager.hideCursor()
   DrawingManager.beginDraw()
+
+  event.stopPropagation()
 }
 
-function pointermove(event: Event) {
-  if (!isPointerEvent(event)) return
+function pointermove(event: PointerEvent) {
   idleTime = 0
 
-  const position = calculateWorldPosition(event) as MouseState
+  const position = calculatePointerWorldPosition(event)
 
   InteractionManager.currentMousePosition.x = position.x
   InteractionManager.currentMousePosition.y = position.y
@@ -202,10 +207,6 @@ function pointermove(event: Event) {
     if (currentInteractionState === InteractionState.touchPanZoom) {
       touchPanZoom()
     }
-
-    DrawingManager.hideCursor()
-  } else {
-    DrawingManager.showCursor()
   }
 
   if (currentInteractionState === InteractionState.pan) {
@@ -217,7 +218,7 @@ function pointermove(event: Event) {
       const coalesced = event.getCoalescedEvents()
 
       for (const coalescedEvent of coalesced) {
-        const coalescedRelativeMouseState = calculateWorldPosition(coalescedEvent) as MouseState
+        const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
 
         InteractionManager.process(coalescedRelativeMouseState)
       }
@@ -225,18 +226,19 @@ function pointermove(event: Event) {
       InteractionManager.process(position)
     }
 
-    InteractionManager.executeOperation(Application.currentOperation)
+    queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
   }
 
   DrawingManager.beginDraw()
+
+  event.stopPropagation()
 }
 
-function pointerup(event: Event) {
-  if (!isPointerEvent(event)) return
+function pointerup(event: PointerEvent) {
   idleTime = 0
 
   Application.drawing = false
-  ;(Application.gl.canvas as HTMLCanvasElement).releasePointerCapture(event.pointerId)
+  Application.gl.canvas.releasePointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
     DrawingManager.hideCursor()
@@ -251,72 +253,78 @@ function pointerup(event: Event) {
   DrawingManager.pauseDrawNextFrame()
 
   reset()
+
+  event.stopPropagation()
 }
 
-function wheel(event: Event) {
+function wheel(event: WheelEvent) {
   currentInteractionState = InteractionState.zoom
   idleTime = 0
 
   DrawingManager.beginDraw()
   wheelZoom(event)
-  DrawingManager.pauseDrawNextFrame()
+  wheelThrottle(DrawingManager.pauseDrawNextFrame)
 
   currentInteractionState = InteractionState.none
+
+  event.stopPropagation()
 }
 
-function keyup(event: Event) {
-  if (!isKeyboardEvent(event)) return
-
+function keyup(event: KeyboardEvent) {
   if (event.code === "Space" && event.type === "keyup") {
     reset()
   }
 }
 
-function pointercancel(event: Event) {
-  if (!isPointerEvent(event)) return
-
+function pointercancel(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+
+  event.stopPropagation()
 }
 
-function pointerout(event: Event) {
-  if (!isPointerEvent(event)) return
-
+function pointerout(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+
+  event.stopPropagation()
 }
 
-function pointerleave(event: Event) {
-  if (!isPointerEvent(event)) return
-
+function pointerleave(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+
+  event.stopPropagation()
 }
 
-const listeners = {
+const pointer_listeners = {
   pointerdown,
   pointermove,
   pointerup,
   pointercancel,
   pointerleave,
   pointerout,
+}
+
+const wheel_listeners = {
   wheel,
+}
+
+const keyboard_listeners = {
   keyup,
 }
 
-function touchdown(event: Event) {
-  event.preventDefault()
-}
-
-function touchmove(event: Event) {
-  event.preventDefault()
-}
-
-function touchend(event: Event) {
+function ignoreEvent(event: Event) {
   event.preventDefault()
 }
 
 const touch_listeners = {
-  touchdown,
-  touchmove,
-  touchend,
+  touchdown: ignoreEvent,
+  touchmove: ignoreEvent,
+  touchend: ignoreEvent,
+}
+
+const mouse_listeners = {
+  mousedown: ignoreEvent,
+  mousemove: ignoreEvent,
+  mouseend: ignoreEvent,
 }
 
 function resize() {
@@ -338,12 +346,50 @@ function windowResize() {
   })
 }
 
+interface EventEmitter {
+  addEventListener<E extends keyof HTMLElementEventMap>(
+    type: E,
+    listener: (ev: HTMLElementEventMap[E]) => any,
+    options: unknown,
+  ): void
+  removeEventListener<E extends keyof HTMLElementEventMap>(type: E, listener: (ev: HTMLElementEventMap[E]) => any): void
+}
+
+type Entries<T> = {
+  [K in keyof T]: [K, T[K]]
+}[keyof T][]
+
+function objectEntries<T extends object>(obj: T): Entries<T> {
+  return Object.entries(obj) as Entries<T>
+}
+
 function init() {
-  for (const [name, callback] of Object.entries(listeners)) {
-    Application.gl.canvas.addEventListener(name, callback, { capture: true, passive: true })
+  for (const [name, callback] of objectEntries(pointer_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).addEventListener(name, callback, {
+      capture: true,
+      passive: true,
+    })
+  }
+
+  for (const [name, callback] of objectEntries(wheel_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).addEventListener(name, callback, {
+      capture: true,
+      passive: true,
+    })
+  }
+
+  for (const [name, callback] of objectEntries(keyboard_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).addEventListener(name, callback, {
+      capture: true,
+      passive: true,
+    })
   }
 
   for (const [name, callback] of Object.entries(touch_listeners)) {
+    Application.gl.canvas.addEventListener(name, callback, { capture: true })
+  }
+
+  for (const [name, callback] of Object.entries(mouse_listeners)) {
     Application.gl.canvas.addEventListener(name, callback, { capture: true })
   }
 
@@ -365,11 +411,21 @@ function reset() {
 }
 
 function destroy() {
-  for (const [name, callback] of Object.entries(listeners)) {
+  for (const [name, callback] of objectEntries(pointer_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
+  }
+  for (const [name, callback] of objectEntries(keyboard_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
+  }
+  for (const [name, callback] of objectEntries(wheel_listeners)) {
+    ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
+  }
+
+  for (const [name, callback] of objectEntries(touch_listeners)) {
     Application.gl.canvas.removeEventListener(name, callback)
   }
 
-  for (const [name, callback] of Object.entries(touch_listeners)) {
+  for (const [name, callback] of objectEntries(mouse_listeners)) {
     Application.gl.canvas.removeEventListener(name, callback)
   }
 

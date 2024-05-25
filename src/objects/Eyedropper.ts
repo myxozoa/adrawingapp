@@ -1,13 +1,14 @@
 import { tool_list } from "@/constants"
-import { Tool, toolDefaults, toolProperties } from "@/objects/Tool"
+import { Tool } from "@/objects/Tool"
 import type { ColorArray, EyeDropperSampleSizes, IEyedropper, IOperation } from "@/types"
 
 import { useMainStore } from "@/stores/MainStore"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { uint16ToFloat16 } from "@/utils/utils"
+import { linearTosRGB, uint16ToFloat16 } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
+import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 
 export class Eyedropper extends Tool implements IEyedropper {
   settings: {
@@ -49,7 +50,7 @@ export class Eyedropper extends Tool implements IEyedropper {
     await readPixelsAsync(gl, point.x, Application.canvasInfo.height - point.y, 1, 1, format, type, data)
 
     const color = Array.from(data, (num) => {
-      return uint16ToFloat16(num)
+      return linearTosRGB(uint16ToFloat16(num))
     })
 
     const unPremultipliedColor = color.map((num) => {
