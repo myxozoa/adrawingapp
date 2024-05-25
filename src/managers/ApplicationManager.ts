@@ -152,12 +152,19 @@ class _Application {
     this.systemConstraints.maxSamples = gl.getParameter(gl.MAX_SAMPLES) as number
   }
 
-  private getSupportedTextureInfo = () => {
+  private getSupportedTextureInfo = (bitDepth: 8 | 16) => {
     const gl = this.gl
     // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
 
-    this.textureSupport.pixelType = gl.HALF_FLOAT
-    this.textureSupport.imageFormat = this.extensions.colorBufferHalfFloat?.RGBA16F_EXT || gl.RGBA16F
+    if (bitDepth === 16) {
+      this.textureSupport.pixelType = gl.HALF_FLOAT
+      this.textureSupport.imageFormat = this.extensions.colorBufferHalfFloat?.RGBA16F_EXT || gl.RGBA16F
+    }
+
+    if (bitDepth === 8) {
+      this.textureSupport.pixelType = gl.UNSIGNED_BYTE
+      this.textureSupport.imageFormat = gl.RGBA8
+    }
 
     // Feature detecting  float texture linear filtering on iOS / iPadOS seems to not work at all
     // TODO: Figure out what to do
@@ -197,7 +204,7 @@ class _Application {
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    this.getSupportedTextureInfo()
+    this.getSupportedTextureInfo(16)
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
