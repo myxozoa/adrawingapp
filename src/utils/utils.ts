@@ -610,3 +610,11 @@ export function compareProps<T>(fields: (keyof T)[]) {
       return prevProps[field] === nextProps[field]
     })
 }
+
+export function sRGBToLinear(sRGB: number) {
+  return sRGB <= 0.04045 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4)
+}
+
+export function linearTosRGB(linearRGB: number) {
+  return linearRGB <= 0.0031308 ? linearRGB * 12.92 : 1.055 * Math.pow(linearRGB, 1 / 2.4) - 0.055
+}

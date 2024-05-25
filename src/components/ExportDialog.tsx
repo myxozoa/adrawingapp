@@ -11,7 +11,7 @@ import { SettingSlider } from "@/components/SettingSlider"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { getMIMEFromImageExtension, uint16ToFloat16 } from "@/utils/utils"
+import { getMIMEFromImageExtension, linearTosRGB, uint16ToFloat16 } from "@/utils/utils"
 
 import type { ExportImageFormats } from "@/types"
 
@@ -74,7 +74,7 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
 
   // Data is 16 bit float values stored in a uint16 array
   const data8bit = Uint8ClampedArray.from(data, (num) => {
-    return uint16ToFloat16(num) * 255
+    return linearTosRGB(uint16ToFloat16(num)) * 255
   })
 
   const imageData = new ImageData(data8bit, Application.canvasInfo.width, Application.canvasInfo.height)

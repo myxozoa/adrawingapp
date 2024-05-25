@@ -20,6 +20,17 @@ float circle(vec2 point)
     return length(point);
 }
 
+float toLinearRGBValue(float sRGBValue) {
+    return sRGBValue <= 0.04045 ? sRGBValue * (1. / 12.92) : pow((sRGBValue + 0.055) * (1. / 1.055), 2.4);
+}
+vec3 toLinearRGB(vec3 sRGB) {
+  return vec3 (
+    toLinearRGBValue(sRGB.r),
+    toLinearRGBValue(sRGB.g),
+    toLinearRGBValue(sRGB.b)
+  );
+}
+
 void main()
 {
     float u_flow = u_brush_qualities.x;
@@ -67,6 +78,7 @@ void main()
     color.a = clamp(color.a - alpha, 0., 1.);
     
     // Premultiplied alpha
+    color.rgb = toLinearRGB(color.rgb);
     color.rgb *= color.a;
     
     fragColor = color;
