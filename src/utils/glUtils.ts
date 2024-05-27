@@ -230,3 +230,47 @@ export function clipSumOfBoundingBoxes(
 
   gl.scissor(newX, newY, newWidth, newHeight)
 }
+
+export function setupFullCanvasVBO(gl: WebGL2RenderingContext, width: number, height: number) {
+  const positions = new Float32Array([
+    // Triangle 1
+    0.0, // Top left
+    0.0,
+    0.0, // Bottom left
+    height,
+    width, // Top right
+    0.0,
+
+    // Triangle 2
+    0.0, // Bottom left
+    height,
+    width, // Bottom right
+    height,
+    width, // Top right
+    0.0,
+  ])
+
+  return createBuffer(gl, positions)
+}
+
+export function setupFullscreenVBO(gl: WebGL2RenderingContext) {
+  const positions = new Float32Array([
+    // Triangle 1
+    -1.0, // Top left
+    1.0,
+    -1.0, // Bottom left
+    -1.0,
+    1.0, // Top right
+    1.0,
+
+    // Triangle 2
+    -1.0, // Bottom left
+    -1.0,
+    1.0, // Bottom right
+    -1.0,
+    1.0, // Top right
+    1.0,
+  ])
+
+  return createBuffer(gl, positions)
+}

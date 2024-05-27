@@ -3,6 +3,7 @@ import {
   createFramebuffer,
   createTexture,
   createVAO,
+  setupFullCanvasVBO,
   setupProgramAttributesUniforms,
 } from "@/utils/glUtils"
 import type { RenderInfo } from "@/types"
@@ -58,7 +59,7 @@ export function createCanvasRenderTexture(
   renderInfo.programInfo.uniforms = uniforms
   renderInfo.programInfo.attributes = attributes
 
-  renderInfo.programInfo.VBO = setupVBO(gl, width, height)
+  renderInfo.programInfo.VBO = setupFullCanvasVBO(gl, width, height)
   gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
 
   renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
@@ -84,43 +85,21 @@ export function createCanvasRenderTexture(
 function setupUVBuffer(gl: WebGL2RenderingContext) {
   const textureCoordinates = new Float32Array([
     // Triangle 1
-    0.0,
-    1.0, // Top left
-    0.0,
-    0.0, // Bottom left
+    0.0, // Top left
     1.0,
+    0.0, // Bottom left
+    0.0,
     1.0, // Top right
+    1.0,
 
     // Triangle 2
-    0.0,
     0.0, // Bottom left
-    1.0,
-    0.0, // Bottom right
-    1.0,
+    0.0,
+    1.0, // Bottom right
+    0.0,
     1.0, // Top right
+    1.0,
   ])
 
   return createBuffer(gl, textureCoordinates)
-}
-
-function setupVBO(gl: WebGL2RenderingContext, width: number, height: number) {
-  const positions = new Float32Array([
-    // Triangle 1
-    0.0,
-    0.0, // Top left
-    0.0,
-    height, // Bottom left
-    width,
-    0.0, // Top right
-
-    // Triangle 2
-    0.0,
-    height, // Bottom left
-    width,
-    height, // Bottom right
-    width,
-    0.0, // Top right
-  ])
-
-  return createBuffer(gl, positions)
 }
