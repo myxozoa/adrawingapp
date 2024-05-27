@@ -274,13 +274,13 @@ export class Brush extends Tool implements IBrush {
     const currentLayer = useLayerStore.getState().currentLayer
     this.previouslyDrawnPoint.copy(point)
 
-    const size = calculateFromPressure(this.settings.size / 2, point.pressure, point.pointerType === "pen")
-    const flow = calculateFromPressure(this.settings.flow / 100, point.pressure, point.pointerType === "pen")
+    const size = calculateFromPressure(this.settings.size / 2, point.pressure, false)
+    const flow = calculateFromPressure(this.settings.flow / 100, point.pressure, false)
     const hardness = calculateFromPressure(this.settings.hardness / 100, point.pressure, false)
 
     const base_roughness = 2
 
-    const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
+    const roughness = calculateFromPressure(base_roughness, point.pressure, false)
 
     const startScissorX = point.x - size
     const startScissorY = Application.canvasInfo.height - size - point.y

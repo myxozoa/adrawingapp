@@ -121,7 +121,8 @@ function prepareOperation(relativeMouseState: MouseState) {
   }
 }
 
-function executeOperation(operation: IOperation) {
+function executeOperation() {
+  const operation = Application.currentOperation
   if (!operation.readyToDraw) return
 
   const gl = Application.gl

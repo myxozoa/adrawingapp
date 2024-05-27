@@ -65,7 +65,7 @@ function wheelZoom(event: WheelEvent) {
 
   const zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
 
-  queueMicrotask(() => zoom(pointerState, zoomTarget))
+  zoom(pointerState, zoomTarget)
 }
 
 function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
@@ -74,7 +74,7 @@ function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
 
   const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
 
-  queueMicrotask(() => zoom(midPoint, zoomTarget))
+  zoom(midPoint, zoomTarget)
 }
 
 function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
@@ -184,7 +184,7 @@ function pointerdown(event: PointerEvent) {
 
     InteractionManager.process(position)
 
-    queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
+    queueMicrotask(InteractionManager.executeOperation)
   }
   DrawingManager.hideCursor()
   DrawingManager.beginDraw()
@@ -226,7 +226,7 @@ function pointermove(event: PointerEvent) {
       InteractionManager.process(position)
     }
 
-    queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
+    queueMicrotask(InteractionManager.executeOperation)
   }
 
   DrawingManager.beginDraw()
