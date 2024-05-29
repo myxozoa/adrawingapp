@@ -15,6 +15,7 @@ import { SettingSlider } from "@/components/SettingSlider"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { DrawingManager } from "@/managers/DrawingManager"
 import { ExportDialog } from "@/components/ExportDialog"
+import { Camera } from "@/objects/Camera"
 
 const PreferenesDialog = () => {
   const setPrefs = usePreferenceStore.use.setPrefs()
@@ -113,6 +114,15 @@ function _TopMenu() {
                 }}
               >
                 Reset Preferences
+              </MenubarItem>
+              <MenubarItem
+                onSelect={() => {
+                  Camera.reset()
+                  DrawingManager.beginDraw()
+                  DrawingManager.pauseDrawNextFrame()
+                }}
+              >
+                Reset Camera
               </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
