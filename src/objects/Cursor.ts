@@ -5,7 +5,7 @@ import * as glUtils from "@/utils/glUtils"
 import { useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { mat3, vec2 } from "gl-matrix"
-import { CanvasSizeCache } from "@/utils/utils"
+import { calculateFromPressure } from "@/utils/utils"
 
 const hoverOpacity = 1
 const drawingOpacity = 0.2
@@ -23,6 +23,7 @@ export class _Cursor {
   location: vec2
   size: vec2
   opacity: number
+  hovering: boolean
 
   constructor() {
     this.programInfo = {} as unknown as typeof this.programInfo
@@ -32,6 +33,7 @@ export class _Cursor {
     this.size = vec2.create()
 
     this.opacity = 1
+    this.hovering = true
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
@@ -101,18 +103,20 @@ export class _Cursor {
     return vao
   }
 
-  public goTransparent = () => {
+  public drawMode = () => {
+    this.hovering = false
     this.opacity = drawingOpacity
   }
 
-  public goOpaque = () => {
+  public hoverMode = () => {
+    this.hovering = true
     this.opacity = hoverOpacity
   }
 
   /**
    * Moves quad around and draws it based on brush settings and point info
    */
-  public draw = (gl: WebGL2RenderingContext, point: { x: number; y: number }) => {
+  public draw = (gl: WebGL2RenderingContext, point: { x: number; y: number }, pressure: number) => {
     gl.useProgram(this.programInfo.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
@@ -125,13 +129,14 @@ export class _Cursor {
         10) / 2,
       1,
     )
-    gl.uniform3f(this.programInfo.uniforms.u_point_size, point.x, CanvasSizeCache.height - point.y, size)
+
+    const pressureSize = calculateFromPressure(size, pressure, !this.hovering)
 
     this.location[0] = point.x
     this.location[1] = point.y
 
-    this.size[0] = size
-    this.size[1] = size
+    this.size[0] = pressureSize
+    this.size[1] = pressureSize
 
     mat3.fromTranslation(this.matrix, this.location)
     mat3.scale(this.matrix, this.matrix, this.size)
