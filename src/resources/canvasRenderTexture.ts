@@ -1,5 +1,4 @@
 import {
-  createBuffer,
   createFramebuffer,
   createTexture,
   createVAO,
@@ -52,8 +51,8 @@ export function createCanvasRenderTexture(
     gl,
     fragment,
     vertex,
-    ["a_position", "a_tex_coord"],
-    ["u_matrix", ...additionalUniforms],
+    ["a_position"],
+    ["u_matrix", "u_size", ...additionalUniforms],
   )
   renderInfo.programInfo.program = program
   renderInfo.programInfo.uniforms = uniforms
@@ -68,38 +67,15 @@ export function createCanvasRenderTexture(
   gl.vertexAttribPointer(attributes.a_position, 2, gl.FLOAT, false, 0, 0)
   gl.enableVertexAttribArray(attributes.a_position)
 
-  const uvBuffer = setupUVBuffer(gl)
-  gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer)
-  gl.vertexAttribPointer(attributes.a_tex_coord, 2, gl.FLOAT, false, 0, 0)
-  gl.enableVertexAttribArray(attributes.a_tex_coord)
+  gl.useProgram(program)
+  gl.uniform2f(uniforms.u_size, width, height)
 
   // Unbind
   gl.bindBuffer(gl.ARRAY_BUFFER, null)
   gl.bindTexture(gl.TEXTURE_2D, null)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   gl.bindVertexArray(null)
+  gl.useProgram(null)
 
   return renderInfo
-}
-
-function setupUVBuffer(gl: WebGL2RenderingContext) {
-  const textureCoordinates = new Float32Array([
-    // Triangle 1
-    0.0, // Top left
-    1.0,
-    0.0, // Bottom left
-    0.0,
-    1.0, // Top right
-    1.0,
-
-    // Triangle 2
-    0.0, // Bottom left
-    0.0,
-    1.0, // Bottom right
-    0.0,
-    1.0, // Top right
-    1.0,
-  ])
-
-  return createBuffer(gl, textureCoordinates)
 }
