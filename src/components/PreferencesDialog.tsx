@@ -2,6 +2,9 @@ import { SettingSlider } from "@/components/SettingSlider"
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+
 export const PreferenesDialog = () => {
   const setPrefs = usePreferenceStore.use.setPrefs()
   const prefs = usePreferenceStore.use.prefs()
@@ -48,6 +51,15 @@ export const PreferenesDialog = () => {
         max={0.99}
         step={0.01}
       />
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="pressure"
+          onCheckedChange={() => setPrefs({ usePressure: !prefs.usePressure })}
+          checked={prefs.usePressure}
+        />
+        <Label htmlFor="pressure">Use Pen Pressure</Label>
+      </div>
     </DialogHeader>
   )
 }
