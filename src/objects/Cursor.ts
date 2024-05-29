@@ -135,8 +135,8 @@ export class _Cursor {
     this.location[0] = point.x
     this.location[1] = point.y
 
-    this.size[0] = pressureSize
-    this.size[1] = pressureSize
+    this.size[0] = pressureSize + 1
+    this.size[1] = pressureSize + 1
 
     mat3.fromTranslation(this.matrix, this.location)
     mat3.scale(this.matrix, this.matrix, this.size)
