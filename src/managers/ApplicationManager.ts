@@ -19,6 +19,9 @@ interface SupportedExtensions {
   textureHalfFloat: OES_texture_float | null
   textureHalfFloatLinear: OES_texture_half_float_linear | null
   colorBufferHalfFloat: EXT_color_buffer_half_float | null
+  // @ts-expect-error This is a real ext
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  provokingVertex: WEBGL_provoking_vertex | null
 }
 
 interface SupportedTextureInfo {
@@ -79,6 +82,7 @@ class _Application {
       textureHalfFloat: null,
       textureHalfFloatLinear: null,
       colorBufferHalfFloat: null,
+      provokingVertex: null,
     }
     this.systemConstraints = {
       maxTextureSize: 0,
@@ -139,6 +143,16 @@ class _Application {
     this.extensions.textureHalfFloat = gl.getExtension("OES_texture_half_float")
     this.extensions.textureHalfFloatLinear = gl.getExtension("OES_texture_half_float_linear")
     this.extensions.colorBufferHalfFloat = gl.getExtension("EXT_color_buffer_half_float")
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.extensions.provokingVertex = gl.getExtension("WEBGL_provoking_vertex")
+
+    if (this.extensions.provokingVertex) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      this.extensions.provokingVertex.provokingVertexWEBGL(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        this.extensions.provokingVertex.FIRST_VERTEX_CONVENTION_WEBGL,
+      )
+    }
   }
 
   private getSystemConstraints = () => {
