@@ -6,9 +6,12 @@ import { useToolStore } from "@/stores/ToolStore"
 
 import type { EyeDropperSampleSizes } from "@/types"
 
+import { BarChart } from "lucide-react"
+import { Toggle } from "@/components/ui/toggle"
 import { SettingSlider } from "@/components/SettingSlider"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { memo } from "react"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 const sampleSizes: EyeDropperSampleSizes[] = [1, 3, 5]
 
@@ -17,6 +20,7 @@ function getSampleSizeLabel(sampleSize: EyeDropperSampleSizes) {
 }
 
 function _ToolSettings() {
+  const prefs = usePreferenceStore.use.prefs()
   const currentTool = useToolStore.use.currentTool()
   const settings = useToolStore.use[currentTool.name]()
   const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
@@ -104,6 +108,15 @@ function _ToolSettings() {
                 min={1}
                 max={500}
               />
+              <Toggle
+                size="xs"
+                aria-label="Toggle Tool Size Pressure"
+                pressed={settings.sizePressure}
+                onPressedChange={() => changeCurrentToolSetting({ sizePressure: !settings.sizePressure })}
+                disabled={!prefs.usePressure}
+              >
+                <BarChart className="h-4 w-4" />
+              </Toggle>
             </div>
           ) : null}
           {"hardness" in settings && settings.hardness !== undefined ? (
@@ -116,18 +129,15 @@ function _ToolSettings() {
                 min={1}
                 max={100}
               />
-            </div>
-          ) : null}
-          {"opacity" in settings && settings.opacity !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
-              <SettingSlider
-                name={"Opacity"}
-                value={settings.opacity}
-                onValueChange={(opacity) => changeCurrentToolSetting({ opacity })}
-                fractionDigits={0}
-                min={1}
-                max={100}
-              />
+              <Toggle
+                size="xs"
+                aria-label="Toggle Tool Hardness Pressure"
+                pressed={settings.hardnessPressure}
+                onPressedChange={() => changeCurrentToolSetting({ hardnessPressure: !settings.hardnessPressure })}
+                disabled={!prefs.usePressure}
+              >
+                <BarChart className="h-4 w-4" />
+              </Toggle>
             </div>
           ) : null}
           {"flow" in settings && settings.flow !== undefined ? (
@@ -136,6 +146,27 @@ function _ToolSettings() {
                 name={"Flow"}
                 value={settings.flow}
                 onValueChange={(flow) => changeCurrentToolSetting({ flow })}
+                fractionDigits={0}
+                min={1}
+                max={100}
+              />
+              <Toggle
+                size="xs"
+                aria-label="Toggle Tool Flow Pressure"
+                pressed={settings.flowPressure}
+                onPressedChange={() => changeCurrentToolSetting({ flowPressure: !settings.flowPressure })}
+                disabled={!prefs.usePressure}
+              >
+                <BarChart className="h-4 w-4" />
+              </Toggle>
+            </div>
+          ) : null}
+          {"opacity" in settings && settings.opacity !== undefined ? (
+            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
+              <SettingSlider
+                name={"Opacity"}
+                value={settings.opacity}
+                onValueChange={(opacity) => changeCurrentToolSetting({ opacity })}
                 fractionDigits={0}
                 min={1}
                 max={100}

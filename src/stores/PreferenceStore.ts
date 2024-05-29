@@ -31,7 +31,7 @@ export const defaultPreferences = {
   canvasWidth: 10 * 300,
   canvasHeight: 8 * 300,
 
-  usePressure: false,
+  usePressure: true,
 }
 
 const usePreferenceStoreBase = create<State & Action>()(
