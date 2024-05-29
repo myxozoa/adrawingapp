@@ -234,12 +234,7 @@ class _Application {
 
     if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
 
-    this.exportDownloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
-    this.exportDownloadLink.id = "local_filesaver"
-    this.exportDownloadLink.target = "_blank"
-    this.exportDownloadLink.rel = "noopener"
-    this.exportDownloadLink.style.display = "none"
-    document.body.appendChild(this.exportDownloadLink)
+    this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
 
     Camera.init()
 

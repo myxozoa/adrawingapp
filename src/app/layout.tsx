@@ -10,6 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <div id="root">{children}</div>
+        <a id="local_filesaver" target="_blank" rel="noopener" className="hidden"></a>
       </body>
     </html>
   )
