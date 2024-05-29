@@ -12,63 +12,105 @@ uniform int u_blend_mode;
 uniform highp sampler2D u_bottom_texture;
 uniform highp sampler2D u_top_texture;
 
-vec3 normal(vec3 base, vec3 blend) {
+vec4 normal(vec4 base, vec4 blend) {
   return blend;
 }
 
-vec3 multiply(vec3 base, vec3 blend) {
+vec4 multiply(vec4 base, vec4 blend) {
   return base * blend;
 }
 
-vec3 pdOver(vec3 base, vec3 blend, float opacity) {
-  vec3 result;
+vec4 screen(vec4 base, vec4 blend) {
+  // Sca × Da + Dca × Sa - Sca × Dca
+  return blend * base.a + base * blend.a - blend * base;
+}
+
+// blend = src
+// base = dst
+vec4 pdOver(vec4 base, vec4 blend) {
+// vec3 pdOver(vec3 base, vec3 blend, float baseA, float blendA) {
+  vec4 result;
 
   //Cr = (1 - αb) x Cs + αb x B(Cb, Cs)
   switch(u_blend_mode) {
     // Clear Mode
     case 0:
-      result = base * (1.0 - opacity);
+      result = base * (1.0 - blend.a);
 
       break;
     // Normal Mode
     case 1:
-      result = normal(base, blend) + (base * (1.0 - opacity));
+      result = normal(base, blend) * base.a;
+
+      break;
+
+    // Multiply Mode
+    case 2:
+      result = multiply(base, blend);
+
+      break;
+
+    // Screen Mode
+    case 3:
+      result = screen(base, blend);
 
       break;
 
   // Error value
     default:
-      result = vec3(1., 0., 1.);
+      result = vec4(1., 0., 1., 1.);
   }
 
-  return result;
+  // + Sca × (1 - Da) + Dca × (1 - Sa)
+  return result + blend * (1. - base.a) + base * (1.0 - blend.a);
 }
 
-// vec4 pdOver(vec4 a, vec4 b){
-//   return a + (b*(1. - a.a));
-// }
+// From SVG spec
 
-vec4 blendColor(vec4 base, vec4 blend, float opacity) {
-  blend *= opacity;
+// Sc  - The source element color value.
+// Sa  - The source element alpha value.
+// Dc  - The canvas color value prior to compositing.
+// Da  - The canvas alpha value prior to compositing.
+// Dc' - The canvas color value post compositing.
+// Da' - The canvas alpha value post compositing.
 
+// dont seem to need alpha because of premultiplication
+  
+// normal
+// colors: Sca × Da + Sca × (1 - Da) + Dca × (1 - Sa)
+// alpha: Sa + Da - Sa × Da
+
+// multiply
+// colors: Sca × Dca + Sca × (1 - Da) + Dca × (1 - Sa)
+// alpha: Sa + Da - Sa × Da
+
+// screen
+// colors: (Sca × Da + Dca × Sa - Sca × Dca) + Sca × (1 - Da) + Dca × (1 - Sa)
+// alpha: Sa + Da - Sa × Da
+
+
+// based on src-over
+vec4 blendColor(vec4 base, vec4 blend) {
+  // b = base
+  // s = blend
   // Cs = (1 - αb) x Cs + αb x B(Cb, Cs)
   // Co = αs x Fa x Cs + αb x Fb x Cb
 
-  // Fa = 1; Fb = 1 – αs
-  float alpha = 1.;
+  // Co = αs x Cs + αb x (1 - αs) x Cb
+  // Fa = 1; Fb = 1 - αs
 
-  if (u_blend_mode == 0) {
-    alpha = base.a - blend.a;
-  } else {
-    alpha = (blend.a + (1. - blend.a) * base.a);
-  }
+  // alpha = (blend.a + (1. - blend.a) * base.a);
 
-  vec3 blended = pdOver(base.rgb, blend.rgb, blend.a);
+  // Sa + Da - Sa × Da
+  // float alpha = blend.a + base.a - blend.a * base.a;
 
-  blended = max(min(blended, 1.),0.);
-  alpha = max(min(alpha, 1.), 0.);
+  vec4 blended = pdOver(base, blend);
 
-  return vec4(blended, alpha);
+  blended = max(min(blended, 1.), 0.);
+  // alpha = max(min(alpha, 1.), 0.);
+
+  // return vec4(blend.a * blended + base.a * (1. - blend.a) * base.rgb, alpha);
+  return blended;
 }
 
 void main() {
@@ -79,18 +121,28 @@ void main() {
     discard;
   }
 
-  vec4 outColor;
+  // Error Color
+  vec4 outColor = vec4(1., 0., 1., 1.);
 
   if (u_blend_mode == 0) {
-    outColor = blendColor(bottom, top, u_opacity);
-
-  } else 
-  if (bottom.a == 0.) {
+    top.a *= u_opacity;
+    float alpha = bottom.a - top.a;
+    vec3 blended = bottom.rgb * (1.0 - top.a);
+  
+    outColor = vec4(blended, alpha);
+     
+  } else if (bottom.a == 0.) {
     outColor = top * u_opacity;
   } else if (top.a == 0.) {
     outColor = bottom;
   } else {
-    outColor = blendColor(bottom, top, u_opacity);
+    // bottom.rgb /= bottom.a;
+    top *= u_opacity;
+    // top.rgb /= top.a;
+
+    bottom = max(min(bottom, 1.), 0.);
+    top = max(min(top, 1.), 0.);
+    outColor = blendColor(bottom, top);
   }
 
   fragColor = outColor;
