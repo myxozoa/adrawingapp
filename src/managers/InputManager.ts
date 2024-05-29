@@ -209,6 +209,7 @@ function pointerdown(event: PointerEvent) {
   Application.gl.canvas.setPointerCapture(event.pointerId)
 
   document.body.style.cursor = "none"
+  ;(event.target as HTMLCanvasElement).focus()
 
   if (event.pointerType === "touch") {
     DrawingManager.disableCursor()
