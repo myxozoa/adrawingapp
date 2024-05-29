@@ -33,6 +33,16 @@ export const PreferenesDialog = () => {
       />
 
       <SettingSlider
+        name={"Pressure Smoothing"}
+        value={((1 - prefs.pressureSmoothing) * 10) / 10}
+        onValueChange={(pressureSmoothing) => setPrefs({ pressureSmoothing: 1 - pressureSmoothing })}
+        fractionDigits={2}
+        min={0}
+        max={0.99}
+        step={0.01}
+      />
+
+      <SettingSlider
         name={"Mouse Filtering"}
         value={((1 - prefs.mouseFiltering) * 10) / 10}
         onValueChange={(mouseFiltering) => setPrefs({ mouseFiltering: 1 - mouseFiltering })}
