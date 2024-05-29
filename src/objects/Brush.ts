@@ -253,7 +253,15 @@ export class Brush extends Tool implements IBrush {
    */
   private line = (gl: WebGL2RenderingContext, start: IPoint, end: IPoint) => {
     const distance = getDistance(start, end)
-    const size = calculateFromPressure(this.settings.size / 2, start.pressure, start.pointerType === "pen")
+
+    const usePressure = usePreferenceStore.getState().prefs.usePressure
+    const basePressure = usePressure && start.pointerType === "pen"
+
+    const size = calculateFromPressure(
+      this.settings.size / 2,
+      start.pressure,
+      basePressure && this.settings.sizePressure,
+    )
 
     const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
@@ -280,20 +288,22 @@ export class Brush extends Tool implements IBrush {
     const currentLayer = useLayerStore.getState().currentLayer
     this.previouslyDrawnPoint.copy(point)
 
+    const basePressure = usePressure && point.pointerType === "pen"
+
     const size = calculateFromPressure(
       this.settings.size / 2,
       point.pressure,
-      usePressure && this.settings.sizePressure,
+      basePressure && this.settings.sizePressure,
     )
     const flow = calculateFromPressure(
       this.settings.flow / 100,
       point.pressure,
-      usePressure && this.settings.flowPressure,
+      basePressure && this.settings.flowPressure,
     )
     const hardness = calculateFromPressure(
       this.settings.hardness / 100,
       point.pressure,
-      usePressure && this.settings.hardnessPressure,
+      basePressure && this.settings.hardnessPressure,
     )
 
     const base_roughness = 2
