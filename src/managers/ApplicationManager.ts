@@ -204,8 +204,8 @@ class _Application {
     this.gl = context as WebGL2RenderingContextDOM
   }
 
-  public resize = () => {
-    resizeCanvasToDisplaySize(this.gl.canvas)
+  public resize = (callback?: () => void) => {
+    resizeCanvasToDisplaySize(this.gl.canvas, callback)
   }
 
   public init = () => {

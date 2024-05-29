@@ -24,6 +24,8 @@ import { Layer } from "@/objects/Layer"
 import { useToolStore } from "@/stores/ToolStore"
 import { Cursor } from "@/objects/Cursor"
 import { isBrush, isEraser } from "@/utils/typeguards"
+import { InputManager } from "@/managers/InputManager"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -134,6 +136,8 @@ function swapPixelInterpolation() {
 
 function render() {
   const gl = Application.gl
+
+  Application.resize(InputManager.resize)
 
   clearSpecific(framebuffers[readFramebuffer])
   clearSpecific(framebuffers[writeFramebuffer])
@@ -565,7 +569,6 @@ function pauseDrawNextFrame() {
 
 function start() {
   requestAnimationFrame(renderLoop)
-  pauseDrawNextFrame()
 }
 
 function renderLoop() {

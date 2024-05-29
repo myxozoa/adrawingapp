@@ -328,22 +328,15 @@ const mouse_listeners = {
 }
 
 function resize() {
+  reset()
   idleTime = 0
 
   Application.resize()
-
-  Camera.updateViewProjectionMatrix()
-  DrawingManager.beginDraw()
-  DrawingManager.pauseDrawNextFrame()
+  Camera.reset()
 }
 
 function windowResize() {
-  resizeThrottle(() => {
-    resize()
-
-    // Device rotation hack
-    setTimeout(resize, 1)
-  })
+  DrawingManager.beginDraw()
 }
 
 interface EventEmitter {
@@ -394,7 +387,13 @@ function init() {
   }
 
   window.addEventListener("resize", windowResize)
-  screen.orientation.addEventListener("change", windowResize)
+
+  if (screen.orientation) {
+    screen.orientation.addEventListener("change", windowResize)
+  } else {
+    window.addEventListener("deviceorientation", windowResize)
+    window.addEventListener("orientationchange", windowResize)
+  }
 }
 
 function reset() {
@@ -430,10 +429,18 @@ function destroy() {
   }
 
   window.removeEventListener("resize", windowResize)
-  screen.orientation.removeEventListener("change", windowResize)
+
+  if (screen.orientation) {
+    screen.orientation.removeEventListener("change", windowResize)
+  } else {
+    window.removeEventListener("deviceorientation", windowResize)
+    window.removeEventListener("orientationchange", windowResize)
+  }
 }
 
 export const InputManager = {
+  resize,
+  windowResize,
   init,
   destroy,
 }

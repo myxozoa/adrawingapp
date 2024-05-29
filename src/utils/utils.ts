@@ -223,23 +223,33 @@ function onResize(entries: ResizeObserverEntry[]) {
   }
 }
 
+export function setCanvasSizeCache(
+  canvas: HTMLCanvasElement,
+  offsetWidth?: number,
+  offsetHeight?: number,
+  width?: number,
+  height?: number,
+) {
+  CanvasSizeCache.offsetWidth = offsetWidth || canvas.offsetWidth
+  CanvasSizeCache.offsetHeight = offsetHeight || canvas.offsetHeight
+  CanvasSizeCache.width = width || canvas.width
+  CanvasSizeCache.height = height || canvas.height
+}
+
 export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: () => void) {
   // Get the size the browser is displaying the canvas in device pixels.
-  const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas)!
+  const canvasDisplaySize = canvasToDisplaySizeMap.get(canvas)!
   // Check if the canvas is not the same size.
-  const needResize = canvas.width !== displayWidth || canvas.height !== displayHeight
-  if (needResize) {
+  if (canvas.width !== canvasDisplaySize[0] || canvas.height !== canvasDisplaySize[1]) {
     // Make the canvas the same size
-    canvas.width = displayWidth
-    canvas.height = displayHeight
 
-    CanvasSizeCache.offsetHeight = canvas.offsetHeight
-    CanvasSizeCache.offsetWidth = canvas.offsetWidth
-    CanvasSizeCache.width = displayWidth
-    CanvasSizeCache.height = displayHeight
+    canvas.width = canvasDisplaySize[0]
+    canvas.height = canvasDisplaySize[1]
+
+    setCanvasSizeCache(canvas)
+
     if (callback) callback()
   }
-  return needResize
 }
 
 // https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately/35363027#35363027
