@@ -125,24 +125,16 @@ void main() {
   vec4 outColor = vec4(1., 0., 1., 1.);
 
   if (u_blend_mode == 0) {
-    bottom.rgb /= bottom.a;
-    bottom = max(min(bottom, 1.), 0.);
-
     top.a *= u_opacity;
-    float alpha = bottom.a - top.a;
 
-    alpha = max(min(alpha, 1.), 0.);
-  
-    outColor = vec4(bottom.rgb * alpha, alpha);
-     
+    //  Dca × (1 - Sa) 
+    outColor = bottom * (1. - top.a);
   } else if (bottom.a == 0.) {
     outColor = top * u_opacity;
   } else if (top.a == 0.) {
     outColor = bottom;
   } else {
-    // bottom.rgb /= bottom.a;
     top *= u_opacity;
-    // top.rgb /= top.a;
 
     bottom = max(min(bottom, 1.), 0.);
     top = max(min(top, 1.), 0.);
