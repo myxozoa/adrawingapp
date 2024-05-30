@@ -125,11 +125,15 @@ void main() {
   vec4 outColor = vec4(1., 0., 1., 1.);
 
   if (u_blend_mode == 0) {
+    bottom.rgb /= bottom.a;
+    bottom = max(min(bottom, 1.), 0.);
+
     top.a *= u_opacity;
     float alpha = bottom.a - top.a;
-    vec3 blended = bottom.rgb * (1.0 - top.a);
+
+    alpha = max(min(alpha, 1.), 0.);
   
-    outColor = vec4(blended, alpha);
+    outColor = vec4(bottom.rgb * alpha, alpha);
      
   } else if (bottom.a == 0.) {
     outColor = top * u_opacity;
