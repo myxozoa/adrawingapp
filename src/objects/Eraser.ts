@@ -10,9 +10,13 @@ import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 export class Eraser extends Tool {
   settings: {
     size: number
+    sizePressure: boolean
     flow: number
+    flowPressure: boolean
     opacity: number
+    opacityPressure: boolean
     hardness: number
+    hardnessPressure: boolean
     spacing: number
   }
   brush: IBrush

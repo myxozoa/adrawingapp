@@ -1,4 +1,4 @@
-import type { MouseState, IOperation } from "@/types"
+import type { MouseState } from "@/types"
 import { tool_types } from "@/constants.tsx"
 import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
@@ -34,25 +34,6 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const prevPoint = operation.points.getPoint(-1).active ? operation.points.getPoint(-1) : operation.points.currentPoint
 
-  const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
-
-  const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
-
-  const size = calculateFromPressure(_size / 2, relativeMouseState.pressure, relativeMouseState.pointerType === "pen")
-
-  const stampSpacing = calculateSpacing(spacing, size)
-
-  // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
-  if (mergeEvent) {
-    relativeMouseState.x = lerp(mergeEventCache.x, relativeMouseState.x, 0.5)
-    relativeMouseState.y = lerp(mergeEventCache.y, relativeMouseState.y, 0.5)
-
-    mergeEvent = false
-  }
-
-  mergeEventCache.x = relativeMouseState.x
-  mergeEventCache.y = relativeMouseState.y
-
   // To counteract the fact that the pointer position resolution gets much lower the
   // more zoomed out the canvas becomes we raise filtering to compensate
   if (Camera.zoom < 1) {
@@ -78,6 +59,26 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   operation.points.currentPoint.pressure = filteredPressure[0]
 
+  operation.points.currentPoint.pressure = lerp(
+    operation.points.currentPoint.pressure,
+    prevPoint.pressure,
+    1 - prefs.pressureSmoothing,
+  )
+
+  const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
+
+  const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
+  const usePressure = usePreferenceStore.getState().prefs.usePressure
+  const basePressure = usePressure && relativeMouseState.pointerType === "pen"
+
+  const size = calculateFromPressure(
+    _size / 2,
+    operation.points.currentPoint.pressure,
+    basePressure && "sizePressure" in operation.tool.settings && operation.tool.settings.sizePressure,
+  )
+
+  const stampSpacing = calculateSpacing(spacing, size)
+
   // These values are just tuned to feel right
   const maxSmoothAdjustment = Math.max(0.8 - (1 - prefs.mouseSmoothing), 0)
 
@@ -89,6 +90,17 @@ function prepareOperation(relativeMouseState: MouseState) {
     operation.points.currentPoint.location,
     Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment, 0.01), 1),
   )
+
+  // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
+  if (mergeEvent) {
+    operation.points.currentPoint.x = lerp(mergeEventCache.x, operation.points.currentPoint.x, 0.7)
+    operation.points.currentPoint.y = lerp(mergeEventCache.y, operation.points.currentPoint.y, 0.7)
+
+    mergeEvent = false
+  }
+
+  mergeEventCache.x = operation.points.currentPoint.x
+  mergeEventCache.y = operation.points.currentPoint.y
 
   const dist = getDistance(prevPoint, operation.points.currentPoint)
 
@@ -121,7 +133,8 @@ function prepareOperation(relativeMouseState: MouseState) {
   }
 }
 
-function executeOperation(operation: IOperation) {
+function executeOperation() {
+  const operation = Application.currentOperation
   if (!operation.readyToDraw) return
 
   const gl = Application.gl

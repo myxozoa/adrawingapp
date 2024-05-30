@@ -104,9 +104,13 @@ export interface ITool {
 export interface IBrush extends ITool {
   settings: {
     size: number
+    sizePressure: boolean
     flow: number
+    flowPressure: boolean
     opacity: number
+    opacityPressure: boolean
     hardness: number
+    hardnessPressure: boolean
     spacing: number
   }
 

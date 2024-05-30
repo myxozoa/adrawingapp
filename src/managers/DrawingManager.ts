@@ -24,6 +24,9 @@ import { Layer } from "@/objects/Layer"
 import { useToolStore } from "@/stores/ToolStore"
 import { Cursor } from "@/objects/Cursor"
 import { isBrush, isEraser } from "@/utils/typeguards"
+import { PointerManager } from "@/managers/PointerManager"
+import { InputManager } from "@/managers/InputManager"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -135,6 +138,8 @@ function swapPixelInterpolation() {
 function render() {
   const gl = Application.gl
 
+  Application.resize(InputManager.resize)
+
   clearSpecific(framebuffers[readFramebuffer])
   clearSpecific(framebuffers[writeFramebuffer])
 
@@ -160,7 +165,9 @@ function render() {
   renderToScreen(displayLayer, true, renderUniforms)
 
   if (shouldShowCursor) {
-    Cursor.draw(gl, InteractionManager.currentMousePosition)
+    const usePressure = usePreferenceStore.getState().prefs.usePressure
+    const pressure = usePressure ? PointerManager.pressure : 1
+    Cursor.draw(gl, InteractionManager.currentMousePosition, pressure)
   }
 }
 
@@ -565,7 +572,6 @@ function pauseDrawNextFrame() {
 
 function start() {
   requestAnimationFrame(renderLoop)
-  pauseDrawNextFrame()
 }
 
 function renderLoop() {
@@ -586,7 +592,7 @@ function recomposite() {
 
 function hideCursor() {
   // shouldShowCursor = false
-  Cursor.goTransparent()
+  Cursor.drawMode()
 }
 
 function disableCursor() {
@@ -595,7 +601,7 @@ function disableCursor() {
 
 function showCursor() {
   shouldShowCursor = true
-  Cursor.goOpaque()
+  Cursor.hoverMode()
 }
 
 /**

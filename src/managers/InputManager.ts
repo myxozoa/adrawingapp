@@ -14,8 +14,16 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 
-const resizeThrottle = throttleRAF()
 const wheelThrottle = throttleRAF()
+
+function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (predicate(arr[i])) {
+      return i
+    }
+  }
+  return -1
+}
 
 enum InteractionState {
   none,
@@ -26,12 +34,86 @@ enum InteractionState {
 }
 
 let currentInteractionState: InteractionState = InteractionState.none
-const touches: PointerEvent[] = []
+
+interface Touch {
+  x: number
+  y: number
+  pointerId: number
+}
+
+class TouchManager {
+  touches: Touch[]
+  midPoint: {
+    x: number
+    y: number
+  }
+  maxTouches: number
+
+  constructor(maxTouches = 2) {
+    this.maxTouches = maxTouches
+    this.touches = []
+    this.midPoint = {
+      x: 0,
+      y: 0,
+    }
+  }
+
+  addTouch = (event: PointerEvent) => {
+    this.touches.push({
+      x: event.x,
+      y: event.y,
+      pointerId: event.pointerId,
+    })
+  }
+
+  removeTouch = (event: PointerEvent) => {
+    const index = this.touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+    this.touches.splice(index, 1)
+  }
+
+  getMidPoint = () => {
+    this.midPoint.x =
+      this.touches.reduce((acc: number, currentTouch: Touch) => {
+        return acc + currentTouch.x
+      }, 0) / this.touches.length
+    this.midPoint.y =
+      this.touches.reduce((acc: number, currentTouch: Touch) => {
+        return acc + currentTouch.y
+      }, 0) / this.touches.length
+
+    return this.midPoint
+  }
+
+  getTouchByID = (pointerId: number) => {
+    return this.touches.find((touch) => touch.pointerId === pointerId)
+  }
+
+  getTouch = (index: number) => {
+    if (index >= this.touches.length) throw new Error("Touch index out of bounds")
+    if (index < 0) throw new Error("Touch index cannot be negative")
+
+    return this.touches[index]
+  }
+
+  updateTouch = (event: PointerEvent) => {
+    const index = findLastIndex(this.touches, (cachedEvent) => cachedEvent.pointerId === event.pointerId)
+    this.touches[index] = event
+  }
+
+  clearTouches = () => {
+    this.touches.length = 0
+  }
+
+  get length() {
+    return this.touches.length
+  }
+}
+
+const touches = new TouchManager()
 let prevTouchDistance = -1
 
-const startMidPosition = { x: 0, y: 0 }
-const lastMidPosition = { x: 0, y: 0 }
-const midPoint = { x: 0, y: 0 }
+const startMidPoint = { x: 0, y: 0 }
+const lastMidPoint = { x: 0, y: 0 }
 
 let idleTime = 0
 
@@ -46,26 +128,12 @@ function incrementIdleTimer() {
 
 setInterval(incrementIdleTimer, 100)
 
-function removeEvent(event: PointerEvent) {
-  const index = touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
-  touches.splice(index, 1)
-}
-
-function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean) {
-  for (let i = arr.length - 1; i >= 0; i--) {
-    if (predicate(arr[i])) {
-      return i
-    }
-  }
-  return -1
-}
-
 function wheelZoom(event: WheelEvent) {
   const pointerState = updatePointer(event)
 
   const zoomTarget = Camera.zoom * Math.pow(2, event.deltaY * -0.001)
 
-  queueMicrotask(() => zoom(pointerState, zoomTarget))
+  zoom(pointerState, zoomTarget)
 }
 
 function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
@@ -74,7 +142,7 @@ function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
 
   const zoomTarget = Camera.zoom * (distance / prevTouchDistance)
 
-  queueMicrotask(() => zoom(midPoint, zoomTarget))
+  zoom(midPoint, zoomTarget)
 }
 
 function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
@@ -82,7 +150,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
-  const mousePositionBeforeZoom = calculateWorldPosition(pointerPosition)
+  const mousePositionBeforeZoom = calculateWorldPosition({ ...pointerPosition })
   const mouseXBeforeZoom = mousePositionBeforeZoom[0]
   const mouseYBeforeZoom = mousePositionBeforeZoom[1]
 
@@ -90,7 +158,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   Camera.updateViewProjectionMatrix()
 
-  const mousePositionAfterZoom = calculateWorldPosition(pointerPosition)
+  const mousePositionAfterZoom = calculateWorldPosition({ ...pointerPosition })
   const mouseXAfterZoom = mousePositionAfterZoom[0]
   const mouseYAfterZoom = mousePositionAfterZoom[1]
 
@@ -104,29 +172,31 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   Camera.updateViewProjectionMatrix()
 }
 
-function pan(midPosition: { x: number; y: number }) {
-  if (lastMidPosition.x === 0 && lastMidPosition.y === 0) return
+function pan(midPoint: { x: number; y: number }) {
+  if (lastMidPoint.x === 0 && lastMidPoint.y === 0) return
   const gl = Application.gl
 
   gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
-  const dx = midPosition.x - lastMidPosition.x
-  const dy = midPosition.y - lastMidPosition.y
+  let dx = midPoint.x - lastMidPoint.x
+  let dy = midPoint.y - lastMidPoint.y
+
+  dx *= window.devicePixelRatio
+  dy *= window.devicePixelRatio
 
   Camera.x -= dx / Camera.zoom
   Camera.y -= dy / Camera.zoom
 
   Camera.updateViewProjectionMatrix()
 
-  lastMidPosition.x = midPosition.x
-  lastMidPosition.y = midPosition.y
+  lastMidPoint.x = midPoint.x
+  lastMidPoint.y = midPoint.y
 }
 
 function touchPanZoom() {
-  midPoint.x = (touches[0].x + touches[1].x) / 2
-  midPoint.y = (touches[0].y + touches[1].y) / 2
+  const distance = getDistance(touches.getTouch(0), touches.getTouch(1))
 
-  const distance = getDistance(touches[0], touches[1])
+  const midPoint = touches.getMidPoint()
 
   pan(midPoint)
   pinchZoom(midPoint, distance)
@@ -138,13 +208,15 @@ function pointerdown(event: PointerEvent) {
   idleTime = 0
   Application.gl.canvas.setPointerCapture(event.pointerId)
 
+  document.body.style.cursor = "none"
+  ;(event.target as HTMLCanvasElement).focus()
+
   if (event.pointerType === "touch") {
     DrawingManager.disableCursor()
-    touches.push(event)
+    touches.addTouch(event)
 
     if (touches.length > 2) {
       InteractionManager.endInteraction(false)
-      touches.length = 0
 
       return
     }
@@ -152,10 +224,11 @@ function pointerdown(event: PointerEvent) {
       InteractionManager.endInteraction(false)
       currentInteractionState = InteractionState.touchPanZoom
 
-      startMidPosition.x = (touches[0].x + touches[1].x) / 2
-      startMidPosition.y = (touches[0].y + touches[1].y) / 2
-      lastMidPosition.x = startMidPosition.x
-      lastMidPosition.y = startMidPosition.y
+      const midPoint = touches.getMidPoint()
+      startMidPoint.x = midPoint.x
+      startMidPoint.y = midPoint.y
+      lastMidPoint.x = startMidPoint.x
+      lastMidPoint.y = startMidPoint.y
 
       DrawingManager.beginDraw()
 
@@ -168,10 +241,10 @@ function pointerdown(event: PointerEvent) {
   if (ModifierKeyManager.has("space")) {
     currentInteractionState = InteractionState.pan
 
-    startMidPosition.x = event.x
-    startMidPosition.y = event.y
-    lastMidPosition.x = event.x
-    lastMidPosition.y = event.y
+    startMidPoint.x = event.x
+    startMidPoint.y = event.y
+    lastMidPoint.x = event.x
+    lastMidPoint.y = event.y
   }
 
   const position = calculatePointerWorldPosition(event)
@@ -184,7 +257,7 @@ function pointerdown(event: PointerEvent) {
 
     InteractionManager.process(position)
 
-    queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
+    queueMicrotask(InteractionManager.executeOperation)
   }
   DrawingManager.hideCursor()
   DrawingManager.beginDraw()
@@ -201,9 +274,7 @@ function pointermove(event: PointerEvent) {
   InteractionManager.currentMousePosition.y = position.y
 
   if (event.pointerType === "touch") {
-    const index = findLastIndex(touches, (cachedEvent) => cachedEvent.pointerId === event.pointerId)
-    touches[index] = event
-
+    touches.updateTouch(event)
     if (currentInteractionState === InteractionState.touchPanZoom) {
       touchPanZoom()
     }
@@ -226,7 +297,7 @@ function pointermove(event: PointerEvent) {
       InteractionManager.process(position)
     }
 
-    queueMicrotask(() => InteractionManager.executeOperation(Application.currentOperation))
+    queueMicrotask(InteractionManager.executeOperation)
   }
 
   DrawingManager.beginDraw()
@@ -237,12 +308,14 @@ function pointermove(event: PointerEvent) {
 function pointerup(event: PointerEvent) {
   idleTime = 0
 
+  document.body.style.cursor = "default"
+
   Application.drawing = false
   Application.gl.canvas.releasePointerCapture(event.pointerId)
 
   if (event.pointerType === "touch") {
     DrawingManager.hideCursor()
-    removeEvent(event)
+    touches.removeTouch(event)
   } else {
     DrawingManager.showCursor()
   }
@@ -278,18 +351,21 @@ function keyup(event: KeyboardEvent) {
 
 function pointercancel(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
 
 function pointerout(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
 
 function pointerleave(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
+  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
@@ -313,37 +389,38 @@ const keyboard_listeners = {
 
 function ignoreEvent(event: Event) {
   event.preventDefault()
+  event.stopPropagation()
 }
 
 const touch_listeners = {
+  touchstart: ignoreEvent,
+  touchcancel: ignoreEvent,
   touchdown: ignoreEvent,
   touchmove: ignoreEvent,
   touchend: ignoreEvent,
 }
 
 const mouse_listeners = {
+  mouseenter: ignoreEvent,
+  mouseleave: ignoreEvent,
+  mouseout: ignoreEvent,
+  mouseup: ignoreEvent,
+  mouseover: ignoreEvent,
   mousedown: ignoreEvent,
   mousemove: ignoreEvent,
   mouseend: ignoreEvent,
 }
 
 function resize() {
+  reset()
   idleTime = 0
 
   Application.resize()
-
-  Camera.updateViewProjectionMatrix()
-  DrawingManager.beginDraw()
-  DrawingManager.pauseDrawNextFrame()
+  Camera.reset()
 }
 
 function windowResize() {
-  resizeThrottle(() => {
-    resize()
-
-    // Device rotation hack
-    setTimeout(resize, 1)
-  })
+  DrawingManager.beginDraw()
 }
 
 interface EventEmitter {
@@ -394,20 +471,24 @@ function init() {
   }
 
   window.addEventListener("resize", windowResize)
-  screen.orientation.addEventListener("change", windowResize)
+
+  if (screen.orientation) {
+    screen.orientation.addEventListener("change", windowResize)
+  } else {
+    window.addEventListener("deviceorientation", windowResize)
+    window.addEventListener("orientationchange", windowResize)
+  }
 }
 
 function reset() {
-  startMidPosition.x = 0
-  startMidPosition.y = 0
-  lastMidPosition.x = 0
-  lastMidPosition.y = 0
-  midPoint.x = 0
-  midPoint.y = 0
-  touches.length = 0
+  startMidPoint.x = 0
+  startMidPoint.y = 0
+  lastMidPoint.x = 0
+  lastMidPoint.y = 0
   prevTouchDistance = -1
 
   currentInteractionState = InteractionState.none
+  document.body.style.cursor = "default"
 }
 
 function destroy() {
@@ -430,10 +511,18 @@ function destroy() {
   }
 
   window.removeEventListener("resize", windowResize)
-  screen.orientation.removeEventListener("change", windowResize)
+
+  if (screen.orientation) {
+    screen.orientation.removeEventListener("change", windowResize)
+  } else {
+    window.removeEventListener("deviceorientation", windowResize)
+    window.removeEventListener("orientationchange", windowResize)
+  }
 }
 
 export const InputManager = {
+  resize,
+  windowResize,
   init,
   destroy,
 }

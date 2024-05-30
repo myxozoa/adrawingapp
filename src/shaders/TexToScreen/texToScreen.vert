@@ -2,14 +2,17 @@
 
 precision highp float;
 
+uniform vec2 u_size;
+
 in vec2 a_position;
-in vec2 a_tex_coord;
 out vec2 v_tex_coord;
 
 uniform mat3 u_matrix;
 
 void main() {
-  v_tex_coord = a_tex_coord;
+  vec2 temp = a_position * (1. / u_size);
+  temp.y = 1. - temp.y;
+  v_tex_coord = temp;
 
   gl_Position = vec4((u_matrix * vec3(a_position, 1.)).xy, 0., 1.);
 }

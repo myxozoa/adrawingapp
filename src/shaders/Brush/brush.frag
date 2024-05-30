@@ -41,15 +41,15 @@ void main()
     vec2 u_point = u_point_random.xy;
     float u_random = u_point_random.z;
 
-    vec2 st = ((gl_FragCoord.xy * (1./u_size)) + u_random);
+    vec2 st = ((gl_FragCoord.xy * (1. / u_size)) + u_random);
 
     // Vary the size for rougher brush edges
     float size_random_amount = u_roughness;
     float size_random = random(st);
 
-    float size_adjustment = (size_random * (size_random_amount)) - (size_random_amount - 0.01);
+    float size_adjustment = (size_random * (size_random_amount));
 
-    float size = 1. / clamp(u_size + 1. + size_adjustment, 1., 1000.);
+    float size = 1. / clamp(u_size + 1. - size_adjustment, 1., 1000.);
 
     // Calculate brush circle
     vec2 position = gl_FragCoord.xy - u_point;
@@ -71,11 +71,11 @@ void main()
 
     float alpha_random = random(st);
 
-    float noise_amount = 0.005;
+    float noise_amount = 0.01;
 
-    float alpha = (alpha_random * (noise_amount)) - (noise_amount - 0.01);
+    float alpha = (alpha_random * (noise_amount));
 
-    color.a = clamp(color.a - alpha, 0., 1.);
+    color.a = clamp(color.a + alpha - (u_random * 0.001), 0., 1.);
     
     // Premultiplied alpha
     color.rgb = toLinearRGB(color.rgb);

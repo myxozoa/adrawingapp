@@ -6,10 +6,18 @@ import { useToolStore } from "@/stores/ToolStore"
 
 import type { EyeDropperSampleSizes } from "@/types"
 
+import { BarChart } from "lucide-react"
+import { Toggle } from "@/components/ui/toggle"
 import { SettingSlider } from "@/components/SettingSlider"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { memo } from "react"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
+import { ChevronDown } from "lucide-react"
+
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 const sampleSizes: EyeDropperSampleSizes[] = [1, 3, 5]
 
 function getSampleSizeLabel(sampleSize: EyeDropperSampleSizes) {
@@ -17,6 +25,7 @@ function getSampleSizeLabel(sampleSize: EyeDropperSampleSizes) {
 }
 
 function _ToolSettings() {
+  const prefs = usePreferenceStore.use.prefs()
   const currentTool = useToolStore.use.currentTool()
   const settings = useToolStore.use[currentTool.name]()
   const changeCurrentToolSetting = useToolStore.use.changeToolSetting()
@@ -93,69 +102,166 @@ function _ToolSettings() {
       }`}
     >
       <Panel className="flex w-full items-center">
-        <div className="flex flex-col items-center justify-center lg:flex-row">
+        <div className="flex flex-row items-center justify-center">
           {"size" in settings && settings.size !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
-              <SettingSlider
-                name={"Size"}
-                value={settings.size}
-                onValueChange={(size) => changeCurrentToolSetting({ size })}
-                fractionDigits={0}
-                min={1}
-                max={500}
-              />
-            </div>
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="xs" variant="ghost">
+                    <Label>Size:</Label>
+                    <Label className="w-[3ch]">{settings.size}</Label>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="flex w-fit flex-row p-1">
+                    <SettingSlider
+                      name=""
+                      hideText={true}
+                      value={settings.size}
+                      onValueChange={(size) => changeCurrentToolSetting({ size })}
+                      fractionDigits={0}
+                      min={1}
+                      max={500}
+                    />
+                    <Toggle
+                      size="xs"
+                      aria-label="Toggle Tool Size Pressure"
+                      pressed={settings.sizePressure}
+                      onPressedChange={() => changeCurrentToolSetting({ sizePressure: !settings.sizePressure })}
+                      disabled={!prefs.usePressure}
+                    >
+                      <BarChart className="h-4 w-4" />
+                    </Toggle>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
           ) : null}
           {"hardness" in settings && settings.hardness !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
-              <SettingSlider
-                name={"Hardness"}
-                value={settings.hardness}
-                onValueChange={(hardness) => changeCurrentToolSetting({ hardness })}
-                fractionDigits={0}
-                min={1}
-                max={100}
-              />
-            </div>
-          ) : null}
-          {"opacity" in settings && settings.opacity !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
-              <SettingSlider
-                name={"Opacity"}
-                value={settings.opacity}
-                onValueChange={(opacity) => changeCurrentToolSetting({ opacity })}
-                fractionDigits={0}
-                min={1}
-                max={100}
-              />
-            </div>
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="xs" variant="ghost">
+                    <Label>Hardness:</Label>
+                    <Label className="w-[3ch]">{settings.hardness}</Label>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="flex flex-row p-1">
+                    <SettingSlider
+                      name=""
+                      hideText={true}
+                      value={settings.hardness}
+                      onValueChange={(hardness) => changeCurrentToolSetting({ hardness })}
+                      fractionDigits={0}
+                      min={1}
+                      max={100}
+                    />
+                    <Toggle
+                      size="xs"
+                      aria-label="Toggle Tool Hardness Pressure"
+                      pressed={settings.hardnessPressure}
+                      onPressedChange={() => changeCurrentToolSetting({ hardnessPressure: !settings.hardnessPressure })}
+                      disabled={!prefs.usePressure}
+                    >
+                      <BarChart className="h-4 w-4" />
+                    </Toggle>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
           ) : null}
           {"flow" in settings && settings.flow !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
-              <SettingSlider
-                name={"Flow"}
-                value={settings.flow}
-                onValueChange={(flow) => changeCurrentToolSetting({ flow })}
-                fractionDigits={0}
-                min={1}
-                max={100}
-              />
-            </div>
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="xs" variant="ghost">
+                    <Label>Flow:</Label>
+                    <Label className="w-[3ch]">{settings.flow}</Label>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="flex flex-row p-1">
+                    <SettingSlider
+                      name=""
+                      hideText={true}
+                      value={settings.flow}
+                      onValueChange={(flow) => changeCurrentToolSetting({ flow })}
+                      fractionDigits={0}
+                      min={1}
+                      max={100}
+                    />
+                    <Toggle
+                      size="xs"
+                      aria-label="Toggle Tool Flow Pressure"
+                      pressed={settings.flowPressure}
+                      onPressedChange={() => changeCurrentToolSetting({ flowPressure: !settings.flowPressure })}
+                      disabled={!prefs.usePressure}
+                    >
+                      <BarChart className="h-4 w-4" />
+                    </Toggle>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
+          ) : null}
+          {"opacity" in settings && settings.opacity !== undefined ? (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="xs" variant="ghost">
+                    <Label>Opacity:</Label>
+                    <Label className="w-[3ch]">{settings.opacity}</Label>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="flex flex-row p-1">
+                    <SettingSlider
+                      name=""
+                      hideText={true}
+                      value={settings.opacity}
+                      onValueChange={(opacity) => changeCurrentToolSetting({ opacity })}
+                      fractionDigits={0}
+                      min={1}
+                      max={100}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
           ) : null}
           {"spacing" in settings && settings.spacing !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
-              <SettingSlider
-                name={"Spacing"}
-                value={settings.spacing}
-                onValueChange={(spacing) => changeCurrentToolSetting({ spacing })}
-                fractionDigits={0}
-                min={1}
-                max={100}
-              />
-            </div>
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="xs" variant="ghost">
+                    <Label>Spacing:</Label>
+                    <Label className="w-[3ch]">{settings.spacing}</Label>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="flex flex-row p-1">
+                    <SettingSlider
+                      name=""
+                      hideText={true}
+                      value={settings.spacing}
+                      onValueChange={(spacing) => changeCurrentToolSetting({ spacing })}
+                      fractionDigits={0}
+                      min={1}
+                      max={100}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
           ) : null}
           {"sampleSize" in settings && settings.sampleSize !== undefined ? (
-            <div className="lg: flex flex-row p-1 max-lg:mb-2 max-lg:border-b lg:mx-1 lg:border-r lg:pr-2">
+            <div className="flex flex-row p-1">
               <div key={`sampleSize_setting`} className="flex w-fit flex-row items-center justify-center">
                 <p className="pr-2 text-sm text-muted-foreground">Sample Size</p>
 

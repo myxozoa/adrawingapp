@@ -19,6 +19,9 @@ interface SupportedExtensions {
   textureHalfFloat: OES_texture_float | null
   textureHalfFloatLinear: OES_texture_half_float_linear | null
   colorBufferHalfFloat: EXT_color_buffer_half_float | null
+  // @ts-expect-error This is a real ext
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  provokingVertex: WEBGL_provoking_vertex | null
 }
 
 interface SupportedTextureInfo {
@@ -79,6 +82,7 @@ class _Application {
       textureHalfFloat: null,
       textureHalfFloatLinear: null,
       colorBufferHalfFloat: null,
+      provokingVertex: null,
     }
     this.systemConstraints = {
       maxTextureSize: 0,
@@ -139,6 +143,16 @@ class _Application {
     this.extensions.textureHalfFloat = gl.getExtension("OES_texture_half_float")
     this.extensions.textureHalfFloatLinear = gl.getExtension("OES_texture_half_float_linear")
     this.extensions.colorBufferHalfFloat = gl.getExtension("EXT_color_buffer_half_float")
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.extensions.provokingVertex = gl.getExtension("WEBGL_provoking_vertex")
+
+    if (this.extensions.provokingVertex) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      this.extensions.provokingVertex.provokingVertexWEBGL(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        this.extensions.provokingVertex.FIRST_VERTEX_CONVENTION_WEBGL,
+      )
+    }
   }
 
   private getSystemConstraints = () => {
@@ -152,12 +166,19 @@ class _Application {
     this.systemConstraints.maxSamples = gl.getParameter(gl.MAX_SAMPLES) as number
   }
 
-  private getSupportedTextureInfo = () => {
+  private getSupportedTextureInfo = (bitDepth: 8 | 16) => {
     const gl = this.gl
     // halfFloatTextureExt && halfFloatColorBufferExt seem to be null on iPadOS 17+
 
-    this.textureSupport.pixelType = gl.HALF_FLOAT
-    this.textureSupport.imageFormat = this.extensions.colorBufferHalfFloat?.RGBA16F_EXT || gl.RGBA16F
+    if (bitDepth === 16) {
+      this.textureSupport.pixelType = gl.HALF_FLOAT
+      this.textureSupport.imageFormat = this.extensions.colorBufferHalfFloat?.RGBA16F_EXT || gl.RGBA16F
+    }
+
+    if (bitDepth === 8) {
+      this.textureSupport.pixelType = gl.UNSIGNED_BYTE
+      this.textureSupport.imageFormat = gl.RGBA8
+    }
 
     // Feature detecting  float texture linear filtering on iOS / iPadOS seems to not work at all
     // TODO: Figure out what to do
@@ -183,8 +204,8 @@ class _Application {
     this.gl = context as WebGL2RenderingContextDOM
   }
 
-  public resize = () => {
-    resizeCanvasToDisplaySize(this.gl.canvas)
+  public resize = (callback?: () => void) => {
+    resizeCanvasToDisplaySize(this.gl.canvas, callback)
   }
 
   public init = () => {
@@ -197,7 +218,7 @@ class _Application {
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    this.getSupportedTextureInfo()
+    this.getSupportedTextureInfo(16)
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
@@ -213,12 +234,7 @@ class _Application {
 
     if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
 
-    this.exportDownloadLink = document.createElementNS("http://www.w3.org/1999/xhtml", "a") as HTMLAnchorElement
-    this.exportDownloadLink.id = "local_filesaver"
-    this.exportDownloadLink.target = "_blank"
-    this.exportDownloadLink.rel = "noopener"
-    this.exportDownloadLink.style.display = "none"
-    document.body.appendChild(this.exportDownloadLink)
+    this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
 
     Camera.init()
 

@@ -4,6 +4,7 @@ import { CanvasSizeCache, toClipSpace } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 
 const one = vec2.fromValues(1, 1)
+const initialZoom = 1
 
 class _Camera {
   public viewMatrix: mat3
@@ -25,7 +26,6 @@ class _Camera {
     this.invZoom = vec2.create()
     this.tempVec2 = vec2.create()
 
-    const initialZoom = 1
     this.info = {
       zoom: vec2.fromValues(initialZoom, initialZoom),
       position: vec2.fromValues(0, 0),
@@ -116,6 +116,15 @@ class _Camera {
     Camera.y = -Math.max(margin, margin + screenMiddleWorldPosition[1] - Application.canvasInfo.height / 2)
 
     Camera.updateViewProjectionMatrix()
+  }
+
+  public reset = () => {
+    this.zoom = initialZoom
+    this.x = 0
+    this.y = 0
+    this.updateViewProjectionMatrix()
+
+    this.fitToView()
   }
 }
 

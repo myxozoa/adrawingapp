@@ -26,6 +26,7 @@ import { tool_list } from "@/constants"
 import { Application } from "@/managers/ApplicationManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { calculateScracthBoundingBox } from "@/managers/DrawingManager"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
@@ -36,9 +37,13 @@ export class Brush extends Tool implements IBrush {
 
   settings: {
     size: number
+    sizePressure: boolean
     flow: number
+    flowPressure: boolean
     opacity: number
+    opacityPressure: boolean
     hardness: number
+    hardnessPressure: boolean
     spacing: number
   }
 
@@ -248,7 +253,15 @@ export class Brush extends Tool implements IBrush {
    */
   private line = (gl: WebGL2RenderingContext, start: IPoint, end: IPoint) => {
     const distance = getDistance(start, end)
-    const size = calculateFromPressure(this.settings.size / 2, start.pressure, start.pointerType === "pen")
+
+    const usePressure = usePreferenceStore.getState().prefs.usePressure
+    const basePressure = usePressure && start.pointerType === "pen"
+
+    const size = calculateFromPressure(
+      this.settings.size / 2,
+      start.pressure,
+      basePressure && this.settings.sizePressure,
+    )
 
     const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
@@ -271,16 +284,31 @@ export class Brush extends Tool implements IBrush {
    * Moves quad around and draws it based on brush settings and point info
    */
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
+    const usePressure = usePreferenceStore.getState().prefs.usePressure
     const currentLayer = useLayerStore.getState().currentLayer
     this.previouslyDrawnPoint.copy(point)
 
-    const size = calculateFromPressure(this.settings.size / 2, point.pressure, point.pointerType === "pen")
-    const flow = calculateFromPressure(this.settings.flow / 100, point.pressure, point.pointerType === "pen")
-    const hardness = calculateFromPressure(this.settings.hardness / 100, point.pressure, false)
+    const basePressure = usePressure && point.pointerType === "pen"
+
+    const size = calculateFromPressure(
+      this.settings.size / 2,
+      point.pressure,
+      basePressure && this.settings.sizePressure,
+    )
+    const flow = calculateFromPressure(
+      this.settings.flow / 100,
+      point.pressure,
+      basePressure && this.settings.flowPressure,
+    )
+    const hardness = calculateFromPressure(
+      this.settings.hardness / 100,
+      point.pressure,
+      basePressure && this.settings.hardnessPressure,
+    )
 
     const base_roughness = 2
 
-    const roughness = calculateFromPressure(base_roughness, point.pressure, point.pointerType === "pen")
+    const roughness = calculateFromPressure(base_roughness, point.pressure, false)
 
     const startScissorX = point.x - size
     const startScissorY = Application.canvasInfo.height - size - point.y

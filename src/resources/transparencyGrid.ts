@@ -1,7 +1,7 @@
 import fragment from "@/shaders/TransparencyGrid/transparencyGrid.frag"
 import vertex from "@/shaders/TransparencyGrid/transparencyGrid.vert"
 
-import { createBuffer, createVAO, setupProgramAttributesUniforms } from "@/utils/glUtils"
+import { setupFullCanvasVBO, createVAO, setupProgramAttributesUniforms } from "@/utils/glUtils"
 import type { RenderInfo } from "@/types"
 import { mat3, vec2 } from "gl-matrix"
 
@@ -30,7 +30,7 @@ export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number
   renderInfo.programInfo.uniforms = uniforms
   renderInfo.programInfo.attributes = attributes
 
-  renderInfo.programInfo.VBO = setupVBO(gl, width, height)
+  renderInfo.programInfo.VBO = setupFullCanvasVBO(gl, width, height)
   gl.bindBuffer(gl.ARRAY_BUFFER, renderInfo.programInfo.VBO)
 
   renderInfo.programInfo.VAO = createVAO(gl, attributes.a_position)
@@ -45,26 +45,4 @@ export function createTransparencyGrid(gl: WebGL2RenderingContext, width: number
   gl.bindVertexArray(null)
 
   return renderInfo
-}
-
-function setupVBO(gl: WebGL2RenderingContext, width: number, height: number) {
-  const positions = new Float32Array([
-    // Triangle 1
-    0.0,
-    0.0, // Top left
-    0.0,
-    height, // Bottom left
-    width,
-    0.0, // Top right
-
-    // Triangle 2
-    0.0,
-    height, // Bottom left
-    width,
-    height, // Bottom right
-    width,
-    0.0, // Top right
-  ])
-
-  return createBuffer(gl, positions)
 }

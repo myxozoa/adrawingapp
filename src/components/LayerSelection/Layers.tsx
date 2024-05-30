@@ -8,7 +8,7 @@ import { Trash2, FilePlus2 } from "lucide-react"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
-import { SettingSlider } from "@/components/SettingSlider"
+// import { SettingSlider } from "@/components/SettingSlider"
 import { memo } from "react"
 
 function _Layers() {
@@ -18,12 +18,12 @@ function _Layers() {
   const newLayer = useLayerStore.use.newLayer()
   const removeLayer = useLayerStore.use.removeLayer()
   const saveNewName = useLayerStore.use.saveNewName()
-  const setOpacity = useLayerStore.use.setOpacity()
+  // const setOpacity = useLayerStore.use.setOpacity()
   const editingLayer = useLayerStore.use.editingLayer()
 
   return (
     <Container className="absolute right-0 top-1/2 h-1/2 w-48 -translate-y-1/2">
-      <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
+      {/* <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
         <SettingSlider
           name={"Opacity"}
           value={currentLayer.opacity}
@@ -32,7 +32,7 @@ function _Layers() {
           min={0}
           max={100}
         />
-      </Panel>
+      </Panel> */}
       <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
         {layers
           .map((layer, idx) => {
