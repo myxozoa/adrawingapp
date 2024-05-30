@@ -389,15 +389,23 @@ const keyboard_listeners = {
 
 function ignoreEvent(event: Event) {
   event.preventDefault()
+  event.stopPropagation()
 }
 
 const touch_listeners = {
+  touchstart: ignoreEvent,
+  touchcancel: ignoreEvent,
   touchdown: ignoreEvent,
   touchmove: ignoreEvent,
   touchend: ignoreEvent,
 }
 
 const mouse_listeners = {
+  mouseenter: ignoreEvent,
+  mouseleave: ignoreEvent,
+  mouseout: ignoreEvent,
+  mouseup: ignoreEvent,
+  mouseover: ignoreEvent,
   mousedown: ignoreEvent,
   mousemove: ignoreEvent,
   mouseend: ignoreEvent,
