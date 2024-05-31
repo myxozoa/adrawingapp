@@ -1,3 +1,5 @@
+"use client"
+
 import { Board } from "@/components/Board"
 import { TopMenu } from "@/components/TopMenu"
 import { Layers } from "@/components/LayerSelection/Layers"

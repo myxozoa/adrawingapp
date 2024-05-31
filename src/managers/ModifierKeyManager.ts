@@ -1,8 +1,10 @@
+"use client"
+
 import type { Modifier, ModifierState } from "@/types"
 import { key_modifers } from "@/constants"
 import { isKeyboardEvent } from "@/utils/typeguards"
 
-export const ModifierKeyManager: ModifierState = new Set()
+export const keys: ModifierState = new Set()
 
 function handleModifier(modifierState: ModifierState, addOrRemove: boolean, key: Modifier) {
   if (addOrRemove) {
@@ -15,11 +17,18 @@ function handleModifier(modifierState: ModifierState, addOrRemove: boolean, key:
 function handleKeys(event: KeyboardEvent) {
   if (!isKeyboardEvent(event)) return
 
-  handleModifier(ModifierKeyManager, event.ctrlKey, key_modifers.ctrl)
-  handleModifier(ModifierKeyManager, event.altKey, key_modifers.alt)
-  handleModifier(ModifierKeyManager, event.shiftKey, key_modifers.shift)
-  handleModifier(ModifierKeyManager, event.code === "Space" && event.type === "keydown", key_modifers.space)
+  handleModifier(keys, event.ctrlKey, key_modifers.ctrl)
+  handleModifier(keys, event.altKey, key_modifers.alt)
+  handleModifier(keys, event.shiftKey, key_modifers.shift)
+  handleModifier(keys, event.code === "Space" && event.type === "keydown", key_modifers.space)
 }
 
-document.addEventListener("keydown", handleKeys)
-document.addEventListener("keyup", handleKeys)
+function init() {
+  window.addEventListener("keydown", handleKeys)
+  window.addEventListener("keyup", handleKeys)
+}
+
+export const ModifierKeyManager = {
+  keys,
+  init,
+}
