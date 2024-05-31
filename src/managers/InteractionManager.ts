@@ -180,7 +180,7 @@ function endInteraction(save = true) {
 
   // TODO: More elegant solution here
   if (save && Application.currentOperation.tool.name !== "EYEDROPPER") {
-    const currentLayerID = useLayerStore.getState().currentLayer.id
+    const currentLayerID = useLayerStore.getState().currentLayer
     const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
     DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)

@@ -190,9 +190,10 @@ function compositeLayers() {
   const emptyLayer = ResourceManager.get("EmptyLayer")
 
   const currentTool = useToolStore.getState().currentTool
+  const layerStorage = useLayerStore.getState().layerStorage
 
   const layers = useLayerStore.getState().layers
-  const currentLayerID = useLayerStore.getState().currentLayer.id
+  const currentLayerID = useLayerStore.getState().currentLayer
   gl.useProgram(intermediaryLayer.programInfo?.program)
   gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
   gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
@@ -224,8 +225,9 @@ function compositeLayers() {
   compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
 
   // Composite First layer against an empty texture
-  const firstLayer = layers[0]
-  const firsLayerResource = ResourceManager.get(`Layer${firstLayer.id}`)
+  const firstLayerID = layers[0]
+  const firstLayer = layerStorage.get(firstLayerID)!
+  const firsLayerResource = ResourceManager.get(`Layer${firstLayerID}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
   gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
@@ -247,8 +249,9 @@ function compositeLayers() {
 
   // Layers above first layer
   for (let i = 1; i < layers.length; i++) {
-    const layer = layers[i]
-    const layerResource = ResourceManager.get(`Layer${layer.id}`)
+    const layerID = layers[i]
+    const layer = layerStorage.get(layerID)!
+    const layerResource = ResourceManager.get(`Layer${layerID}`)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
     gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
@@ -416,13 +419,16 @@ function init() {
     ),
   )
 
-  for (const layer of layers) {
-    newLayer(layer)
+  const layerStorage = useLayerStore.getState().layerStorage
+
+  for (const layerID of layers) {
+    newLayer(layerStorage.get(layerID)!)
   }
 
-  const currentLayer = useLayerStore.getState().currentLayer
+  const currentLayerID = useLayerStore.getState().currentLayer
+  const currentLayer = layerStorage.get(currentLayerID)!
 
-  const currentLayerResource = ResourceManager.get(`Layer${currentLayer.id}`)
+  const currentLayerResource = ResourceManager.get(`Layer${currentLayerID}`)
 
   clearSpecific(currentLayerResource, white)
   currentLayer.calculateNewBoundingBox(

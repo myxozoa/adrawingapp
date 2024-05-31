@@ -8,54 +8,51 @@ import { Trash2, FilePlus2 } from "lucide-react"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
-// import { SettingSlider } from "@/components/SettingSlider"
+import { SettingSlider } from "@/components/SettingSlider"
 import { memo } from "react"
 
 function _Layers() {
-  const layers = useLayerStore.use.layers()
-  const currentLayer = useLayerStore.use.currentLayer()
-  const setCurrentLayer = useLayerStore.use.setCurrentLayer()
-  const newLayer = useLayerStore.use.newLayer()
-  const removeLayer = useLayerStore.use.removeLayer()
-  const saveNewName = useLayerStore.use.saveNewName()
-  // const setOpacity = useLayerStore.use.setOpacity()
-  const editingLayer = useLayerStore.use.editingLayer()
+  const LayerStore = useLayerStore()
+
+  const currentLayer = LayerStore.layerStorage.get(LayerStore.currentLayer)!
 
   return (
     <Container className="absolute right-0 top-1/2 h-1/2 w-48 -translate-y-1/2">
-      {/* <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
+      <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
         <SettingSlider
           name={"Opacity"}
           value={currentLayer.opacity}
-          onValueChange={(opacity) => setOpacity(currentLayer.id, opacity)}
+          id={LayerStore.currentLayer}
+          onValueChange={(opacity) => LayerStore.setOpacity(LayerStore.currentLayer, opacity)}
           fractionDigits={0}
           min={0}
           max={100}
         />
-      </Panel> */}
+      </Panel>
       <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
-        {layers
-          .map((layer, idx) => {
+        {LayerStore.layers
+          .map((layerID, idx) => {
+            const layer = LayerStore.layerStorage.get(layerID)!
             return (
               <Layer
-                saveNewName={saveNewName}
-                editing={!!editingLayer && editingLayer === layer.id}
+                saveNewName={LayerStore.saveNewName}
+                editing={!!LayerStore.editingLayer && LayerStore.editingLayer === layerID}
                 key={layer.name + idx}
                 name={layer.name}
-                id={layer.id}
-                select={setCurrentLayer}
-                selected={currentLayer.id === layer.id}
+                id={layerID}
+                select={LayerStore.setCurrentLayer}
+                selected={LayerStore.currentLayer === layerID}
               />
             )
           })
           .reverse()}
       </Panel>
       <Panel className="mt-0 flex w-full shrink-0 justify-between shadow-md">
-        <Button variant="outline" size="sm" className="w-1/2" onClick={() => newLayer()}>
+        <Button variant="outline" size="sm" className="w-1/2" onClick={() => LayerStore.newLayer()}>
           <FilePlus2 className="h-5 w-5" strokeWidth={1.5} />
         </Button>
 
-        <Button variant="outline" size="sm" className="w-1/2" onClick={() => removeLayer()}>
+        <Button variant="outline" size="sm" className="w-1/2" onClick={() => LayerStore.removeLayer()}>
           <Trash2 className="h-5 w-5" strokeWidth={1.5} />
         </Button>
       </Panel>
