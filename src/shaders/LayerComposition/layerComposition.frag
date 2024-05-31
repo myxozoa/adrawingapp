@@ -35,7 +35,7 @@ vec4 pdOver(vec4 base, vec4 blend) {
   switch(u_blend_mode) {
     // Clear Mode
     case 0:
-      result = base * (1.0 - blend.a);
+      result = base * (1. - blend.a);
 
       break;
     // Normal Mode
@@ -62,7 +62,7 @@ vec4 pdOver(vec4 base, vec4 blend) {
   }
 
   // + Sca × (1 - Da) + Dca × (1 - Sa)
-  return result + blend * (1. - base.a) + base * (1.0 - blend.a);
+  return result + blend * (1. - base.a) + base * (1. - blend.a);
 }
 
 // From SVG spec
@@ -121,24 +121,32 @@ void main() {
     discard;
   }
 
+  top *= u_opacity;
+
   // Error Color
   vec4 outColor = vec4(1., 0., 1., 1.);
 
   if (u_blend_mode == 0) {
-    top.a *= u_opacity;
+    bottom.rgb /= bottom.a;
+    bottom = max(min(bottom, 1.), 0.);
 
-    //  Dca × (1 - Sa) 
-    outColor = bottom * (1. - top.a);
+    vec4 blended = vec4(bottom.rgb, bottom.a - top.a);
+
+    blended.rgb *= blended.a;
+
+    blended = max(min(blended, 1.), 0.);
+    outColor = blended;
   } else if (bottom.a == 0.) {
-    outColor = top * u_opacity;
+    outColor = top;
   } else if (top.a == 0.) {
     outColor = bottom;
   } else {
-    top *= u_opacity;
 
     bottom = max(min(bottom, 1.), 0.);
     top = max(min(top, 1.), 0.);
-    outColor = blendColor(bottom, top);
+    vec4 blended = blendColor(bottom, top);
+
+    outColor = blended;
   }
 
   fragColor = outColor;
