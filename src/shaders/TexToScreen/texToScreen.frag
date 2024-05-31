@@ -25,7 +25,9 @@ void main() {
   if (color.a == 0.)
     discard;
 
+  color.rgb /= color.a;
   color.rgb = tosRGB(color.rgb);
+  color.rgb *= color.a;
 
   fragColor = color;
 }

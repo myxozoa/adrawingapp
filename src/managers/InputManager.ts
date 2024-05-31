@@ -1,3 +1,5 @@
+"use client"
+
 import { DrawingManager } from "@/managers/DrawingManager"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
@@ -238,7 +240,7 @@ function pointerdown(event: PointerEvent) {
     DrawingManager.beginDraw()
   }
 
-  if (ModifierKeyManager.has("space")) {
+  if (ModifierKeyManager.keys.has("space")) {
     currentInteractionState = InteractionState.pan
 
     startMidPoint.x = event.x

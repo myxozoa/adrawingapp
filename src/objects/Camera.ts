@@ -130,7 +130,7 @@ class _Camera {
 
 export const Camera = new _Camera()
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
   // @ts-expect-error Adding camera global for debugging purposes
   window.__Camera = Camera
 }

@@ -285,7 +285,9 @@ export class Brush extends Tool implements IBrush {
    */
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
     const usePressure = usePreferenceStore.getState().prefs.usePressure
-    const currentLayer = useLayerStore.getState().currentLayer
+    const currentLayerID = useLayerStore.getState().currentLayer
+    const layerStorage = useLayerStore.getState().layerStorage
+    const currentLayer = layerStorage.get(currentLayerID)!
     this.previouslyDrawnPoint.copy(point)
 
     const basePressure = usePressure && point.pointerType === "pen"

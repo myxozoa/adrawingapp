@@ -9,6 +9,8 @@ import { Operation } from "@/objects/Operation"
 
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
+import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
+
 import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
 
 interface SupportedExtensions {
@@ -210,6 +212,7 @@ class _Application {
 
   public init = () => {
     InputManager.init()
+    ModifierKeyManager.init()
 
     if (this.initialized) return
 
@@ -255,7 +258,7 @@ class _Application {
 
 export const Application = new _Application()
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
   // @ts-expect-error Adding global for debugging purposes
   window.__Application = Application
 }

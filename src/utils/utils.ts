@@ -153,7 +153,7 @@ export function initializeCanvas(
   const options = { ...defaultOptions, ..._options }
 
   // TODO: Add hiDPI setting on project creation
-  const targetDpi = window.devicePixelRatio
+  const targetDpi = typeof window !== "undefined" ? window.devicePixelRatio : 1
 
   const newWidth = Math.round(width * targetDpi)
   const newHeight = Math.round(height * targetDpi)
@@ -192,7 +192,7 @@ function onResize(entries: ResizeObserverEntry[]) {
   for (const entry of entries) {
     let width: number
     let height: number
-    let dpr = window.devicePixelRatio
+    let dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1
     if (entry.devicePixelContentBoxSize) {
       // NOTE: Only this path gives the correct answer
       // The other 2 paths are an imperfect fallback
