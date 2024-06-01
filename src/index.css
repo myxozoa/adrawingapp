@@ -82,7 +82,13 @@
 
 html,
 body {
+  max-height: 100dvh;
+  min-height: 100dvh;
+  max-width: 100dvw;
+  min-width: 100dvw;
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 #root {

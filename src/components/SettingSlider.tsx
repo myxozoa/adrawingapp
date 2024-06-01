@@ -22,11 +22,7 @@ function _SettingSlider({ name, value, hideText, onValueChange, id, fractionDigi
 
   return (
     <div key={`${name}_setting`} className="flex w-fit flex-row items-center justify-center">
-      {!hideText ? (
-        <Label className="pr-2" htmlFor={`setting_slider_${name}`}>
-          {name}
-        </Label>
-      ) : null}
+      {!hideText ? <p className="pr-2 text-sm font-normal leading-none text-muted-foreground ">{name}l</p> : null}
       <Slider
         id={`setting_slider_${name}`}
         className="mr-2 w-28"
@@ -35,9 +31,9 @@ function _SettingSlider({ name, value, hideText, onValueChange, id, fractionDigi
         onValueChange={valueChange}
       />
       {!hideText ? (
-        <Label className="w-[3ch]" htmlFor={`setting_slider_${name}`}>
+        <p className="w-[3ch] text-sm font-normal leading-none text-muted-foreground">
           {value.toFixed(fractionDigits)}
-        </Label>
+        </p>
       ) : null}
     </div>
   )

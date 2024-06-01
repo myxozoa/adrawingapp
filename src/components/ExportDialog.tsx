@@ -126,6 +126,8 @@ function _ExportDialog() {
 
         <div className="mt-2 flex w-fit flex-row sm:mt-0">
           <Input
+            name="Export File Name"
+            id="export_file_name"
             type="string"
             className="w-[15ch]"
             placeholder="Your Filename"

@@ -107,9 +107,13 @@ function _ToolSettings() {
         <div className="flex flex-row items-center justify-center">
           {"size" in settings && settings.size !== undefined ? (
             <>
-              <Label className="px-2">Size:</Label>
+              <Label htmlFor="tool_size" className="px-2">
+                Size:
+              </Label>
               <div className="flex flex-row items-center justify-center rounded-sm border">
                 <Input
+                  name="Tool Size"
+                  id="tool_size"
                   type="number"
                   className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                   pattern="[0-9]*"
@@ -150,58 +154,15 @@ function _ToolSettings() {
               </div>
             </>
           ) : null}
-          {"hardness" in settings && settings.hardness !== undefined ? (
-            <>
-              <Label className="px-2">Hardness:</Label>
-              <div className="flex flex-row items-center justify-center rounded-sm border">
-                <Input
-                  type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
-                  pattern="[0-9]*"
-                  min={1}
-                  max={500}
-                  value={settings.hardness.toString()}
-                  onChange={(event) => changeCurrentToolSetting({ hardness: Number(event.target.value) })}
-                />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button className="rounded-none" size="xs" variant="ghost">
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <div className="flex flex-row p-1">
-                      <SettingSlider
-                        name=""
-                        hideText={true}
-                        value={settings.hardness}
-                        onValueChange={(hardness) => changeCurrentToolSetting({ hardness })}
-                        fractionDigits={0}
-                        min={1}
-                        max={100}
-                      />
-                      <Toggle
-                        size="xs"
-                        aria-label="Toggle Tool Hardness Pressure"
-                        pressed={settings.hardnessPressure}
-                        onPressedChange={() =>
-                          changeCurrentToolSetting({ hardnessPressure: !settings.hardnessPressure })
-                        }
-                        disabled={!prefs.usePressure}
-                      >
-                        <BarChart className="h-4 w-4" />
-                      </Toggle>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </>
-          ) : null}
           {"flow" in settings && settings.flow !== undefined ? (
             <>
-              <Label className="px-2">Flow:</Label>
+              <Label htmlFor="tool_flow" className="px-2">
+                Flow:
+              </Label>
               <div className="flex flex-row items-center justify-center rounded-sm border">
                 <Input
+                  name="Tool Flow"
+                  id="tool_flow"
                   type="number"
                   className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                   pattern="[0-9]*"
@@ -244,9 +205,13 @@ function _ToolSettings() {
           ) : null}
           {"opacity" in settings && settings.opacity !== undefined ? (
             <>
-              <Label className="px-2">Opacity:</Label>
+              <Label htmlFor="tool_opacity" className="px-2">
+                Opacity:
+              </Label>
               <div className="flex flex-row items-center justify-center rounded-sm border">
                 <Input
+                  name="Tool Opacity"
+                  id="tool_opacity"
                   type="number"
                   className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                   pattern="[0-9]*"
@@ -268,42 +233,6 @@ function _ToolSettings() {
                         hideText={true}
                         value={settings.opacity}
                         onValueChange={(opacity) => changeCurrentToolSetting({ opacity })}
-                        fractionDigits={0}
-                        min={1}
-                        max={100}
-                      />
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </>
-          ) : null}
-          {"spacing" in settings && settings.spacing !== undefined ? (
-            <>
-              <Label className="px-2">Spacing:</Label>
-              <div className="flex flex-row items-center justify-center rounded-sm border">
-                <Input
-                  type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
-                  pattern="[0-9]*"
-                  min={1}
-                  max={500}
-                  value={settings.spacing.toString()}
-                  onChange={(event) => changeCurrentToolSetting({ spacing: Number(event.target.value) })}
-                />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button className="rounded-none" size="xs" variant="ghost">
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <div className="flex flex-row p-1">
-                      <SettingSlider
-                        name=""
-                        hideText={true}
-                        value={settings.spacing}
-                        onValueChange={(spacing) => changeCurrentToolSetting({ spacing })}
                         fractionDigits={0}
                         min={1}
                         max={100}
@@ -344,6 +273,89 @@ function _ToolSettings() {
               </div>
             </div>
           ) : null}
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button className="ml-2" size="xs" variant="outline">
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              {"spacing" in settings && settings.spacing !== undefined ? (
+                <>
+                  <Label htmlFor="tool_spacing" className="px-2">
+                    Spacing:
+                  </Label>
+                  <div className="flex flex-row items-center justify-center rounded-sm border">
+                    <div className="flex flex-row p-1">
+                      <SettingSlider
+                        name=""
+                        hideText={true}
+                        value={settings.spacing}
+                        onValueChange={(spacing) => changeCurrentToolSetting({ spacing })}
+                        fractionDigits={0}
+                        min={1}
+                        max={100}
+                      />
+                      <Input
+                        name="Tool Spacing"
+                        id="tool_spacing"
+                        type="number"
+                        className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                        pattern="[0-9]*"
+                        min={1}
+                        max={500}
+                        value={settings.spacing.toString()}
+                        onChange={(event) => changeCurrentToolSetting({ spacing: Number(event.target.value) })}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {"hardness" in settings && settings.hardness !== undefined ? (
+                <>
+                  <Label htmlFor="tool_hardness" className="px-2">
+                    Hardness:
+                  </Label>
+                  <div className="flex flex-row items-center justify-center rounded-sm border">
+                    <div className="flex flex-row p-1">
+                      <SettingSlider
+                        name=""
+                        hideText={true}
+                        value={settings.hardness}
+                        onValueChange={(hardness) => changeCurrentToolSetting({ hardness })}
+                        fractionDigits={0}
+                        min={1}
+                        max={100}
+                      />
+                      <Input
+                        name="Tool Hardness"
+                        id="tool_hardness"
+                        type="number"
+                        className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                        pattern="[0-9]*"
+                        min={1}
+                        max={500}
+                        value={settings.hardness.toString()}
+                        onChange={(event) => changeCurrentToolSetting({ hardness: Number(event.target.value) })}
+                      />
+                      <Toggle
+                        size="xs"
+                        aria-label="Toggle Tool Hardness Pressure"
+                        pressed={settings.hardnessPressure}
+                        onPressedChange={() =>
+                          changeCurrentToolSetting({ hardnessPressure: !settings.hardnessPressure })
+                        }
+                        disabled={!prefs.usePressure}
+                      >
+                        <BarChart className="h-4 w-4" />
+                      </Toggle>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </PopoverContent>
+          </Popover>
         </div>
       </Panel>
     </Container>
