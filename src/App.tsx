@@ -13,10 +13,10 @@ function App() {
       <TopMenu />
       <ToolSettings />
       <Tools />
+      <Layers />
       <ErrorBoundary fallback={<div>unfortunate!</div>}>
         <Board />
       </ErrorBoundary>
-      <Layers />
     </div>
   )
 }
