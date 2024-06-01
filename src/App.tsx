@@ -9,7 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 function App() {
   return (
-    <div className="flex max-h-[100dvh] min-h-[100dvh] flex-col">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <TopMenu />
       <ToolSettings />
       <Tools />

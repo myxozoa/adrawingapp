@@ -21,11 +21,11 @@ function _Layers() {
   const currentLayer = LayerStore.layerStorage.get(LayerStore.currentLayer)!
 
   return (
-    <div className="absolute right-0 top-1/2 flex h-1/2 w-48 -translate-y-1/2 flex-col items-end">
+    <div className="absolute right-0 top-1/4 flex flex-col items-end">
       <Button className="h-10 w-10 p-1" variant="outline" onClick={() => setShowLayers(!showLayers)}>
         <LayersIcon className="h-5 w-5" />
       </Button>
-      <Container className={`${showLayers ? "" : "hidden"} grow`}>
+      <Container className={`${showLayers ? "" : "hidden"} h-[50vh] w-48 grow`}>
         <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
           <SettingSlider
             name={"Opacity"}
