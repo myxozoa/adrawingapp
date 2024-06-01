@@ -107,9 +107,13 @@ function _ToolSettings() {
         <div className="flex flex-row items-center justify-center">
           {"size" in settings && settings.size !== undefined ? (
             <>
-              <Label className="px-2">Size:</Label>
+              <Label htmlFor="tool_size" className="px-2">
+                Size:
+              </Label>
               <div className="flex flex-row items-center justify-center rounded-sm border">
                 <Input
+                  name="Tool Size"
+                  id="tool_size"
                   type="number"
                   className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                   pattern="[0-9]*"
@@ -152,9 +156,13 @@ function _ToolSettings() {
           ) : null}
           {"flow" in settings && settings.flow !== undefined ? (
             <>
-              <Label className="px-2">Flow:</Label>
+              <Label htmlFor="tool_flow" className="px-2">
+                Flow:
+              </Label>
               <div className="flex flex-row items-center justify-center rounded-sm border">
                 <Input
+                  name="Tool Flow"
+                  id="tool_flow"
                   type="number"
                   className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                   pattern="[0-9]*"
@@ -197,9 +205,13 @@ function _ToolSettings() {
           ) : null}
           {"opacity" in settings && settings.opacity !== undefined ? (
             <>
-              <Label className="px-2">Opacity:</Label>
+              <Label htmlFor="tool_opacity" className="px-2">
+                Opacity:
+              </Label>
               <div className="flex flex-row items-center justify-center rounded-sm border">
                 <Input
+                  name="Tool Opacity"
+                  id="tool_opacity"
                   type="number"
                   className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                   pattern="[0-9]*"
@@ -271,7 +283,9 @@ function _ToolSettings() {
             <PopoverContent>
               {"spacing" in settings && settings.spacing !== undefined ? (
                 <>
-                  <Label className="px-2">Spacing:</Label>
+                  <Label htmlFor="tool_spacing" className="px-2">
+                    Spacing:
+                  </Label>
                   <div className="flex flex-row items-center justify-center rounded-sm border">
                     <div className="flex flex-row p-1">
                       <SettingSlider
@@ -284,6 +298,8 @@ function _ToolSettings() {
                         max={100}
                       />
                       <Input
+                        name="Tool Spacing"
+                        id="tool_spacing"
                         type="number"
                         className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                         pattern="[0-9]*"
@@ -298,7 +314,9 @@ function _ToolSettings() {
               ) : null}
               {"hardness" in settings && settings.hardness !== undefined ? (
                 <>
-                  <Label className="px-2">Hardness:</Label>
+                  <Label htmlFor="tool_hardness" className="px-2">
+                    Hardness:
+                  </Label>
                   <div className="flex flex-row items-center justify-center rounded-sm border">
                     <div className="flex flex-row p-1">
                       <SettingSlider
@@ -311,6 +329,8 @@ function _ToolSettings() {
                         max={100}
                       />
                       <Input
+                        name="Tool Hardness"
+                        id="tool_hardness"
                         type="number"
                         className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
                         pattern="[0-9]*"
