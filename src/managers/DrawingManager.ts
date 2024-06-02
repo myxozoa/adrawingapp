@@ -52,7 +52,79 @@ enum InterpolationType {
   trilinear,
 }
 
-const scratchLayerBoundingBox: Box = { x: 0, y: 0, width: 1, height: 1 }
+class BoundingBox {
+  box: Box
+
+  drawnTo: boolean
+
+  constructor() {
+    this.box = { x: 0, y: 0, width: 1, height: 1 }
+    this.drawnTo = false
+  }
+
+  get x() {
+    return this.box.x
+  }
+
+  get y() {
+    return this.box.y
+  }
+
+  get width() {
+    return this.box.width
+  }
+
+  get height() {
+    return this.box.height
+  }
+
+  _set = (x: number, y: number, width: number, height: number) => {
+    this.box.x = x
+    this.box.y = y
+    this.box.width = width
+    this.box.height = height
+  }
+
+  set = (x: number, y: number, width: number, height: number) => {
+    this._set(x, y, width, height)
+
+    this.drawnTo = true
+  }
+
+  reset = () => {
+    this.box.x = 0
+    this.box.y = 0
+    this.box.width = 1
+    this.box.height = 1
+
+    this.drawnTo = false
+  }
+
+  calculate = (x: number, y: number, width: number, height: number) => {
+    if (!this.drawnTo) {
+      this.set(x, y, width, height)
+      return
+    }
+
+    const newBottomLeftX = Math.min(this.box.x, x)
+    const newBottomLeftY = Math.min(this.box.y, y)
+
+    const newUpperRightX = Math.max(this.box.x + this.box.width, x + width)
+    const newUpperRightY = Math.max(this.box.y + this.box.height, y + height)
+
+    const newWidth = newUpperRightX - newBottomLeftX
+    const newHeight = newUpperRightY - newBottomLeftY
+
+    this.box.x = newBottomLeftX
+    this.box.y = newBottomLeftY
+
+    this.box.width = newWidth
+    this.box.height = newHeight
+  }
+}
+
+export const strokeFrameBoundingBox = new BoundingBox()
+export const scratchLayerBoundingBox = new BoundingBox()
 
 const transparent = new Float32Array([0, 0, 0, 0])
 const white = new Float32Array([1, 1, 1, 1])
@@ -66,47 +138,6 @@ let shouldRecomposite = true
 
 let shouldShowCursor = true
 let pixelInterpolation = InterpolationType.trilinear
-
-let drawnToScratch = false
-function setScratchBoundingBox(x: number, y: number, width: number, height: number) {
-  scratchLayerBoundingBox.x = x
-  scratchLayerBoundingBox.y = y
-  scratchLayerBoundingBox.width = width
-  scratchLayerBoundingBox.height = height
-
-  drawnToScratch = true
-}
-
-export function resetScratchBoundingBox() {
-  scratchLayerBoundingBox.x = 0
-  scratchLayerBoundingBox.y = 0
-  scratchLayerBoundingBox.width = 1
-  scratchLayerBoundingBox.height = 1
-
-  drawnToScratch = false
-}
-
-export function calculateScracthBoundingBox(x: number, y: number, width: number, height: number) {
-  if (!drawnToScratch) {
-    setScratchBoundingBox(x, y, width, height)
-    return
-  }
-
-  const newBottomLeftX = Math.min(scratchLayerBoundingBox.x, x)
-  const newBottomLeftY = Math.min(scratchLayerBoundingBox.y, y)
-
-  const newUpperRightX = Math.max(scratchLayerBoundingBox.x + scratchLayerBoundingBox.width, x + width)
-  const newUpperRightY = Math.max(scratchLayerBoundingBox.y + scratchLayerBoundingBox.height, y + height)
-
-  const newWidth = newUpperRightX - newBottomLeftX
-  const newHeight = newUpperRightY - newBottomLeftY
-
-  scratchLayerBoundingBox.x = newBottomLeftX
-  scratchLayerBoundingBox.y = newBottomLeftY
-
-  scratchLayerBoundingBox.width = newWidth
-  scratchLayerBoundingBox.height = newHeight
-}
 
 function swapPixelInterpolation() {
   const gl = Application.gl
@@ -157,7 +188,7 @@ function render() {
   if (shouldRecomposite) {
     compositeLayers()
 
-    blit(framebuffers[readFramebuffer], displayLayer)
+    blit(framebuffers[readFramebuffer], displayLayer, strokeFrameBoundingBox)
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
@@ -169,6 +200,8 @@ function render() {
     const pressure = usePressure ? PointerManager.pressure : 1
     Cursor.draw(gl, InteractionManager.currentMousePosition, pressure)
   }
+
+  strokeFrameBoundingBox.reset()
 }
 
 function clearSpecific(renderInfo: RenderInfo, color?: Float32Array) {
@@ -177,9 +210,32 @@ function clearSpecific(renderInfo: RenderInfo, color?: Float32Array) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
 
   gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  scissorCanvas()
 
   clear(color)
+}
+
+function viewportCanvas() {
+  const gl = Application.gl
+
+  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+}
+
+function scissorCanvas() {
+  const gl = Application.gl
+
+  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+}
+
+function scissorStrokeFrameSection() {
+  const gl = Application.gl
+
+  gl.scissor(
+    strokeFrameBoundingBox.x,
+    strokeFrameBoundingBox.y,
+    strokeFrameBoundingBox.width + 1,
+    strokeFrameBoundingBox.height + 1,
+  )
 }
 
 function compositeLayers() {
@@ -198,8 +254,8 @@ function compositeLayers() {
   gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
   gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
 
-  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
-  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  viewportCanvas()
+  scissorStrokeFrameSection()
 
   gl.disable(gl.BLEND)
 
@@ -208,8 +264,8 @@ function compositeLayers() {
   const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
-  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
-  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  viewportCanvas()
+  scissorStrokeFrameSection()
 
   if (isBrush(currentTool)) {
     gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 1)
@@ -230,8 +286,8 @@ function compositeLayers() {
   const firsLayerResource = ResourceManager.get(`Layer${firstLayerID}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
-  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
-  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  viewportCanvas()
+  scissorStrokeFrameSection()
 
   gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, firstLayer.blendMode)
   gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
@@ -254,8 +310,8 @@ function compositeLayers() {
     const layerResource = ResourceManager.get(`Layer${layerID}`)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
-    gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
-    gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+    viewportCanvas()
+    scissorStrokeFrameSection()
 
     gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer.blendMode)
     gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer.opacity / 100)
@@ -298,9 +354,8 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
   gl.bindBuffer(gl.ARRAY_BUFFER, intermediaryLayer3.programInfo?.VBO)
   gl.bindVertexArray(intermediaryLayer3.programInfo?.VAO)
 
-  gl.viewport(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
-  gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
-
+  viewportCanvas()
+  scissorCanvas()
   gl.disable(gl.BLEND)
 
   if (isBrush(currentTool)) {
@@ -316,31 +371,46 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
 
   compositeLayer(top.bufferInfo.textures[0], bottom.bufferInfo.textures[0])
 
-  blit(intermediaryLayer3, destination)
+  blit(intermediaryLayer3, destination, scratchLayerBoundingBox)
 
   clearSpecific(intermediaryLayer3)
 
   gl.enable(gl.BLEND)
 }
 
-function blit(source: RenderInfo, destination: RenderInfo) {
+function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {
   const gl = Application.gl
 
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, source.bufferInfo?.framebuffer)
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, destination.bufferInfo?.framebuffer)
 
-  gl.blitFramebuffer(
-    0,
-    0,
-    Application.canvasInfo.width,
-    Application.canvasInfo.height,
-    0,
-    0,
-    Application.canvasInfo.width,
-    Application.canvasInfo.height,
-    gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
-    gl.NEAREST,
-  )
+  if (area) {
+    gl.blitFramebuffer(
+      area.x,
+      area.y,
+      area.x + area.width,
+      area.y + area.height,
+      area.x,
+      area.y,
+      area.x + area.width,
+      area.y + area.height,
+      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
+      gl.NEAREST,
+    )
+  } else {
+    gl.blitFramebuffer(
+      0,
+      0,
+      Application.canvasInfo.width,
+      Application.canvasInfo.height,
+      0,
+      0,
+      Application.canvasInfo.width,
+      Application.canvasInfo.height,
+      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
+      gl.NEAREST,
+    )
+  }
 }
 
 function copy(source: WebGLFramebuffer, destination: WebGLTexture) {

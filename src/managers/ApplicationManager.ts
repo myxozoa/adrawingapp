@@ -1,6 +1,6 @@
 import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
 
-import { DrawingManager } from "@/managers/DrawingManager"
+import { DrawingManager, scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
 
 import { tools, useToolStore } from "@/stores/ToolStore"
@@ -247,6 +247,11 @@ class _Application {
     })
 
     this.initialized = true
+
+    // Set these bounding boxes to the size of the canvas initially so everything draws
+    // in the beginning before any brush interactions happen. Interactions will set them to the proper size
+    scratchLayerBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
+    strokeFrameBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
 
     DrawingManager.start()
   }

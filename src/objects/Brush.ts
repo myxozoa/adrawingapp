@@ -25,7 +25,7 @@ import * as glUtils from "@/utils/glUtils"
 import { tool_list } from "@/constants"
 import { Application } from "@/managers/ApplicationManager"
 import { useLayerStore } from "@/stores/LayerStore"
-import { calculateScracthBoundingBox } from "@/managers/DrawingManager"
+import { scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 export class Brush extends Tool implements IBrush {
@@ -321,7 +321,8 @@ export class Brush extends Tool implements IBrush {
     // Internals
     gl.scissor(startScissorX, startScissorY, scissorWidth, scissorHeight)
 
-    calculateScracthBoundingBox(startScissorX, startScissorY, scissorWidth, scissorHeight)
+    scratchLayerBoundingBox.calculate(startScissorX, startScissorY, scissorWidth, scissorHeight)
+    strokeFrameBoundingBox.calculate(startScissorX, startScissorY, scissorWidth, scissorHeight)
     currentLayer.calculateNewBoundingBox(startScissorX, startScissorY, scissorWidth, scissorHeight)
 
     gl.uniform4f(this.programInfo.uniforms.u_brush_qualities, flow, hardness, base_roughness - roughness, size)
