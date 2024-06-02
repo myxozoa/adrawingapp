@@ -22,7 +22,7 @@ function _SettingSlider({ name, value, hideText, onValueChange, id, fractionDigi
 
   return (
     <div key={`${name}_setting`} className="flex w-fit flex-row items-center justify-center">
-      {!hideText ? <p className="pr-2 text-sm font-normal leading-none text-muted-foreground ">{name}l</p> : null}
+      {!hideText ? <p className="pr-2 text-sm font-normal leading-none text-muted-foreground ">{name}</p> : null}
       <Slider
         id={`setting_slider_${name}`}
         className="mr-2 w-28"
