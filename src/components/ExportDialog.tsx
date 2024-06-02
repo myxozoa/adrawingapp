@@ -5,7 +5,7 @@ import { ResourceManager } from "@/managers/ResourceManager"
 import { DrawingManager } from "@/managers/DrawingManager"
 import { Button } from "@/components/ui/button"
 
-import { DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 import { SettingSlider } from "@/components/SettingSlider"
 
@@ -111,9 +111,41 @@ function _ExportDialog() {
   const [format, setFormat] = useState(Application.supportedExportImageFormats[0]) // PNG is always supported
 
   return (
-    <DialogHeader>
-      <DialogTitle>Save Image</DialogTitle>
+    <>
+      <DialogHeader>
+        <DialogTitle>Save Image</DialogTitle>
+        <DialogDescription>
+          This is quite slow at the moment so the page may become unresponsive for a few seconds depending on your
+          hardware and the canvas size. Improvement coming soon.
+        </DialogDescription>
+      </DialogHeader>
+
       <div className="!mt-4 flex flex-col items-center justify-between sm:flex-row">
+        <div className="mt-2 flex w-fit flex-row sm:mt-0">
+          <Input
+            name="Export File Name"
+            id="export_file_name"
+            type="string"
+            className="w-[15ch] rounded-r-none"
+            placeholder="Your Filename"
+            value={filename}
+            onChange={(event) => setFilename(event.target.value)}
+          />
+          <Select defaultValue={format} onValueChange={(value) => setFormat(value as ExportImageFormats)}>
+            <SelectTrigger className="rounded-l-none pl-4">
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Application.supportedExportImageFormats.map((imageFormat, index) => (
+                  <SelectItem key={`exportFormat${index}`} value={imageFormat}>
+                    .{imageFormat.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
         <SettingSlider
           name={"Quality"}
           value={quality}
@@ -123,38 +155,13 @@ function _ExportDialog() {
           max={1}
           step={0.1}
         />
-
-        <div className="mt-2 flex w-fit flex-row sm:mt-0">
-          <Input
-            name="Export File Name"
-            id="export_file_name"
-            type="string"
-            className="w-[15ch]"
-            placeholder="Your Filename"
-            value={filename}
-            onChange={(event) => setFilename(event.target.value)}
-          />
-          <p className="mx-3 pt-2">.</p>
-          <Select defaultValue={format} onValueChange={(value) => setFormat(value as ExportImageFormats)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {Application.supportedExportImageFormats.map((imageFormat, index) => (
-                  <SelectItem key={`exportFormat${index}`} value={imageFormat}>
-                    {imageFormat.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
-      <Button variant="outline" size="sm" className="!mt-4" onClick={() => void saveImage(filename, format, quality)}>
-        Save Image
-      </Button>
-    </DialogHeader>
+      <DialogFooter>
+        <Button variant="outline" size="sm" className="!mt-4" onClick={() => void saveImage(filename, format, quality)}>
+          Save Image
+        </Button>
+      </DialogFooter>
+    </>
   )
 }
 

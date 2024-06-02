@@ -10,8 +10,11 @@ export const PreferenesDialog = () => {
   const prefs = usePreferenceStore.use.prefs()
 
   return (
-    <DialogHeader>
-      <DialogTitle>Preferences</DialogTitle>
+    <>
+      <DialogHeader>
+        <DialogTitle>Preferences</DialogTitle>
+      </DialogHeader>
+
       <SettingSlider
         name={"Pressure Sensitivity"}
         value={prefs.pressureSensitivity}
@@ -70,6 +73,6 @@ export const PreferenesDialog = () => {
         />
         <Label htmlFor="pressure">Use Pen Pressure</Label>
       </div>
-    </DialogHeader>
+    </>
   )
 }
