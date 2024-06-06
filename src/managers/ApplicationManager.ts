@@ -12,6 +12,8 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
+import { ResourceManager } from "@/managers/ResourceManager"
+import { useLayerStore } from "@/stores/LayerStore"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -221,7 +223,8 @@ class _Application {
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    this.getSupportedTextureInfo(16)
+    const colorDepth = usePreferenceStore.getState().prefs.colorDepth
+    this.getSupportedTextureInfo(colorDepth)
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
@@ -258,6 +261,8 @@ class _Application {
 
   public destroy = () => {
     InputManager.destroy()
+    ResourceManager.deleteAll()
+    useLayerStore.getState().deleteAll()
   }
 }
 
