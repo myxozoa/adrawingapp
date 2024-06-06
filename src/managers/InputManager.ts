@@ -220,8 +220,6 @@ function touchPanZoom() {
 function pointerdown(event: PointerEvent) {
   idleTime = 0
   Application.gl.canvas.setPointerCapture(event.pointerId)
-
-  document.body.style.cursor = "none"
   ;(event.target as HTMLCanvasElement).focus()
 
   if (event.pointerType !== "touch") touches.clear()
@@ -340,8 +338,6 @@ function pointermove(event: PointerEvent) {
 function pointerup(event: PointerEvent) {
   idleTime = 0
 
-  document.body.style.cursor = "default"
-
   Application.drawing = false
   Application.gl.canvas.releasePointerCapture(event.pointerId)
 
@@ -383,21 +379,18 @@ function keyup(event: KeyboardEvent) {
 
 function pointercancel(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
-  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
 
 function pointerout(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
-  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
 
 function pointerleave(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
-  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
@@ -520,7 +513,6 @@ function reset() {
   prevTouchDistance = -1
 
   currentInteractionState = InteractionState.none
-  document.body.style.cursor = "default"
 }
 
 function destroy() {
