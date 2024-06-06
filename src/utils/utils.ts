@@ -21,6 +21,7 @@ interface CanvasSizeCache {
   height: number
   offsetWidth: number
   offsetHeight: number
+  toString: () => string
 }
 
 export const CanvasSizeCache: CanvasSizeCache = {
@@ -28,6 +29,9 @@ export const CanvasSizeCache: CanvasSizeCache = {
   height: 0,
   offsetHeight: 0,
   offsetWidth: 0,
+  toString(): string {
+    return `width: ${this.width}, height: ${this.height}, offsetWidth: ${this.offsetWidth}, offsetHeight: ${this.offsetHeight}`
+  },
 }
 
 export function getRelativePosition<T extends MouseState | { x: number; y: number }>(mouseState: T): T {
