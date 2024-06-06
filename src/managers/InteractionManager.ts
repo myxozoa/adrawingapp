@@ -11,6 +11,7 @@ import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
 import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
 import { useToolStore } from "@/stores/ToolStore"
+import { LocationStorage } from "@/objects/utils"
 
 const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
 const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
@@ -18,9 +19,9 @@ const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
 const positionArray = positionFilter.getInputArray()
 const pressureArray = pressureFilter.getInputArray()
 
-const currentMousePosition = { x: 0, y: 0 }
+const currentMousePosition = new LocationStorage()
 let mergeEvent = false
-const mergeEventCache = { x: 0, y: 0 }
+const mergeEventCache = new LocationStorage()
 
 function prepareOperation(relativeMouseState: MouseState) {
   if (DrawingManager.waitUntilInteractionEnd) return

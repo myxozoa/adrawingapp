@@ -54,10 +54,7 @@ class TouchManager {
   constructor(maxTouches = 2) {
     this.maxTouches = maxTouches
     this.touches = []
-    this.midPoint = {
-      x: 0,
-      y: 0,
-    }
+    this.midPoint = new LocationStorage()
   }
 
   addTouch = (event: PointerEvent) => {
@@ -114,8 +111,8 @@ class TouchManager {
 const touches = new TouchManager()
 let prevTouchDistance = -1
 
-const startMidPoint = { x: 0, y: 0 }
-const lastMidPoint = { x: 0, y: 0 }
+const startMidPoint = new LocationStorage()
+const lastMidPoint = new LocationStorage()
 
 let idleTime = 0
 
@@ -152,7 +149,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
 
-  const mousePositionBeforeZoom = calculateWorldPosition({ ...pointerPosition })
+  const mousePositionBeforeZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
   const mouseXBeforeZoom = mousePositionBeforeZoom[0]
   const mouseYBeforeZoom = mousePositionBeforeZoom[1]
 
@@ -160,7 +157,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   Camera.updateViewProjectionMatrix()
 
-  const mousePositionAfterZoom = calculateWorldPosition({ ...pointerPosition })
+  const mousePositionAfterZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
   const mouseXAfterZoom = mousePositionAfterZoom[0]
   const mouseYAfterZoom = mousePositionAfterZoom[1]
 
