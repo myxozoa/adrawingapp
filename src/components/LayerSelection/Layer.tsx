@@ -34,8 +34,17 @@ function _Layer({
     }
   }, [id, name, newName])
 
+  const onChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setNewName(event.target.value), [])
+  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      save()
+    }
+  }, [])
+
+  const editLayer = useCallback(() => setEditingLayer(id), [id])
+
   return (
-    <PanelElement className="h-8" selected={selected} select={select} id={id} onDoubleClick={() => setEditingLayer(id)}>
+    <PanelElement className="h-8" selected={selected} select={select} id={id} onDoubleClick={editLayer}>
       {!editing ? (
         <p className="m-0 w-28 truncate text-sm">{name}</p>
       ) : (
@@ -45,12 +54,8 @@ function _Layer({
           placeholder={name}
           value={newName}
           onBlur={save}
-          onChange={(event) => setNewName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              save()
-            }
-          }}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
         />
       )}
     </PanelElement>
