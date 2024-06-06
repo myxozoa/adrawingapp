@@ -153,7 +153,7 @@ export class Brush extends Tool implements IBrush {
         this.drawnPoints.set(currentPoint.id, true)
         operation.addDrawnPoints(1)
       }
-    } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
+    } else if (currentPoint.active && prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!this.drawnPoints.get(currentPoint.id)) {
         this.line(gl, prevPoint, currentPoint)
 
@@ -196,17 +196,11 @@ export class Brush extends Tool implements IBrush {
     const end = points.getPoint(-1)
 
     if (operation.drawnPoints > 4) {
-      // From Previous spline
       const prevControl2 = points.getPoint(-5)
 
-      const dist = getDistance(start, control)
-      const prevDist = getDistance(prevControl2, start)
-
-      // Move control point to be in line with the previous splines c2 control point
-      // and the previous curve/current curve's shared end/start point
-      // This results in a smoothly joined curve
-      control.x = start.x + (start.x - prevControl2.x) * (dist / prevDist)
-      control.y = start.y + (start.y - prevControl2.y) * (dist / prevDist)
+      // Trying for c1 continuity
+      control.x = start.x + (start.x - prevControl2.x)
+      control.y = start.y + (start.y - prevControl2.y)
     }
 
     this.spline(gl, start, control, control2, end)
