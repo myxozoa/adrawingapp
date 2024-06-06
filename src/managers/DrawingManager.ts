@@ -58,31 +58,47 @@ class BoundingBox {
   drawnTo: boolean
 
   constructor() {
-    this.box = { x: 0, y: 0, width: 1, height: 1 }
+    this.box = new Float32Array(4) // x, y, width, height
     this.drawnTo = false
   }
 
   get x() {
-    return this.box.x
+    return this.box[0]
+  }
+
+  set x(value: number) {
+    this.box[0] = value
   }
 
   get y() {
-    return this.box.y
+    return this.box[1]
+  }
+
+  set y(value: number) {
+    this.box[1] = value
   }
 
   get width() {
-    return this.box.width
+    return this.box[2]
+  }
+
+  set width(value: number) {
+    this.box[2] = value
   }
 
   get height() {
-    return this.box.height
+    return this.box[3]
+  }
+
+  set height(value: number) {
+    this.box[3] = value
   }
 
   _set = (x: number, y: number, width: number, height: number) => {
-    this.box.x = x
-    this.box.y = y
-    this.box.width = width
-    this.box.height = height
+    this.x = x
+    this.y = y
+    this.width = width
+    this.height = height
   }
 
   set = (x: number, y: number, width: number, height: number) => {
@@ -92,10 +108,10 @@ class BoundingBox {
   }
 
   reset = () => {
-    this.box.x = 0
-    this.box.y = 0
-    this.box.width = 1
-    this.box.height = 1
+    this.x = 0
+    this.y = 0
+    this.width = 1
+    this.height = 1
 
     this.drawnTo = false
   }
@@ -106,20 +122,24 @@ class BoundingBox {
       return
     }
 
-    const newBottomLeftX = Math.min(this.box.x, x)
-    const newBottomLeftY = Math.min(this.box.y, y)
+    const newBottomLeftX = Math.min(this.x, x)
+    const newBottomLeftY = Math.min(this.y, y)
 
-    const newUpperRightX = Math.max(this.box.x + this.box.width, x + width)
-    const newUpperRightY = Math.max(this.box.y + this.box.height, y + height)
+    const newUpperRightX = Math.max(this.x + this.width, x + width)
+    const newUpperRightY = Math.max(this.y + this.height, y + height)
 
     const newWidth = newUpperRightX - newBottomLeftX
     const newHeight = newUpperRightY - newBottomLeftY
 
-    this.box.x = newBottomLeftX
-    this.box.y = newBottomLeftY
+    this.x = newBottomLeftX
+    this.y = newBottomLeftY
 
-    this.box.width = newWidth
-    this.box.height = newHeight
+    this.width = newWidth
+    this.height = newHeight
+  }
+
+  toString = () => {
+    return `x: ${this.x}, y: ${this.y}, width: ${this.width}, height: ${this.height}`
   }
 }
 
