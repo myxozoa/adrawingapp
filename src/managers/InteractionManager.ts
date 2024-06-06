@@ -5,19 +5,12 @@ import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
-import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
 import { DrawingManager, scratchLayerBoundingBox } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
 import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
 import { useToolStore } from "@/stores/ToolStore"
 import { LocationStorage } from "@/objects/utils"
-
-const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
-const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
-
-const positionArray = positionFilter.getInputArray()
-const pressureArray = pressureFilter.getInputArray()
 
 const currentMousePosition = new LocationStorage()
 let mergeEvent = false
@@ -30,20 +23,16 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const prefs = usePreferenceStore.getState().prefs
 
-  if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.changeSetting(prefs.pressureFiltering)
-  if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.changeSetting(prefs.mouseFiltering)
-
   const prevPoint = operation.points.getPoint(-1).active ? operation.points.getPoint(-1) : operation.points.currentPoint
 
+  let zoomAdjustment = 0
+
   // To counteract the fact that the pointer position resolution gets much lower the
-  // more zoomed out the canvas becomes we raise filtering to compensate
+  // more zoomed out the canvas becomes we raise smoothing to compensate
   if (Camera.zoom < 1) {
     // These values are just tuned to feel right
-    const maxZoomFilteringAdjustment = Math.max(0.7 - (1 - prefs.mouseFiltering), 0)
 
-    const zoomFilteringAdjustment = Math.min((1 - Camera.zoom) * 0.3, maxZoomFilteringAdjustment)
-
-    positionFilter.changeSetting(Math.min(Math.max(prefs.mouseFiltering - zoomFilteringAdjustment, 0.01), 1))
+    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.1, 0.05)
   }
 
   operation.points.currentPoint.pointerType = relativeMouseState.pointerType
@@ -53,11 +42,6 @@ function prepareOperation(relativeMouseState: MouseState) {
     relativeMouseState.pressure,
     prefs.pressureSmoothing,
   )
-
-  pressureArray[0] = operation.points.currentPoint.pressure
-  const filteredPressure = pressureFilter.filter(pressureArray)
-
-  operation.points.currentPoint.pressure = filteredPressure[0]
 
   const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
 
@@ -88,7 +72,7 @@ function prepareOperation(relativeMouseState: MouseState) {
     operation.points.currentPoint.location,
     prevPoint.location,
     operation.points.currentPoint.location,
-    Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment, 0.01), 1),
+    Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment - zoomAdjustment, 0.01), 1),
   )
 
   // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
@@ -101,13 +85,6 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   mergeEventCache.x = operation.points.currentPoint.x
   mergeEventCache.y = operation.points.currentPoint.y
-
-  positionArray[0] = operation.points.currentPoint.location[0]
-  positionArray[1] = operation.points.currentPoint.location[1]
-  const filteredPositions = positionFilter.filter(positionArray)
-
-  operation.points.currentPoint.x = filteredPositions[0]
-  operation.points.currentPoint.y = filteredPositions[1]
 
   const dist = getDistance(prevPoint, operation.points.currentPoint)
 
@@ -198,8 +175,7 @@ function endInteraction(save = true) {
   DrawingManager.pauseDrawNextFrame()
 
   DrawingManager.waitUntilInteractionEnd = false
-  positionFilter.reset()
-  pressureFilter.reset()
+
   Application.currentOperation.reset()
   scratchLayerBoundingBox.reset()
 
