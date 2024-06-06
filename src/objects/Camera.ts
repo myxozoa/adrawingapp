@@ -93,8 +93,7 @@ class _Camera {
 
   public fitToView = () => {
     // Minimum space between canvas edges and screen edges
-    // Should be greater than the UI width (TODO: Automate)
-    const margin = (Math.max(CanvasSizeCache.width, CanvasSizeCache.height) / 100) * 4
+    const margin = (Math.min(CanvasSizeCache.width, CanvasSizeCache.height) / 100) * 4
 
     // Start with a zoom that allows the whole canvas to be in view
     const widthZoomTarget = CanvasSizeCache.width - margin * 2
@@ -103,6 +102,8 @@ class _Camera {
       widthZoomTarget / Application.canvasInfo.width,
       heightZoomTarget / Application.canvasInfo.height,
     )
+
+    Camera.updateViewProjectionMatrix()
 
     const screenMiddle = {
       x: CanvasSizeCache.width / 2,
