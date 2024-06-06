@@ -73,33 +73,7 @@ export function getDistance(
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
-/**
- * Parse hex color to rgb color array
- *
- */
-export function hexToRgb(hex: HexColor): Maybe<ColorArray> {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : undefined
-}
-
-/**
- * Number to hex with 1 left padding
- */
-export function componentToHex(color: ColorValue): ColorValueString {
-  const hex = color.toString(16)
-  return hex.length == 1 ? "0" + hex : hex
-}
-
-/**
- * Translates array of 8bit rgb colors to hex
- *
- * @returns css style `#FFFFFF` color
- */
-export function rgbToHex(color: ColorArray): HexColor {
-  return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2])
-}
-
-export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
+export const lerp = (x: number, y: number, t: number) => (1 - t) * x + t * y
 
 let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
 let resizeObserver: ResizeObserver
