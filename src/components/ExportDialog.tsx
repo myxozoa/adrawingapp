@@ -11,7 +11,9 @@ import { SettingSlider } from "@/components/SettingSlider"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { getMIMEFromImageExtension, linearTosRGB, uint16ToFloat16 } from "@/utils/utils"
+import { linearTosRGB } from "@/utils/colors"
+
+import { getMIMEFromImageExtension, uint16ToFloat16 } from "@/utils/utils"
 
 import type { ExportImageFormats } from "@/types"
 

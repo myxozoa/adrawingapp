@@ -8,7 +8,7 @@ import { useToolStore } from "@/stores/ToolStore"
 
 import { tools } from "@/stores/ToolStore"
 
-import { hexToRgb, rgbToHex } from "@/utils/utils"
+import { hexToRgb, rgbToHex } from "@/utils/colors"
 import { useMainStore } from "@/stores/MainStore"
 import { Application } from "@/managers/ApplicationManager"
 import type { ToolName } from "@/types"

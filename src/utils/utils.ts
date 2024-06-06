@@ -1,15 +1,4 @@
-import {
-  Maybe,
-  HexColor,
-  ColorArray,
-  ColorValue,
-  ColorValueString,
-  IPoint,
-  MouseState,
-  IPoints,
-  ExportImageFormatsMIME,
-  ExportImageFormats,
-} from "@/types"
+import { IPoint, MouseState, IPoints, ExportImageFormatsMIME, ExportImageFormats } from "@/types"
 import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
@@ -256,84 +245,6 @@ export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: 
   }
 }
 
-// https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately/35363027#35363027
-
-/**
- * @example
- * ```
- *  const { r, g, b } = HSVtoRGB(hsvState.hue / 360, saturationPercentage, 1 - valuePercentage)
- * ```
- */
-export function HSVtoRGB(h: number, s: number, v: number) {
-  let r = 0
-  let g = 0
-  let b = 0
-
-  const i = Math.floor(h * 6)
-  const f = h * 6 - i
-  const p = v * (1 - s)
-  const q = v * (1 - f * s)
-  const t = v * (1 - (1 - f) * s)
-  switch (i % 6) {
-    case 0:
-      ;(r = v), (g = t), (b = p)
-      break
-    case 1:
-      ;(r = q), (g = v), (b = p)
-      break
-    case 2:
-      ;(r = p), (g = v), (b = t)
-      break
-    case 3:
-      ;(r = p), (g = q), (b = v)
-      break
-    case 4:
-      ;(r = t), (g = p), (b = v)
-      break
-    case 5:
-      ;(r = v), (g = p), (b = q)
-      break
-  }
-  return {
-    r: Math.round(r * 255),
-    g: Math.round(g * 255),
-    b: Math.round(b * 255),
-  }
-}
-
-export function RGBtoHSV(r: number, g: number, b: number) {
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const d = max - min
-  let h = 0
-  const s = max === 0 ? 0 : d / max
-  const v = max / 255
-
-  switch (max) {
-    case min:
-      h = 0
-      break
-    case r:
-      h = g - b + d * (g < b ? 6 : 0)
-      h /= 6 * d
-      break
-    case g:
-      h = b - r + d * 2
-      h /= 6 * d
-      break
-    case b:
-      h = r - g + d * 4
-      h /= 6 * d
-      break
-  }
-
-  return {
-    h: h,
-    s: s,
-    v: v,
-  }
-}
-
 export function degreesToRadians(degrees: number) {
   return degrees * (Math.PI / 180)
 }
@@ -358,16 +269,6 @@ export function scaleNumberToRange(
   const clampedOutput = Math.min(Math.max(scaledValue, minOutput), maxOutput)
 
   return clampedOutput
-}
-
-/**
- * Translates array of 8bit rgb colors to rgba
- *
- * @returns css style `rgba()` string
- */
-export const getCanvasColor = function (color: ColorArray, opacity?: number) {
-  const useOpacity = opacity !== undefined ? (opacity / 100).toFixed(2) : 1
-  return `rgba(${color[0]},${color[1]},${color[2]}, ${useOpacity})`
 }
 
 /**
@@ -618,17 +519,10 @@ export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
 export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
   return `image/${string}`
 }
+
 export function compareProps<T>(fields: (keyof T)[]) {
   return (prevProps: T, nextProps: T) =>
     fields.every((field) => {
       return prevProps[field] === nextProps[field]
     })
-}
-
-export function sRGBToLinear(sRGB: number) {
-  return sRGB <= 0.04045 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4)
-}
-
-export function linearTosRGB(linearRGB: number) {
-  return linearRGB <= 0.0031308 ? linearRGB * 12.92 : 1.055 * Math.pow(linearRGB, 1 / 2.4) - 0.055
 }

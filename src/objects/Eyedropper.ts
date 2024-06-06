@@ -6,7 +6,8 @@ import { useMainStore } from "@/stores/MainStore"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { linearTosRGB, uint16ToFloat16 } from "@/utils/utils"
+import { linearTosRGB } from "@/utils/colors"
+import { uint16ToFloat16 } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 
