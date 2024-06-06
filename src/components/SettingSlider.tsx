@@ -2,8 +2,6 @@ import { Slider } from "@/components/ui/slider"
 import { compareProps } from "@/utils/utils"
 import { SliderProps } from "@radix-ui/react-slider"
 
-import { Label } from "@/components/ui/label"
-
 import { useCallback } from "react"
 
 import { memo } from "react"
