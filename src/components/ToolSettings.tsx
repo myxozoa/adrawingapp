@@ -115,7 +115,7 @@ function _ToolSettings() {
                   name="Tool Size"
                   id="tool_size"
                   type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                  className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                   pattern="[0-9]*"
                   min={1}
                   max={500}
@@ -164,7 +164,7 @@ function _ToolSettings() {
                   name="Tool Flow"
                   id="tool_flow"
                   type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                  className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                   pattern="[0-9]*"
                   min={1}
                   max={500}
@@ -213,7 +213,7 @@ function _ToolSettings() {
                   name="Tool Opacity"
                   id="tool_opacity"
                   type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                  className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                   pattern="[0-9]*"
                   min={1}
                   max={500}
@@ -301,7 +301,7 @@ function _ToolSettings() {
                         name="Tool Spacing"
                         id="tool_spacing"
                         type="number"
-                        className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                        className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                         pattern="[0-9]*"
                         min={1}
                         max={500}
@@ -332,7 +332,7 @@ function _ToolSettings() {
                         name="Tool Hardness"
                         id="tool_hardness"
                         type="number"
-                        className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                        className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                         pattern="[0-9]*"
                         min={1}
                         max={500}
