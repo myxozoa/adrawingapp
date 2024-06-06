@@ -53,7 +53,7 @@ enum InterpolationType {
 }
 
 class BoundingBox {
-  box: Box
+  box: Float32Array
 
   drawnTo: boolean
 
