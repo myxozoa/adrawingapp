@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from "react"
-import { memo, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import {
   Menubar,
@@ -26,7 +26,13 @@ enum Dialogs {
 }
 
 function _TopMenu() {
+  const router = useRouter()
   const [currentDialog, setCurrentDialog] = useState(Dialogs.export)
+
+  const newProject = useCallback(() => {
+    Application.destroy()
+    router.push("/")
+  }, [])
 
   const openExport = useCallback(() => {
     setCurrentDialog(Dialogs.export)
@@ -54,8 +60,8 @@ function _TopMenu() {
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
-              <MenubarItem disabled>New</MenubarItem>
-              <DialogTrigger asChild onClick={() => setCurrentDialog(Dialogs.export)}>
+              <MenubarItem onSelect={newProject}>New</MenubarItem>
+              <DialogTrigger asChild onClick={openExport}>
                 <MenubarItem>Save Image</MenubarItem>
               </DialogTrigger>
 

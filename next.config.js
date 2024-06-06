@@ -1,5 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/canvas",
+        missing: [
+          {
+            type: "cookie",
+            key: "allow-edit",
+            value: "true",
+          },
+        ],
+        permanent: false,
+        destination: "/",
+      },
+    ]
+  },
   reactStrictMode: true,
   webpack: (config) => {
     config.module.rules.push({

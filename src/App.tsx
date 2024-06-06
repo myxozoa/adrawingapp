@@ -8,6 +8,8 @@ import { ToolSettings } from "@/components/ToolSettings"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 function App() {
+  document.cookie = "allow-edit=false"
+
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
       <TopMenu />

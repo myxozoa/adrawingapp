@@ -1,10 +1,9 @@
 import "@/index.css"
-import { ClientOnly } from "./client"
 
-export function generateStaticParams() {
-  return [{ slug: [""] }]
-}
+import dynamic from "next/dynamic"
+
+const App = dynamic(() => import("@/App"), { ssr: true })
 
 export default function Page() {
-  return <ClientOnly />
+  return <App />
 }
