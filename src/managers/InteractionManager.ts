@@ -29,7 +29,7 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   // To counteract the fact that the pointer position resolution gets much lower the
   // more zoomed out the canvas becomes we raise smoothing to compensate
-  if (Camera.zoom < 1) {
+  if (Camera.zoom < 1 && prefs.zoomCompensation) {
     // These values are just tuned to feel right
 
     zoomAdjustment = Math.min((1 - Camera.zoom) * 0.1, 0.05)

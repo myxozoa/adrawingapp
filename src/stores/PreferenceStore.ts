@@ -12,6 +12,7 @@ interface State {
     canvasHeight: number
     usePressure: boolean
     useCoalescedEvents: boolean
+    zoomCompensation: boolean
     colorDepth: 8 | 16
   }
 }
@@ -35,6 +36,7 @@ export const defaultPreferences = {
 
   usePressure: true,
   useCoalescedEvents: true,
+  zoomCompensation: true,
 }
 
 const usePreferenceStoreBase = create<State & Action>()(

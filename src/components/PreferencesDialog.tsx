@@ -66,7 +66,15 @@ export const PreferenesDialog = () => {
           onCheckedChange={() => setPrefs({ useCoalescedEvents: !prefs.useCoalescedEvents })}
           checked={prefs.useCoalescedEvents}
         />
-        <Label htmlFor="pressure">Use Coalesced Pointer Events</Label>
+        <Label htmlFor="coalescedEvents">Use Coalesced Pointer Events</Label>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="zoomCompensation"
+          onCheckedChange={() => setPrefs({ zoomCompensation: !prefs.zoomCompensation })}
+          checked={prefs.zoomCompensation}
+        />
+        <Label htmlFor="zoomCompensation">Use Zoom Smoothing Compensation</Label>
       </div>
     </>
   )
