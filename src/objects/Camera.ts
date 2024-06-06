@@ -94,7 +94,7 @@ class _Camera {
 
   public fitToView = () => {
     // Minimum space between canvas edges and screen edges
-    const margin = (Math.min(CanvasSizeCache.width, CanvasSizeCache.height) / 100) * 4
+    const margin = (Math.min(Application.canvasInfo.width, Application.canvasInfo.height) / 100) * 4
 
     // Start with a zoom that allows the whole canvas to be in view
     const widthZoomTarget = CanvasSizeCache.width - margin * 2
@@ -114,8 +114,8 @@ class _Camera {
     const screenMiddleWorldPosition = this.getWorldPosition(screenMiddle)
 
     // Start with a camera position that centers the canvas in view
-    Camera.x = -Math.max(margin, margin + screenMiddleWorldPosition[0] - Application.canvasInfo.width / 2)
-    Camera.y = -Math.max(margin, margin + screenMiddleWorldPosition[1] - Application.canvasInfo.height / 2)
+    Camera.x = -(margin + screenMiddleWorldPosition[0] - Application.canvasInfo.width / 2)
+    Camera.y = -(margin + screenMiddleWorldPosition[1] - Application.canvasInfo.height / 2)
 
     Camera.updateViewProjectionMatrix()
   }
