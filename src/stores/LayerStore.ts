@@ -24,6 +24,7 @@ interface Action {
   saveNewName: (id: LayerID, name: LayerName) => void
   setOpacity: (id: LayerID, opacity: number) => void
   keepCurrentLayerInSync: () => void
+  deleteAll: () => void
 }
 
 const baseLayer = new Layer("New Layer")
@@ -137,6 +138,12 @@ const useLayerStoreBase = create<State & Action>((set) => ({
     DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
+  },
+  deleteAll: () => {
+    set((state) => {
+      state.layerStorage.clear()
+      return { ...state, currentLayer: undefined, layers: [], editingLayer: null }
+    })
   },
 }))
 
