@@ -8,7 +8,7 @@ export const PointerManager: MouseState = {
   rightMouseDown: false,
   middleMouseDown: false,
   pressure: 0,
-  pointerType: "pen",
+  pointerType: "mouse",
 }
 
 function parseMouseButtons(event: PointerEvent | WheelEvent) {
