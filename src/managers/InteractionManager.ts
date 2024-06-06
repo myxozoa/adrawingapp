@@ -46,25 +46,18 @@ function prepareOperation(relativeMouseState: MouseState) {
     positionFilter.changeSetting(Math.min(Math.max(prefs.mouseFiltering - zoomFilteringAdjustment, 0.01), 1))
   }
 
-  positionArray[0] = relativeMouseState.x
-  positionArray[1] = relativeMouseState.y
-  const filteredPositions = positionFilter.filter(positionArray)
-
-  operation.points.currentPoint.x = filteredPositions[0]
-  operation.points.currentPoint.y = filteredPositions[1]
-
   operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-  pressureArray[0] = relativeMouseState.pressure
+  operation.points.currentPoint.pressure = lerp(
+    operation.points.getPoint(-1).active ? prevPoint.pressure : 0,
+    relativeMouseState.pressure,
+    prefs.pressureSmoothing,
+  )
+
+  pressureArray[0] = operation.points.currentPoint.pressure
   const filteredPressure = pressureFilter.filter(pressureArray)
 
   operation.points.currentPoint.pressure = filteredPressure[0]
-
-  operation.points.currentPoint.pressure = lerp(
-    operation.points.currentPoint.pressure,
-    prevPoint.pressure,
-    1 - prefs.pressureSmoothing,
-  )
 
   const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
 
@@ -85,6 +78,9 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
 
+  operation.points.currentPoint.x = relativeMouseState.x
+  operation.points.currentPoint.y = relativeMouseState.y
+
   vec2.lerp(
     operation.points.currentPoint.location,
     prevPoint.location,
@@ -94,14 +90,21 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
   if (mergeEvent) {
-    operation.points.currentPoint.x = lerp(mergeEventCache.x, operation.points.currentPoint.x, 0.7)
-    operation.points.currentPoint.y = lerp(mergeEventCache.y, operation.points.currentPoint.y, 0.7)
+    operation.points.currentPoint.x = lerp(mergeEventCache.x, operation.points.currentPoint.x, 0.5)
+    operation.points.currentPoint.y = lerp(mergeEventCache.y, operation.points.currentPoint.y, 0.5)
 
     mergeEvent = false
   }
 
   mergeEventCache.x = operation.points.currentPoint.x
   mergeEventCache.y = operation.points.currentPoint.y
+
+  positionArray[0] = operation.points.currentPoint.location[0]
+  positionArray[1] = operation.points.currentPoint.location[1]
+  const filteredPositions = positionFilter.filter(positionArray)
+
+  operation.points.currentPoint.x = filteredPositions[0]
+  operation.points.currentPoint.y = filteredPositions[1]
 
   const dist = getDistance(prevPoint, operation.points.currentPoint)
 
