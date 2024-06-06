@@ -2,6 +2,7 @@ import { mat3, vec2 } from "gl-matrix"
 
 import { CanvasSizeCache, toClipSpace } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
+import { InputManager } from "@/managers/InputManager"
 
 const one = vec2.fromValues(1, 1)
 const initialZoom = 1
@@ -45,7 +46,7 @@ class _Camera {
   }
 
   set x(value: number) {
-    vec2.set(this.info.position, value, this.info.position[1])
+    this.info.position[0] = value
   }
 
   get y() {
@@ -53,7 +54,7 @@ class _Camera {
   }
 
   set y(value: number) {
-    vec2.set(this.info.position, this.info.position[0], value)
+    this.info.position[1] = value
   }
 
   public init = () => {
@@ -126,6 +127,8 @@ class _Camera {
     this.updateViewProjectionMatrix()
 
     this.fitToView()
+
+    InputManager.reset()
   }
 }
 

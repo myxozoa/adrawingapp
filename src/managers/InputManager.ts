@@ -557,4 +557,5 @@ export const InputManager = {
   windowResize,
   init,
   destroy,
+  reset,
 }
