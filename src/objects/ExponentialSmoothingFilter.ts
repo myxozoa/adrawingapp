@@ -27,6 +27,7 @@ export class ExponentialSmoothingFilter {
     for (let index = 0; index < this.smoothedValue.length; index++) {
       if (this.initialState) {
         this.smoothedValue[index] = newValues[index]
+        this.initialState = false
       } else {
         this.smoothedValue[index] =
           this.smoothAmount * newValues[index] + (1 - this.smoothAmount) * this.smoothedValue[index]
