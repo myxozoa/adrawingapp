@@ -13,6 +13,7 @@ interface State {
     canvasWidth: number
     canvasHeight: number
     usePressure: boolean
+    useCoalescedEvents: boolean
   }
 }
 
@@ -34,6 +35,7 @@ export const defaultPreferences = {
   canvasHeight: 8 * 300,
 
   usePressure: true,
+  useCoalescedEvents: true,
 }
 
 const usePreferenceStoreBase = create<State & Action>()(

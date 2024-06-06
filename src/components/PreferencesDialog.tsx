@@ -9,6 +9,8 @@ export const PreferenesDialog = () => {
   const setPrefs = usePreferenceStore.use.setPrefs()
   const prefs = usePreferenceStore.use.prefs()
 
+  const coalescedEventsSupported = PointerEvent.prototype.getCoalescedEvents !== undefined
+
   return (
     <>
       <DialogHeader>
@@ -72,6 +74,19 @@ export const PreferenesDialog = () => {
           checked={prefs.usePressure}
         />
         <Label htmlFor="pressure">Use Pen Pressure</Label>
+      </div>
+
+      {!coalescedEventsSupported ? (
+        <p className="text-sm text-destructive"> It seems your device does not support Coalesced Events</p>
+      ) : null}
+      <div className="flex items-center space-x-2">
+        <Switch
+          disabled={!coalescedEventsSupported}
+          id="coalescedEvents"
+          onCheckedChange={() => setPrefs({ useCoalescedEvents: !prefs.useCoalescedEvents })}
+          checked={prefs.useCoalescedEvents}
+        />
+        <Label htmlFor="pressure">Use Coalesced Pointer Events</Label>
       </div>
     </>
   )
