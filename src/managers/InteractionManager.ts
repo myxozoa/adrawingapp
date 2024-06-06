@@ -78,7 +78,8 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   let pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
 
-  if (relativeMouseState.pointerType === "mouse") pointerPositionLerpAdjustment += 0.1
+  if (relativeMouseState.pointerType === "mouse" || relativeMouseState.pointerType === "touch")
+    pointerPositionLerpAdjustment += 0.1
 
   operation.points.currentPoint.x = relativeMouseState.x
   operation.points.currentPoint.y = relativeMouseState.y
