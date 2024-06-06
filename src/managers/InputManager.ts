@@ -287,15 +287,31 @@ function pointermove(event: PointerEvent) {
   }
 
   if (currentInteractionState === InteractionState.useTool) {
-    if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-      const coalesced = event.getCoalescedEvents()
+    const useCoalescedEvents = usePreferenceStore.getState().prefs.useCoalescedEvents
 
-      for (const coalescedEvent of coalesced) {
-        const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
+    let coalesced: PointerEvent[] | undefined
+    if (PointerEvent.prototype.getCoalescedEvents !== undefined && useCoalescedEvents) {
+      coalesced = event.getCoalescedEvents()
 
-        InteractionManager.process(coalescedRelativeMouseState)
+      if (coalesced !== undefined) {
+        for (const coalescedEvent of coalesced) {
+          const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
+
+          InteractionManager.process(coalescedRelativeMouseState)
+        }
       }
-    } else {
+    }
+
+    // At least on some platforms and browsers it seems the main pointer event is not included in the coalesced events array
+
+    // We check to see if there were no coalesced events or if the last coalesced event in the list matches the main event
+    // Processing the main event here seems to help responsiveness on some devices
+    if (
+      coalesced === undefined ||
+      (coalesced !== undefined &&
+        coalesced.length >= 1 &&
+        (coalesced[coalesced.length - 1].x !== position.x || coalesced[coalesced.length - 1].y !== position.y))
+    ) {
       InteractionManager.process(position)
     }
 
