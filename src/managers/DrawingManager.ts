@@ -135,6 +135,7 @@ let needRedraw = true
 let endDrawNextFrame = false
 
 let shouldRecomposite = true
+let shouldFullyRecomposite = true
 
 let shouldShowCursor = true
 let pixelInterpolation = InterpolationType.trilinear
@@ -188,7 +189,9 @@ function render() {
   if (shouldRecomposite) {
     compositeLayers()
 
-    blit(framebuffers[readFramebuffer], displayLayer, strokeFrameBoundingBox)
+    scissorCanvas()
+    blit(framebuffers[readFramebuffer], displayLayer, shouldFullyRecomposite ? undefined : strokeFrameBoundingBox)
+    shouldFullyRecomposite = false
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
@@ -230,12 +233,16 @@ function scissorCanvas() {
 function scissorStrokeFrameSection() {
   const gl = Application.gl
 
-  gl.scissor(
-    strokeFrameBoundingBox.x,
-    strokeFrameBoundingBox.y,
-    strokeFrameBoundingBox.width + 1,
-    strokeFrameBoundingBox.height + 1,
-  )
+  if (shouldFullyRecomposite) {
+    gl.scissor(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+  } else {
+    gl.scissor(
+      strokeFrameBoundingBox.x,
+      strokeFrameBoundingBox.y,
+      strokeFrameBoundingBox.width + 1,
+      strokeFrameBoundingBox.height + 1,
+    )
+  }
 }
 
 function compositeLayers() {
@@ -666,6 +673,11 @@ function recomposite() {
   shouldRecomposite = true
 }
 
+function fullyRecomposite() {
+  recomposite()
+  shouldFullyRecomposite = true
+}
+
 function hideCursor() {
   // shouldShowCursor = false
   Cursor.drawMode()
@@ -760,6 +772,7 @@ export const DrawingManager = {
   hideCursor,
   disableCursor,
   recomposite,
+  fullyRecomposite,
   render,
   start,
   beginDraw,

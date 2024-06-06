@@ -77,7 +77,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, currentLayer: newLayer.id, layers: [...state.layers, newLayer.id] }
     })
 
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },
@@ -99,7 +99,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return state
     })
 
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },
@@ -112,7 +112,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, currentLayer: id }
     })
 
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },
@@ -134,7 +134,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }
     })
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },

@@ -187,7 +187,7 @@ function endInteraction(save = true) {
   }
   DrawingManager.clearSpecific(scratchLayer)
 
-  DrawingManager.recomposite()
+  DrawingManager.fullyRecomposite()
   DrawingManager.pauseDrawNextFrame()
 
   DrawingManager.waitUntilInteractionEnd = false
