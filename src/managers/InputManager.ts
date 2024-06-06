@@ -15,6 +15,8 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { LocationStorage } from "@/objects/utils"
 
 const wheelThrottle = throttleRAF()
 
@@ -67,6 +69,9 @@ class TouchManager {
 
   removeTouch = (event: PointerEvent) => {
     const index = this.touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+
+    if (index === -1) throw new Error("Touch could not be found to be removed")
+
     this.touches.splice(index, 1)
   }
 
@@ -84,7 +89,11 @@ class TouchManager {
   }
 
   getTouchByID = (pointerId: number) => {
-    return this.touches.find((touch) => touch.pointerId === pointerId)
+    const touch = this.touches.find((touch) => touch.pointerId === pointerId)
+
+    if (typeof touch === "undefined") throw new Error("Touch could not be found by ID")
+
+    return
   }
 
   getTouch = (index: number) => {
@@ -96,10 +105,13 @@ class TouchManager {
 
   updateTouch = (event: PointerEvent) => {
     const index = findLastIndex(this.touches, (cachedEvent) => cachedEvent.pointerId === event.pointerId)
+
+    if (index === -1) throw new Error("Touch could not be found in order to be updated")
+
     this.touches[index] = event
   }
 
-  clearTouches = () => {
+  clear = () => {
     this.touches.length = 0
   }
 
@@ -193,6 +205,8 @@ function pan(midPoint: { x: number; y: number }) {
 }
 
 function touchPanZoom() {
+  if (touches.length < 2) throw new Error("Too few touches to be able to pan/zoom")
+
   const distance = getDistance(touches.getTouch(0), touches.getTouch(1))
 
   const midPoint = touches.getMidPoint()
@@ -210,11 +224,14 @@ function pointerdown(event: PointerEvent) {
   document.body.style.cursor = "none"
   ;(event.target as HTMLCanvasElement).focus()
 
+  if (event.pointerType !== "touch") touches.clear()
+
   if (event.pointerType === "touch") {
     DrawingManager.disableCursor()
     touches.addTouch(event)
 
     if (touches.length > 2) {
+      touches.clear()
       InteractionManager.endInteraction(false)
 
       return
