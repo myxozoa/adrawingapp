@@ -6,10 +6,10 @@ import { useMainStore } from "@/stores/MainStore"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { linearTosRGB } from "@/utils/colors"
 import { uint16ToFloat16 } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 import { toolDefaults, toolProperties } from "@/stores/ToolStore"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 export class Eyedropper extends Tool implements IEyedropper {
   settings: {
@@ -39,11 +39,12 @@ export class Eyedropper extends Tool implements IEyedropper {
    */
   // TODO: Implement multiple pixel sampling/averaging
   use = async (gl: WebGL2RenderingContext, operation: IOperation) => {
+    const colorDepth = usePreferenceStore.getState().prefs.colorDepth
     const setColor = useMainStore.getState().setColor
 
     const point = operation.points.list[0]
 
-    const data = new Uint16Array(4)
+    const data = new (colorDepth === 8 ? Uint8Array : Uint16Array)(4)
 
     const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
     const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
@@ -51,7 +52,9 @@ export class Eyedropper extends Tool implements IEyedropper {
     await readPixelsAsync(gl, point.x, Application.canvasInfo.height - point.y, 1, 1, format, type, data)
 
     const color = Array.from(data, (num) => {
-      return linearTosRGB(uint16ToFloat16(num))
+      if (colorDepth === 8) return num / 255
+
+      return uint16ToFloat16(num)
     })
 
     const unPremultipliedColor = color.map((num) => {

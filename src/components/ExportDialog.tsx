@@ -11,8 +11,6 @@ import { SettingSlider } from "@/components/SettingSlider"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { linearTosRGB } from "@/utils/colors"
-
 import { getMIMEFromImageExtension, uint16ToFloat16 } from "@/utils/utils"
 
 import type { ExportImageFormats } from "@/types"
@@ -20,6 +18,7 @@ import type { ExportImageFormats } from "@/types"
 import { Input } from "@/components/ui/input"
 
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 function flipVertically(imageData: ImageData) {
   const width = imageData.width
@@ -48,13 +47,14 @@ function flipVertically(imageData: ImageData) {
 
 const saveImage = async (filename: string, exportFormat: ExportImageFormats, exportQuality: number) => {
   const gl = Application.gl
+  const colorDepth = usePreferenceStore.getState().prefs.colorDepth
 
   const displayLayer = ResourceManager.get("DisplayLayer")
 
-  DrawingManager.pauseDrawNextFrame()
   DrawingManager.clearSpecific(displayLayer)
-  DrawingManager.recomposite()
+  DrawingManager.fullyRecomposite()
   DrawingManager.render()
+  DrawingManager.pauseDrawNextFrame()
   gl.bindFramebuffer(gl.FRAMEBUFFER, displayLayer.bufferInfo.framebuffer)
 
   const glReadbackFormat = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
@@ -62,7 +62,9 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
 
   gl.readBuffer(gl.COLOR_ATTACHMENT0)
 
-  const data = new Uint16Array(Application.canvasInfo.width * Application.canvasInfo.height * 4)
+  const data = new (colorDepth === 8 ? Uint8Array : Uint16Array)(
+    Application.canvasInfo.width * Application.canvasInfo.height * 4,
+  )
   await readPixelsAsync(
     gl,
     0,
@@ -74,37 +76,60 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
     data,
   )
 
-  // Data is 16 bit float values stored in a uint16 array
-  const data8bit = Uint8ClampedArray.from(data, (num) => {
-    return linearTosRGB(uint16ToFloat16(num)) * 255
+  queueMicrotask(() => {
+    const data8bit = Uint8ClampedArray.from(data, (num) => {
+      if (colorDepth === 8) return num
+
+      return uint16ToFloat16(num)
+    })
+
+    for (let i = 0; i < data8bit.length; i += 4) {
+      const alpha = colorDepth === 8 ? data8bit[i + 3] / 255 : data8bit[i + 3]
+
+      data8bit[i] /= alpha
+      data8bit[i + 1] /= alpha
+      data8bit[i + 2] /= alpha
+
+      if (colorDepth === 16) {
+        data8bit[i] *= 255
+        data8bit[i + 1] *= 255
+        data8bit[i + 2] *= 255
+        data8bit[i + 3] *= 255
+      }
+    }
+
+    const imageData = new ImageData(data8bit, Application.canvasInfo.width, Application.canvasInfo.height)
+
+    queueMicrotask(() => {
+      flipVertically(imageData)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    queueMicrotask(async () => {
+      const imageBitmap = await createImageBitmap(imageData)
+      Application.exportCanvasContext.transferFromImageBitmap(imageBitmap)
+
+      const exportFormatMIME = getMIMEFromImageExtension(exportFormat)
+
+      const blob = await Application.exportCanvas.convertToBlob({ type: exportFormatMIME, quality: exportQuality })
+
+      if (!blob) {
+        console.error("Unable to create blob and save image")
+        return
+      }
+
+      const fullFilename = `${filename}.${exportFormat}`
+
+      const fileData = new File([blob], fullFilename, { type: exportFormatMIME })
+      const url = URL.createObjectURL(fileData)
+
+      Application.exportDownloadLink.setAttribute("href", url)
+      Application.exportDownloadLink.download = fullFilename
+      Application.exportDownloadLink.click()
+
+      URL.revokeObjectURL(url)
+    })
   })
-
-  const imageData = new ImageData(data8bit, Application.canvasInfo.width, Application.canvasInfo.height)
-
-  flipVertically(imageData)
-
-  const imageBitmap = await createImageBitmap(imageData)
-  Application.exportCanvasContext.transferFromImageBitmap(imageBitmap)
-
-  const exportFormatMIME = getMIMEFromImageExtension(exportFormat)
-
-  const blob = await Application.exportCanvas.convertToBlob({ type: exportFormatMIME, quality: exportQuality })
-
-  if (!blob) {
-    console.error("Unable to create blob and save image")
-    return
-  }
-
-  const fullFilename = `${filename}.${exportFormat}`
-
-  const fileData = new File([blob], fullFilename, { type: exportFormatMIME })
-  const url = URL.createObjectURL(fileData)
-
-  Application.exportDownloadLink.setAttribute("href", url)
-  Application.exportDownloadLink.download = fullFilename
-  Application.exportDownloadLink.click()
-
-  URL.revokeObjectURL(url)
 }
 
 function _ExportDialog() {

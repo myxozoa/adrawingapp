@@ -12,6 +12,28 @@ uniform int u_blend_mode;
 uniform highp sampler2D u_bottom_texture;
 uniform highp sampler2D u_top_texture;
 
+float tosRGBValue(float linearRGBValue) {
+    return linearRGBValue <= 0.0031308 ? linearRGBValue * 12.92 :( 1.055 * pow(linearRGBValue, 1. / 2.4)) - 0.055;
+}
+vec3 tosRGB(vec3 linearRGB) {
+  return vec3(
+    tosRGBValue(linearRGB.r),
+    tosRGBValue(linearRGB.g),
+    tosRGBValue(linearRGB.b)
+  );
+}
+
+float toLinearRGBValue(float sRGBValue) {
+    return sRGBValue <= 0.04045 ? sRGBValue * (1. / 12.92) : pow((sRGBValue + 0.055) * (1. / 1.055), 2.4);
+}
+vec3 toLinearRGB(vec3 sRGB) {
+  return vec3 (
+    toLinearRGBValue(sRGB.r),
+    toLinearRGBValue(sRGB.g),
+    toLinearRGBValue(sRGB.b)
+  );
+}
+
 vec4 normal(vec4 base, vec4 blend) {
   return blend;
 }
@@ -28,16 +50,10 @@ vec4 screen(vec4 base, vec4 blend) {
 // blend = src
 // base = dst
 vec4 pdOver(vec4 base, vec4 blend) {
-// vec3 pdOver(vec3 base, vec3 blend, float baseA, float blendA) {
   vec4 result;
 
   //Cr = (1 - αb) x Cs + αb x B(Cb, Cs)
   switch(u_blend_mode) {
-    // Clear Mode
-    case 0:
-      result = base * (1. - blend.a);
-
-      break;
     // Normal Mode
     case 1:
       result = normal(base, blend) * base.a;
@@ -88,6 +104,20 @@ vec4 pdOver(vec4 base, vec4 blend) {
 // colors: (Sca × Da + Dca × Sa - Sca × Dca) + Sca × (1 - Da) + Dca × (1 - Sa)
 // alpha: Sa + Da - Sa × Da
 
+// overlay
+// if 2 × Dca <= Da
+//   colors: 2 × Sca × Dca + Sca × (1 - Da) + Dca × (1 - Sa)
+// otherwise
+//   colors: Sa × Da - 2 × (Da - Dca) × (Sa - Sca) + Sca × (1 - Da) + Dca × (1 - Sa)
+// alpha: Sa + Da - Sa × Da
+
+// darken
+// colors: min(Sca × Da, Dca × Sa) + Sca × (1 - Da) + Dca × (1 - Sa)
+// alpha:  Sa + Da - Sa × Da 
+
+// lighten
+// colors:max(Sca × Da, Dca × Sa) + Sca × (1 - Da) + Dca × (1 - Sa)
+// alpha: Sa + Da - Sa × Da 
 
 // based on src-over
 vec4 blendColor(vec4 base, vec4 blend) {
@@ -99,17 +129,8 @@ vec4 blendColor(vec4 base, vec4 blend) {
   // Co = αs x Cs + αb x (1 - αs) x Cb
   // Fa = 1; Fb = 1 - αs
 
-  // alpha = (blend.a + (1. - blend.a) * base.a);
-
-  // Sa + Da - Sa × Da
-  // float alpha = blend.a + base.a - blend.a * base.a;
-
   vec4 blended = pdOver(base, blend);
 
-  blended = max(min(blended, 1.), 0.);
-  // alpha = max(min(alpha, 1.), 0.);
-
-  // return vec4(blend.a * blended + base.a * (1. - blend.a) * base.rgb, alpha);
   return blended;
 }
 
@@ -121,6 +142,15 @@ void main() {
     discard;
   }
 
+  bottom = max(min(bottom, 1.), 0.);
+  top = max(min(top, 1.), 0.);
+
+  bottom.rgb = toLinearRGB(bottom.rgb);
+  top.rgb = toLinearRGB(top.rgb);
+
+  bottom.a = toLinearRGBValue(bottom.a);
+  top.a = toLinearRGBValue(top.a);
+
   top *= u_opacity;
 
   // Error Color
@@ -128,26 +158,23 @@ void main() {
 
   if (u_blend_mode == 0) {
     bottom.rgb /= bottom.a;
-    bottom = max(min(bottom, 1.), 0.);
 
-    vec4 blended = vec4(bottom.rgb, bottom.a - top.a);
+    // base * (1. - blend.a)
+    vec4 blended = vec4(bottom.rgb, bottom.a * (1. - top.a));
 
     blended.rgb *= blended.a;
 
-    blended = max(min(blended, 1.), 0.);
     outColor = blended;
-  } else if (bottom.a == 0.) {
-    outColor = top;
-  } else if (top.a == 0.) {
-    outColor = bottom;
   } else {
-
-    bottom = max(min(bottom, 1.), 0.);
-    top = max(min(top, 1.), 0.);
     vec4 blended = blendColor(bottom, top);
 
     outColor = blended;
   }
+
+  outColor = max(min(outColor, 1.), 0.);
+
+  outColor.a = tosRGBValue(outColor.a);
+  outColor.rgb = tosRGB(outColor.rgb);
 
   fragColor = outColor;
 }

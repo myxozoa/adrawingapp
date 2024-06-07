@@ -118,7 +118,7 @@ export function initializeCanvas(
     // Setting alpha to false is known to have strange performance implications on some platforms (eg. intel iGPU macbooks) (possibly fixed when metal backed ANGLE was released?)
     // However it is required to be false for desynchronized to work and have DOM elements composited above the canvas
     alpha: false,
-    premultipliedAlpha: true,
+    premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
     antialias: false,
