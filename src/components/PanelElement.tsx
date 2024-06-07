@@ -1,5 +1,5 @@
 import { compareProps } from "@/utils/utils"
-import { memo } from "react"
+import { memo, useCallback } from "react"
 
 function _PanelElement({
   id,
@@ -16,10 +16,11 @@ function _PanelElement({
   className?: string
   children: React.ReactNode
 }) {
+  const handleClick = useCallback(() => select(id), [select, id])
   return (
     <div
       onDoubleClick={onDoubleClick}
-      onClick={() => select(id)}
+      onClick={handleClick}
       className={`w-full rounded-sm p-0.5 hover:cursor-pointer ${className} ${selected ? "bg-secondary" : ""}`}
     >
       <div className="flex h-full items-center justify-center">{children}</div>
