@@ -27,6 +27,7 @@ import { isBrush, isEraser } from "@/utils/typeguards"
 import { PointerManager } from "@/managers/PointerManager"
 import { InputManager } from "@/managers/InputManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { blend_modes } from "@/constants"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -297,13 +298,13 @@ function compositeLayers() {
   scissorStrokeFrameSection()
 
   if (isBrush(currentTool)) {
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 1)
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, blend_modes.normal)
     gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
   } else if (isEraser(currentTool)) {
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 0)
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, blend_modes.clear)
     gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
   } else {
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, 1)
+    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, blend_modes.normal)
     gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
   }
 
@@ -388,13 +389,13 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
   gl.disable(gl.BLEND)
 
   if (isBrush(currentTool)) {
-    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 1)
+    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, blend_modes.normal)
     gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
   } else if (isEraser(currentTool)) {
-    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 0)
+    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, blend_modes.clear)
     gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
   } else {
-    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, 1)
+    gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, blend_modes.normal)
     gl.uniform1f(intermediaryLayer3.programInfo.uniforms.u_opacity, 1)
   }
 

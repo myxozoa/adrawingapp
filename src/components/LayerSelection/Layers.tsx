@@ -7,10 +7,12 @@ import { Layer } from "@/components/LayerSelection/Layer"
 import { Button } from "@/components/ui/button"
 
 import { TrashIcon, FilePlusIcon, LayersIcon } from "@radix-ui/react-icons"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { SettingSlider } from "@/components/SettingSlider"
+import { blendModeNames, blend_modes } from "@/constants"
 
 function _Layers() {
   const [showLayers, setShowLayers] = useState(false)
@@ -66,6 +68,30 @@ function _Layers() {
             max={100}
           />
         </Panel>
+        <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
+          <Select
+            value={currentLayer.blendMode.toString()}
+            onValueChange={(value) =>
+              LayerStore.setBlendMode(LayerStore.currentLayer, Number(value) as unknown as blend_modes)
+            }
+          >
+            <SelectTrigger className="pl-4">
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {blendModeNames.map((mode, idx) => {
+                  return (
+                    <SelectItem key={`blendModes${idx}`} value={idx.toString()}>
+                      {mode}
+                    </SelectItem>
+                  )
+                })}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Panel>
+
         <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
           {LayerStore.layers.map(renderLayer).reverse()}
         </Panel>

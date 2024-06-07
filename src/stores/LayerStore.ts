@@ -7,6 +7,7 @@ import { DrawingManager } from "@/managers/DrawingManager"
 
 import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
+import type { blend_modes } from "@/constants"
 
 interface State {
   layerStorage: Map<LayerID, Layer>
@@ -23,6 +24,7 @@ interface Action {
   removeLayer: () => void
   saveNewName: (id: LayerID, name: LayerName) => void
   setOpacity: (id: LayerID, opacity: number) => void
+  setBlendMode: (id: LayerID, blendMode: blend_modes) => void
   keepCurrentLayerInSync: () => void
   deleteAll: () => void
 }
@@ -131,6 +133,19 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       const layer = state.layerStorage.get(id)
 
       if (layer) layer.opacity = opacity
+      else throw new Error("Layer not found")
+
+      return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }
+    })
+    DrawingManager.fullyRecomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
+  },
+  setBlendMode: (id: LayerID, blendMode: blend_modes) => {
+    set((state) => {
+      const layer = state.layerStorage.get(id)
+
+      if (layer) layer.blendMode = blendMode
       else throw new Error("Layer not found")
 
       return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }

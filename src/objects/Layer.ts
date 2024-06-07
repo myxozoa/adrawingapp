@@ -58,6 +58,7 @@ export class Layer implements ILayer {
   }
 
   reset = () => {
+    this.blendMode = blend_modes.normal
     this.name = "New Layer"
     this.noDraw = false
     this.boundingBox = { x: 0, y: 0, width: 1, height: 1 } //  TODO: Calculate every time drawn to
