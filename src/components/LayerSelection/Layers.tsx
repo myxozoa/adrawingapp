@@ -27,6 +27,28 @@ function _Layers() {
     [LayerStore.currentLayer],
   )
 
+  const select = useCallback((id: string) => {
+    LayerStore.setCurrentLayer(id)
+  }, [])
+
+  const renderLayer = useCallback(
+    (layerID: string, idx: number) => {
+      const layer = LayerStore.layerStorage.get(layerID)!
+      return (
+        <Layer
+          saveNewName={LayerStore.saveNewName}
+          editing={!!LayerStore.editingLayer && LayerStore.editingLayer === layerID}
+          key={layer.name + idx}
+          name={layer.name}
+          id={layerID}
+          select={select}
+          selected={LayerStore.currentLayer === layerID}
+        />
+      )
+    },
+    [LayerStore.editingLayer, LayerStore.currentLayer],
+  )
+
   return (
     <div className="absolute right-0 top-1/4 flex flex-col items-end">
       <Button className="h-10 w-10 p-1" variant="outline" onClick={toggleLayers}>
@@ -45,22 +67,7 @@ function _Layers() {
           />
         </Panel>
         <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
-          {LayerStore.layers
-            .map((layerID: string, idx: number) => {
-              const layer = LayerStore.layerStorage.get(layerID)!
-              return (
-                <Layer
-                  saveNewName={LayerStore.saveNewName}
-                  editing={!!LayerStore.editingLayer && LayerStore.editingLayer === layerID}
-                  key={layer.name + idx}
-                  name={layer.name}
-                  id={layerID}
-                  select={LayerStore.setCurrentLayer}
-                  selected={LayerStore.currentLayer === layerID}
-                />
-              )
-            })
-            .reverse()}
+          {LayerStore.layers.map(renderLayer).reverse()}
         </Panel>
         <Panel className="mt-0 flex w-full shrink-0 justify-between shadow-md">
           <Button variant="outline" size="sm" className="w-1/2" onClick={LayerStore.newLayer}>

@@ -35,11 +35,14 @@ function _Layer({
   }, [id, name, newName])
 
   const onChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setNewName(event.target.value), [])
-  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      save()
-    }
-  }, [])
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        save()
+      }
+    },
+    [id, name, newName],
+  )
 
   const editLayer = useCallback(() => setEditingLayer(id), [id])
 
@@ -62,4 +65,4 @@ function _Layer({
   )
 }
 
-export const Layer = memo(_Layer, compareProps(["editing", "name", "selected"]))
+export const Layer = memo(_Layer, compareProps(["editing", "name", "selected", "id"]))
