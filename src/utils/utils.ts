@@ -5,7 +5,7 @@ import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
 
-interface CanvasSizeCache {
+interface IAppViewportSizeCache {
   width: number
   height: number
   offsetWidth: number
@@ -14,7 +14,7 @@ interface CanvasSizeCache {
   reset: () => void
 }
 
-export const CanvasSizeCache: CanvasSizeCache = {
+export const AppViewportSizeCache: IAppViewportSizeCache = {
   width: 0,
   height: 0,
   offsetHeight: 0,
@@ -31,8 +31,8 @@ export const CanvasSizeCache: CanvasSizeCache = {
 }
 
 export function getRelativePosition<T extends MouseState | { x: number; y: number }>(mouseState: T): T {
-  mouseState.x = mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth)
-  mouseState.y = mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight)
+  mouseState.x = mouseState.x * (AppViewportSizeCache.width / AppViewportSizeCache.offsetWidth)
+  mouseState.y = mouseState.y * (AppViewportSizeCache.height / AppViewportSizeCache.offsetHeight)
 
   return mouseState
 }
@@ -132,13 +132,13 @@ export function initializeCanvas(
   const newWidth = Math.round(width * targetDpi)
   const newHeight = Math.round(height * targetDpi)
 
-  CanvasSizeCache.width = newWidth
-  CanvasSizeCache.height = newHeight
+  AppViewportSizeCache.width = newWidth
+  AppViewportSizeCache.height = newHeight
   canvas.width = newWidth
   canvas.height = newHeight
 
-  CanvasSizeCache.offsetHeight = canvas.offsetHeight
-  CanvasSizeCache.offsetWidth = canvas.offsetWidth
+  AppViewportSizeCache.offsetHeight = canvas.offsetHeight
+  AppViewportSizeCache.offsetWidth = canvas.offsetWidth
 
   if (!options.resize) {
     canvas.style.width = `${width.toString()}px`
@@ -204,10 +204,10 @@ export function setCanvasSizeCache(
   width?: number,
   height?: number,
 ) {
-  CanvasSizeCache.offsetWidth = offsetWidth || canvas.offsetWidth
-  CanvasSizeCache.offsetHeight = offsetHeight || canvas.offsetHeight
-  CanvasSizeCache.width = width || canvas.width
-  CanvasSizeCache.height = height || canvas.height
+  AppViewportSizeCache.offsetWidth = offsetWidth || canvas.offsetWidth
+  AppViewportSizeCache.offsetHeight = offsetHeight || canvas.offsetHeight
+  AppViewportSizeCache.width = width || canvas.width
+  AppViewportSizeCache.height = height || canvas.height
 }
 
 export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: () => void) {
@@ -407,8 +407,8 @@ const tempVec2 = vec2.create()
  */
 export function toClipSpace(point: { x: number; y: number }): vec2 {
   // Calculate clip space coordinates for x and y
-  const clipX = (2 * point.x) / CanvasSizeCache.width - 1
-  const clipY = 1 - (2 * point.y) / CanvasSizeCache.height
+  const clipX = (2 * point.x) / AppViewportSizeCache.width - 1
+  const clipY = 1 - (2 * point.y) / AppViewportSizeCache.height
 
   return vec2.set(tempVec2, clipX, clipY)
 }

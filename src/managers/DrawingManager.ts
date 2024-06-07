@@ -1,4 +1,4 @@
-import { CanvasSizeCache } from "@/utils/utils"
+import { AppViewportSizeCache } from "@/utils/utils"
 
 import type { Box, RenderInfo } from "@/types"
 
@@ -234,7 +234,7 @@ function clearSpecific(renderInfo: RenderInfo, color?: Float32Array) {
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderInfo.bufferInfo.framebuffer)
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
   scissorCanvas()
 
   clear(color)
@@ -725,8 +725,8 @@ function renderToScreen(
 ) {
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
-  gl.scissor(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
+  gl.scissor(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
   // TODO: Better override system
   if (overrides?.programInfo?.program) {

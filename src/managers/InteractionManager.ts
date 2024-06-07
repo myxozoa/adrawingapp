@@ -1,6 +1,6 @@
 import type { MouseState } from "@/types"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils/utils"
+import { getDistance, calculateFromPressure, AppViewportSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -144,7 +144,7 @@ function executeOperation() {
 function process(pointerState: MouseState) {
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
   prepareOperation(pointerState)
 }

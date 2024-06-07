@@ -7,7 +7,7 @@ import {
   throttleRAF,
   getDistance,
   calculateWorldPosition,
-  CanvasSizeCache,
+  AppViewportSizeCache,
   calculatePointerWorldPosition,
 } from "@/utils/utils"
 
@@ -159,7 +159,7 @@ function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
 function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
   const mousePositionBeforeZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
   const mouseXBeforeZoom = mousePositionBeforeZoom[0]
@@ -187,7 +187,7 @@ function pan(midPoint: { x: number; y: number }) {
   if (lastMidPoint.x === 0 && lastMidPoint.y === 0) return
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
   let dx = midPoint.x - lastMidPoint.x
   let dy = midPoint.y - lastMidPoint.y
