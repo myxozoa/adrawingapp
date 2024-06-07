@@ -49,6 +49,7 @@ function _TopMenu() {
 
   const resetCamera = useCallback(() => {
     Camera.reset()
+    Camera.fitToView()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   }, [])
