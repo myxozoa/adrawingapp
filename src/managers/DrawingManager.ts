@@ -188,6 +188,8 @@ function swapPixelInterpolation() {
 }
 
 function render() {
+  if (!Application.initialized) return
+
   const gl = Application.gl
 
   Application.resize(InputManager.resize)
@@ -773,6 +775,21 @@ function empty(texture: WebGLTexture) {
   gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
 }
 
+function reset() {
+  strokeFrameBoundingBox.reset()
+  scratchLayerBoundingBox.reset()
+
+  waitUntilInteractionEnd = false
+  needRedraw = true
+  endDrawNextFrame = false
+
+  shouldRecomposite = true
+  shouldFullyRecomposite = true
+
+  shouldShowCursor = true
+  pixelInterpolation = InterpolationType.trilinear
+}
+
 // TODO: Reimplement undo
 function undo() {
   //   if (currentLayer.undoSnapshotQueue.length > 0 && currentOperation.points.length === 0) {
@@ -801,4 +818,5 @@ export const DrawingManager = {
   newLayer,
   undo,
   copy,
+  reset,
 }

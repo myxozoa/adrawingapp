@@ -57,6 +57,15 @@ export class Layer implements ILayer {
     this.boundingBox.height = newHeight
   }
 
+  reset = () => {
+    this.name = "New Layer"
+    this.noDraw = false
+    this.boundingBox = { x: 0, y: 0, width: 1, height: 1 } //  TODO: Calculate every time drawn to
+    this.opacity = 100
+    this.drawnTo = false
+    this.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random() * Math.random()).toString()
+  }
+
   // addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {
   //   const image = this.getImageData(gl)
 

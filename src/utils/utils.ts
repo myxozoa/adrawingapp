@@ -11,6 +11,7 @@ interface CanvasSizeCache {
   offsetWidth: number
   offsetHeight: number
   toString: () => string
+  reset: () => void
 }
 
 export const CanvasSizeCache: CanvasSizeCache = {
@@ -20,6 +21,12 @@ export const CanvasSizeCache: CanvasSizeCache = {
   offsetWidth: 0,
   toString(): string {
     return `width: ${this.width}, height: ${this.height}, offsetWidth: ${this.offsetWidth}, offsetHeight: ${this.offsetHeight}`
+  },
+  reset() {
+    this.width = 0
+    this.height = 0
+    this.offsetHeight = 0
+    this.offsetWidth = 0
   },
 }
 
@@ -75,8 +82,8 @@ export function getDistance(
 
 export const lerp = (x: number, y: number, t: number) => (1 - t) * x + t * y
 
-let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
-let resizeObserver: ResizeObserver
+export let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
+export let resizeObserver: ResizeObserver
 
 interface Options {
   desynchronized: boolean

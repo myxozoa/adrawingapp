@@ -1,4 +1,4 @@
-import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
+import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize, resizeObserver } from "@/utils/utils"
 
 import { DrawingManager, scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
@@ -14,6 +14,8 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { useLayerStore } from "@/stores/LayerStore"
+import { resetPointerManager } from "@/managers/PointerManager"
+import { InteractionManager } from "@/managers/InteractionManager"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -97,11 +99,9 @@ class _Application {
       maxSamples: 0,
     }
 
-    const prefs = usePreferenceStore.getState().prefs
-
     this.canvasInfo = {
-      width: prefs.canvasWidth,
-      height: prefs.canvasHeight,
+      width: 0,
+      height: 0,
     }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
@@ -220,11 +220,17 @@ class _Application {
 
     const gl = this.gl
 
+    const prefs = usePreferenceStore.getState().prefs
+
+    this.canvasInfo = {
+      width: prefs.canvasWidth,
+      height: prefs.canvasHeight,
+    }
+
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    const colorDepth = usePreferenceStore.getState().prefs.colorDepth
-    this.getSupportedTextureInfo(colorDepth)
+    this.getSupportedTextureInfo(prefs.colorDepth)
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
@@ -260,9 +266,50 @@ class _Application {
   }
 
   public destroy = () => {
+    if (!this.initialized) return
+
+    Camera.reset()
     InputManager.destroy()
     ResourceManager.deleteAll()
+    DrawingManager.reset()
+    InteractionManager.reset()
+    ModifierKeyManager.reset()
+    resetPointerManager()
+
+    this.gl = {} as WebGL2RenderingContextDOM
+    this.currentOperation = {} as Operation
+    this.extensions = {
+      colorBufferFloat: null,
+      floatBlend: null,
+      textureFloat: null,
+      textureFloatLinear: null,
+      textureHalfFloat: null,
+      textureHalfFloatLinear: null,
+      colorBufferHalfFloat: null,
+      provokingVertex: null,
+    }
+    this.systemConstraints = {
+      maxTextureSize: 0,
+      maxTextureImageUnits: 0,
+      maxRenderBufferSize: 0,
+      maxDrawBuffers: 0,
+      maxColorAttachments: 0,
+      maxSamples: 0,
+    }
+    this.canvasInfo = {
+      width: 0,
+      height: 0,
+    }
+    this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
+    this.drawing = false
+
+    this.supportedExportImageFormats = ["png"]
+
+    this.initialized = false
+
     useLayerStore.getState().deleteAll()
+    resizeObserver.disconnect()
+    // canvasToDisplaySizeMap.clear()
   }
 }
 

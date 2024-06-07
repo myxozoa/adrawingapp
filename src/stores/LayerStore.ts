@@ -141,8 +141,10 @@ const useLayerStoreBase = create<State & Action>((set) => ({
   },
   deleteAll: () => {
     set((state) => {
+      baseLayer.reset()
       state.layerStorage.clear()
-      return { ...state, currentLayer: undefined, layers: [], editingLayer: null }
+      state.layerStorage.set(baseLayer.id, baseLayer)
+      return { ...state, currentLayer: baseLayer.id, layers: [baseLayer.id], editingLayer: null }
     })
   },
 }))

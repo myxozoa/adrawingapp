@@ -182,9 +182,16 @@ function endInteraction(save = true) {
   currentTool.reset()
 }
 
+function reset() {
+  currentMousePosition.reset()
+  mergeEvent = false
+  mergeEventCache.reset()
+}
+
 export const InteractionManager = {
   currentMousePosition,
   endInteraction,
   process,
   executeOperation,
+  reset,
 }

@@ -512,10 +512,13 @@ function reset() {
   lastMidPoint.y = 0
   prevTouchDistance = -1
 
+  touches.clear()
+
   currentInteractionState = InteractionState.none
 }
 
 function destroy() {
+  reset()
   for (const [name, callback] of objectEntries(pointer_listeners)) {
     ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
   }

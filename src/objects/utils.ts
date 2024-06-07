@@ -1,6 +1,5 @@
 export class LocationStorage {
   location: Float32Array
-  obj: { x: number; y: number }
 
   constructor() {
     this.location = new Float32Array(2).fill(0)
@@ -24,5 +23,10 @@ export class LocationStorage {
 
   toString() {
     return `x: ${this.location[0]}, y: ${this.location[1]}`
+  }
+
+  reset() {
+    this.location[0] = 0
+    this.location[0] = 0
   }
 }

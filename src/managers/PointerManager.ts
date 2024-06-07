@@ -31,3 +31,13 @@ export const updatePointer = (event: PointerEvent | WheelEvent): MouseState => {
 
   return PointerManager
 }
+
+export const resetPointerManager = () => {
+  PointerManager.x = 0
+  PointerManager.y = 0
+  PointerManager.leftMouseDown = false
+  PointerManager.rightMouseDown = false
+  PointerManager.middleMouseDown = false
+  PointerManager.pressure = 0
+  PointerManager.pointerType = "mouse"
+}

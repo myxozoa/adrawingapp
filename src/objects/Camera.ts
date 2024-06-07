@@ -127,8 +127,6 @@ class _Camera {
     this.updateViewProjectionMatrix()
 
     this.fitToView()
-
-    InputManager.reset()
   }
 }
 
