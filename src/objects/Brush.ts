@@ -74,8 +74,8 @@ export class Brush extends Tool implements IBrush {
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
-    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
-    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
+    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment, true)
+    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex, true)
 
     const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
 
