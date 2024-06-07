@@ -62,7 +62,7 @@ function App() {
       <div className="rounded-sm border p-10">
         <div className="flex w-full items-center">
           <div className="pr-5">
-            <div className="flex items-center">
+            <div className="flex items-center pb-2">
               <Label className="pr-12" htmlFor="new_project_width">
                 Width:
               </Label>
@@ -77,7 +77,7 @@ function App() {
                 onChange={handleWidth}
               />
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center pb-2">
               <Label className="pr-11" htmlFor="new_project_height">
                 Height:
               </Label>
@@ -95,22 +95,22 @@ function App() {
           </div>
 
           <div>
-            <Toggle variant={"outline"} onClick={handleLink}>
+            <Toggle variant={"outline"} className="h-8 w-8 p-0" onClick={handleLink}>
               {link ? <Link1Icon className="h-4 w-4" /> : <LinkNone1Icon className="h-4 w-4" />}
             </Toggle>
           </div>
         </div>
 
-        <div className="flex w-full items-center">
+        <div className="flex w-full items-center pb-2">
           <p className="cursor-default pr-2.5 text-sm font-normal leading-none text-muted-foreground">Color Depth: </p>
           <Select defaultValue={colorDepth.toString()} onValueChange={handleColorDepth}>
-            <SelectTrigger className="rounded-l-none pl-4">
+            <SelectTrigger className="pl-4">
               <SelectValue placeholder="Format" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value={"8"}>8 bit</SelectItem>
-                <SelectItem value={"16"}>16 bit</SelectItem>
+                <SelectItem value={"8"}>8bit</SelectItem>
+                <SelectItem value={"16"}>16bit</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
