@@ -6,12 +6,11 @@ import { Layer } from "@/components/LayerSelection/Layer"
 
 import { Button } from "@/components/ui/button"
 
-import { Trash2, FilePlus2 } from "lucide-react"
+import { TrashIcon, FilePlusIcon, LayersIcon } from "@radix-ui/react-icons"
 
 import { useLayerStore } from "@/stores/LayerStore"
 
 import { SettingSlider } from "@/components/SettingSlider"
-import { Layers as LayersIcon } from "lucide-react"
 
 function _Layers() {
   const [showLayers, setShowLayers] = useState(false)
@@ -65,11 +64,11 @@ function _Layers() {
         </Panel>
         <Panel className="mt-0 flex w-full shrink-0 justify-between shadow-md">
           <Button variant="outline" size="sm" className="w-1/2" onClick={LayerStore.newLayer}>
-            <FilePlus2 className="h-5 w-5" strokeWidth={1.5} />
+            <FilePlusIcon className="h-5 w-5" />
           </Button>
 
           <Button variant="outline" size="sm" className="w-1/2" onClick={LayerStore.removeLayer}>
-            <Trash2 className="h-5 w-5" strokeWidth={1.5} />
+            <TrashIcon className="h-5 w-5" />
           </Button>
         </Panel>
       </Container>

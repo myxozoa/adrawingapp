@@ -17,7 +17,7 @@ function _Board() {
   useEffect(() => {
     Application.init()
     return () => {
-      Application.destroy()
+      // Application.destroy()
     }
   }, [])
 

@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { Link, Unlink } from "lucide-react"
+import { Link1Icon, LinkNone1Icon } from "@radix-ui/react-icons"
 
 import { useState, useCallback } from "react"
 
@@ -94,9 +95,9 @@ function App() {
           </div>
 
           <div>
-            <Button variant={"outline"} onClick={handleLink}>
-              {link ? <Link className="h-4 w-4" /> : <Unlink className="h-4 w-4" />}
-            </Button>
+            <Toggle variant={"outline"} onClick={handleLink}>
+              {link ? <Link1Icon className="h-4 w-4" /> : <LinkNone1Icon className="h-4 w-4" />}
+            </Toggle>
           </div>
         </div>
 
