@@ -8,7 +8,8 @@ import { ToolSettings } from "@/components/ToolSettings"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 function App() {
-  document.cookie = "allow-edit=false"
+  // To redirect the next time this page is loaded, hacky solution to only allow getting here through the creation page
+  if (typeof document !== "undefined") document.cookie = "allow-edit=false"
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
