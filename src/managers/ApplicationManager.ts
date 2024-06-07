@@ -276,6 +276,12 @@ class _Application {
     ModifierKeyManager.reset()
     resetPointerManager()
 
+    for (const tool of Object.values(tools)) {
+      tool.reset()
+    }
+
+    this.currentOperation.reset()
+
     this.gl = {} as WebGL2RenderingContextDOM
     this.currentOperation = {} as Operation
     this.extensions = {
@@ -309,7 +315,6 @@ class _Application {
 
     useLayerStore.getState().deleteAll()
     resizeObserver.disconnect()
-    // canvasToDisplaySizeMap.clear()
   }
 }
 

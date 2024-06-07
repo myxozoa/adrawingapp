@@ -388,11 +388,17 @@ export class Brush extends Tool implements IBrush {
     gl.blendEquation(gl.FUNC_ADD)
   }
 
-  public reset = () => {
+  public end = () => {
     this.previouslyDrawnPoint.reset()
 
     this.interpolationPoint.reset()
 
     this.drawnPoints.clear()
+  }
+
+  public reset = () => {
+    Object.assign(this, toolProperties.BRUSH)
+    Object.assign(this.settings, toolDefaults.BRUSH)
+    this.end()
   }
 }

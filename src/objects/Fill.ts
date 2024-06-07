@@ -46,4 +46,9 @@ export class Fill extends Tool implements IFill {
     // TODO: this is currently assuming 8bit color
     gl.clearBufferfv(gl.COLOR, 0, new Float32Array([...color.map((value) => value / 255), 1]))
   }
+
+  reset = () => {
+    Object.assign(this, toolProperties.FILL)
+    Object.assign(this.settings, toolDefaults.FILL)
+  }
 }

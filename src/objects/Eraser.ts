@@ -75,4 +75,11 @@ export class Eraser extends Tool {
   switchTo = (gl: WebGL2RenderingContext) => {
     this.brush.switchTo(gl)
   }
+
+  reset = () => {
+    this.brush.reset()
+
+    Object.assign(this, toolProperties.ERASER)
+    Object.assign(this.settings, toolDefaults.ERASER)
+  }
 }

@@ -60,4 +60,9 @@ export class Eyedropper extends Tool implements IEyedropper {
 
     setColor(unPremultipliedColor.slice(0, 3) as ColorArray)
   }
+
+  reset = () => {
+    Object.assign(this, toolProperties.EYEDROPPER)
+    Object.assign(this.settings, toolDefaults.EYEDROPPER)
+  }
 }
