@@ -60,10 +60,7 @@ function prepareOperation(relativeMouseState: MouseState) {
   // These values are just tuned to feel right
   const maxSmoothAdjustment = Math.max(0.8 - (1 - prefs.mouseSmoothing), 0)
 
-  let pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
-
-  if (relativeMouseState.pointerType === "mouse" || relativeMouseState.pointerType === "touch")
-    pointerPositionLerpAdjustment += 0.1
+  const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
 
   operation.points.currentPoint.x = relativeMouseState.x
   operation.points.currentPoint.y = relativeMouseState.y
@@ -179,7 +176,7 @@ function endInteraction(save = true) {
   Application.currentOperation.reset()
   scratchLayerBoundingBox.reset()
 
-  currentTool.reset()
+  currentTool.end()
 }
 
 function reset() {
