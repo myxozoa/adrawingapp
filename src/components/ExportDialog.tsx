@@ -1,4 +1,4 @@
-import { memo, useState } from "react"
+import { memo, useCallback, useState } from "react"
 
 import { Application } from "@/managers/ApplicationManager"
 import { ResourceManager } from "@/managers/ResourceManager"
@@ -112,6 +112,21 @@ function _ExportDialog() {
   const [filename, setFilename] = useState("New Image")
   const [format, setFormat] = useState(Application.supportedExportImageFormats[0]) // PNG is always supported
 
+  const handleFormat = useCallback((value: string) => setFormat(value as ExportImageFormats), [])
+
+  const renderFormats = useCallback(
+    (imageFormat: string, index: number) => (
+      <SelectItem key={`exportFormat${index}`} value={imageFormat}>
+        .{imageFormat.toUpperCase()}
+      </SelectItem>
+    ),
+    [],
+  )
+
+  const handleQuality = useCallback((value: number) => setQuality(value), [])
+
+  const handleSave = useCallback(() => void saveImage(filename, format, quality), [filename, format, quality])
+
   return (
     <>
       <DialogHeader>
@@ -133,25 +148,19 @@ function _ExportDialog() {
             value={filename}
             onChange={(event) => setFilename(event.target.value)}
           />
-          <Select defaultValue={format} onValueChange={(value) => setFormat(value as ExportImageFormats)}>
+          <Select defaultValue={format} onValueChange={handleFormat}>
             <SelectTrigger className="rounded-l-none pl-4">
               <SelectValue placeholder="Format" />
             </SelectTrigger>
             <SelectContent>
-              <SelectGroup>
-                {Application.supportedExportImageFormats.map((imageFormat, index) => (
-                  <SelectItem key={`exportFormat${index}`} value={imageFormat}>
-                    .{imageFormat.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
+              <SelectGroup>{Application.supportedExportImageFormats.map(renderFormats)}</SelectGroup>
             </SelectContent>
           </Select>
         </div>
         <SettingSlider
           name={"Quality"}
           value={quality}
-          onValueChange={(value) => setQuality(value)}
+          onValueChange={handleQuality}
           fractionDigits={1}
           min={0}
           max={1}
@@ -159,7 +168,7 @@ function _ExportDialog() {
         />
       </div>
       <DialogFooter>
-        <Button variant="outline" size="sm" className="!mt-4" onClick={() => void saveImage(filename, format, quality)}>
+        <Button variant="outline" size="sm" className="!mt-4" onClick={handleSave}>
           Save Image
         </Button>
       </DialogFooter>
