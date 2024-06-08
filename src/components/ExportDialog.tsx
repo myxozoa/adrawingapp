@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
-function flipVertically(imageData: ImageData) {
+export function flipVertically(imageData: ImageData) {
   const width = imageData.width
   const height = imageData.height
   const data = imageData.data

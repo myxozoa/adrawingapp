@@ -1,3 +1,4 @@
+import { Application } from "@/managers/ApplicationManager"
 import { blend_modes } from "../constants"
 
 import type { ILayer, LayerID, LayerName, Box } from "@/types"
@@ -13,6 +14,7 @@ export class Layer implements ILayer {
   boundingBox: Box
   opacity: number
   drawnTo: boolean
+  thumbnailFileHandle: FileSystemFileHandle
 
   constructor(name: LayerName) {
     this.blendMode = blend_modes.normal
@@ -56,6 +58,30 @@ export class Layer implements ILayer {
 
     this.boundingBox.width = newWidth
     this.boundingBox.height = newHeight
+  }
+
+  setupThumbnail = async () => {
+    const root = await navigator.storage.getDirectory()
+    this.thumbnailFileHandle = await root.getFileHandle(`thumbnail_${this.id}.png`, { create: true })
+
+    const imageData = new ImageData(
+      new Uint8ClampedArray(Application.thumbnailSize.width * Application.thumbnailSize.height * 4).fill(0),
+      Application.thumbnailSize.width,
+      Application.thumbnailSize.height,
+    )
+
+    const imageBitmap = await createImageBitmap(imageData)
+    Application.thumbnailCanvasContext.transferFromImageBitmap(imageBitmap)
+
+    const blob = await Application.thumbnailCanvas.convertToBlob({ type: "image/png", quality: 0.5 })
+
+    const writable = await this.thumbnailFileHandle.createWritable()
+    await writable.write(blob)
+    await writable.close()
+
+    const file = await this.thumbnailFileHandle.getFile()
+    const objectURL = URL.createObjectURL(file)
+    ;(document.getElementById(`thumbnail_${this.id}`) as unknown as HTMLImageElement).src = objectURL
   }
 
   reset = () => {

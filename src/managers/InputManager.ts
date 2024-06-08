@@ -441,7 +441,7 @@ function resize() {
   idleTime = 0
 
   Application.resize()
-  Camera.reset()
+  Camera.updateViewProjectionMatrix()
 }
 
 function windowResize() {

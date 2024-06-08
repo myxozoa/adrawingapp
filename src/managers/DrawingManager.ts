@@ -1,4 +1,4 @@
-import { AppViewportSizeCache } from "@/utils/utils"
+import { AppViewportSizeCache, uint16ToFloat16 } from "@/utils/utils"
 
 import type { Box, RenderInfo } from "@/types"
 
@@ -28,6 +28,9 @@ import { PointerManager } from "@/managers/PointerManager"
 import { InputManager } from "@/managers/InputManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { blend_modes } from "@/constants"
+import { createSimpleTexture } from "@/resources/simpleTexture"
+import { readPixelsAsync } from "@/utils/asyncReadback"
+import { flipVertically } from "@/components/ExportDialog"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -437,9 +440,91 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
 
   blit(intermediaryLayer3, destination, scratchLayerBoundingBox)
 
+  const thumbnailResource = ResourceManager.get("IntermediaryLayerThumbnail")
+
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, intermediaryLayer3.bufferInfo?.framebuffer)
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, thumbnailResource.bufferInfo?.framebuffer)
+
+  gl.blitFramebuffer(
+    0,
+    0,
+    Application.canvasInfo.width,
+    Application.canvasInfo.height,
+    0,
+    0,
+    Application.thumbnailSize.width,
+    Application.thumbnailSize.height,
+    gl.COLOR_BUFFER_BIT,
+    gl.NEAREST,
+  )
+
+  void writeThumbnail()
+
   clearSpecific(intermediaryLayer3)
 
   gl.enable(gl.BLEND)
+}
+
+async function writeThumbnail() {
+  const gl = Application.gl
+
+  const thumbnailResource = ResourceManager.get("IntermediaryLayerThumbnail")
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, thumbnailResource.bufferInfo?.framebuffer)
+
+  const currentLayerID = useLayerStore.getState().currentLayer
+  const layerStorage = useLayerStore.getState().layerStorage
+  const currentLayer = layerStorage.get(currentLayerID)!
+
+  const colorDepth = usePreferenceStore.getState().prefs.colorDepth
+  gl.readBuffer(gl.COLOR_ATTACHMENT0)
+
+  const data = new (colorDepth === 8 ? Uint8Array : Uint16Array)(
+    Application.thumbnailSize.width * Application.thumbnailSize.height * 4,
+  )
+
+  const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
+  const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
+
+  await readPixelsAsync(gl, 0, 0, Application.thumbnailSize.width, Application.thumbnailSize.height, format, type, data)
+
+  const data8bit = Uint8ClampedArray.from(data, (num) => {
+    if (colorDepth === 8) return num
+
+    return uint16ToFloat16(num)
+  })
+
+  for (let i = 0; i < data8bit.length; i += 4) {
+    const alpha = colorDepth === 8 ? data8bit[i + 3] / 255 : data8bit[i + 3]
+
+    data8bit[i] /= alpha
+    data8bit[i + 1] /= alpha
+    data8bit[i + 2] /= alpha
+
+    if (colorDepth === 16) {
+      data8bit[i] *= 255
+      data8bit[i + 1] *= 255
+      data8bit[i + 2] *= 255
+      data8bit[i + 3] *= 255
+    }
+  }
+
+  const imageData = new ImageData(data8bit, Application.thumbnailSize.width, Application.thumbnailSize.height)
+
+  flipVertically(imageData)
+
+  const imageBitmap = await createImageBitmap(imageData)
+  Application.thumbnailCanvasContext.transferFromImageBitmap(imageBitmap)
+
+  const blob = await Application.thumbnailCanvas.convertToBlob({ type: "image/png", quality: 1.0 })
+
+  const writable = await currentLayer.thumbnailFileHandle.createWritable()
+  await writable.write(blob)
+  await writable.close()
+
+  const file = await currentLayer.thumbnailFileHandle.getFile()
+  const objectURL = URL.createObjectURL(file)
+  ;(document.getElementById(`thumbnail_${currentLayer.id}`) as unknown as HTMLImageElement).src = objectURL
 }
 
 function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {
@@ -624,6 +709,15 @@ function init() {
   )
 
   createIntermediaryLayers(4)
+
+  const thumbnailResource = ResourceManager.create(
+    "IntermediaryLayerThumbnail",
+    createSimpleTexture(gl, Application.thumbnailSize.width, Application.thumbnailSize.height, false),
+  )
+
+  clearSpecific(thumbnailResource, white)
+
+  void writeThumbnail()
 
   Cursor.init(gl)
 

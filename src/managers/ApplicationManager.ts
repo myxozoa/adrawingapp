@@ -51,6 +51,11 @@ interface CanvasInfo {
   height: number
 }
 
+interface ThumbnailSize {
+  width: number
+  height: number
+}
+
 interface WebGL2RenderingContextDOM extends Omit<WebGL2RenderingContext, "canvas"> {
   canvas: HTMLCanvasElement
 }
@@ -73,6 +78,11 @@ class _Application {
   supportedExportImageFormats: ExportImageFormats[]
 
   canvasInfo: CanvasInfo
+  thumbnailCanvas: OffscreenCanvas
+  thumbnailCanvasContext: ImageBitmapRenderingContext
+  thumbnailSize: ThumbnailSize
+
+  opfsRoot: FileSystemDirectoryHandle
 
   initialized: boolean
   drawing: boolean
@@ -90,6 +100,7 @@ class _Application {
       colorBufferHalfFloat: null,
       provokingVertex: null,
     }
+
     this.systemConstraints = {
       maxTextureSize: 0,
       maxTextureImageUnits: 0,
@@ -103,6 +114,12 @@ class _Application {
       width: 0,
       height: 0,
     }
+
+    this.thumbnailSize = {
+      width: 0,
+      height: 0,
+    }
+
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
 
@@ -227,6 +244,13 @@ class _Application {
       height: prefs.canvasHeight,
     }
 
+    // Thumbnail should fit inside a 50x50 box if this ends up larger than the canvas, use the canvas size
+    const scaleFactor = Math.max(Application.canvasInfo.width, Application.canvasInfo.height) / 50
+    this.thumbnailSize = {
+      width: Math.min(Math.max(Application.canvasInfo.width / scaleFactor, 1), Application.canvasInfo.width),
+      height: Math.min(Math.max(Application.canvasInfo.height / scaleFactor, 1), Application.canvasInfo.height),
+    }
+
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
@@ -239,14 +263,28 @@ class _Application {
 
     this.resize()
 
-    DrawingManager.init()
-
     this.exportCanvas = new OffscreenCanvas(this.canvasInfo.width, this.canvasInfo.height)
     this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
 
     if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
 
+    this.thumbnailCanvas = new OffscreenCanvas(this.thumbnailSize.width, this.thumbnailSize.height)
+    this.thumbnailCanvasContext = this.thumbnailCanvas.getContext("bitmaprenderer")!
+
+    if (!this.thumbnailCanvasContext) throw new Error("unable to get thumbnailcanvas context")
+
     this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
+
+    const layerStorage = useLayerStore.getState().layerStorage
+    const layers = useLayerStore.getState().layers
+
+    const layerThumbnailSetup = []
+
+    for (const layerName of layers) {
+      const layer = layerStorage.get(layerName)
+
+      layerThumbnailSetup.push(layer?.setupThumbnail())
+    }
 
     Camera.init()
 
@@ -262,7 +300,12 @@ class _Application {
     scratchLayerBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
     strokeFrameBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
 
-    DrawingManager.start()
+    Promise.all(layerThumbnailSetup)
+      .then(() => {
+        DrawingManager.init()
+        DrawingManager.start()
+      })
+      .catch((error) => console.error(error))
   }
 
   public destroy = () => {
@@ -303,6 +346,10 @@ class _Application {
       maxSamples: 0,
     }
     this.canvasInfo = {
+      width: 0,
+      height: 0,
+    }
+    this.thumbnailSize = {
       width: 0,
       height: 0,
     }

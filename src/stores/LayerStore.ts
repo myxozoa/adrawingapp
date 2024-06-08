@@ -72,6 +72,8 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       const newLayer = new Layer(`New Layer (${state.layers.length})`)
 
+      void newLayer.setupThumbnail()
+
       state.layerStorage.set(newLayer.id, newLayer)
 
       DrawingManager.newLayer(newLayer)
