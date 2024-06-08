@@ -25,7 +25,7 @@ import * as glUtils from "@/utils/glUtils"
 import { tool_list } from "@/constants"
 import { Application } from "@/managers/ApplicationManager"
 import { useLayerStore } from "@/stores/LayerStore"
-import { calculateScracthBoundingBox } from "@/managers/DrawingManager"
+import { scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 export class Brush extends Tool implements IBrush {
@@ -74,8 +74,8 @@ export class Brush extends Tool implements IBrush {
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
-    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
-    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
+    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment, true)
+    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex, true)
 
     const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
 
@@ -153,7 +153,7 @@ export class Brush extends Tool implements IBrush {
         this.drawnPoints.set(currentPoint.id, true)
         operation.addDrawnPoints(1)
       }
-    } else if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
+    } else if (currentPoint.active && prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!this.drawnPoints.get(currentPoint.id)) {
         this.line(gl, prevPoint, currentPoint)
 
@@ -196,17 +196,11 @@ export class Brush extends Tool implements IBrush {
     const end = points.getPoint(-1)
 
     if (operation.drawnPoints > 4) {
-      // From Previous spline
       const prevControl2 = points.getPoint(-5)
 
-      const dist = getDistance(start, control)
-      const prevDist = getDistance(prevControl2, start)
-
-      // Move control point to be in line with the previous splines c2 control point
-      // and the previous curve/current curve's shared end/start point
-      // This results in a smoothly joined curve
-      control.x = start.x + (start.x - prevControl2.x) * (dist / prevDist)
-      control.y = start.y + (start.y - prevControl2.y) * (dist / prevDist)
+      // Trying for c1 continuity
+      control.x = start.x + (start.x - prevControl2.x)
+      control.y = start.y + (start.y - prevControl2.y)
     }
 
     this.spline(gl, start, control, control2, end)
@@ -321,7 +315,8 @@ export class Brush extends Tool implements IBrush {
     // Internals
     gl.scissor(startScissorX, startScissorY, scissorWidth, scissorHeight)
 
-    calculateScracthBoundingBox(startScissorX, startScissorY, scissorWidth, scissorHeight)
+    scratchLayerBoundingBox.calculate(startScissorX, startScissorY, scissorWidth, scissorHeight)
+    strokeFrameBoundingBox.calculate(startScissorX, startScissorY, scissorWidth, scissorHeight)
     currentLayer.calculateNewBoundingBox(startScissorX, startScissorY, scissorWidth, scissorHeight)
 
     gl.uniform4f(this.programInfo.uniforms.u_brush_qualities, flow, hardness, base_roughness - roughness, size)
@@ -386,18 +381,25 @@ export class Brush extends Tool implements IBrush {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
 
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.enable(gl.BLEND)
 
     gl.blendEquation(gl.FUNC_ADD)
   }
 
-  public reset = () => {
+  public end = () => {
     this.previouslyDrawnPoint.reset()
 
     this.interpolationPoint.reset()
 
     this.drawnPoints.clear()
+  }
+
+  public reset = () => {
+    Object.assign(this, toolProperties.BRUSH)
+    Object.assign(this.settings, toolDefaults.BRUSH)
+    this.end()
   }
 }

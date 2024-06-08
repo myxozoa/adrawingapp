@@ -10,7 +10,7 @@ export class Point implements IPoint {
 
   constructor(values?: Partial<IPoint>) {
     this.active = false
-    this.pressure = 0.5
+    this.pressure = 0.0
     this.location = vec2.create()
     this.pointerType = "mouse"
     this.id = Math.random() * Math.random()

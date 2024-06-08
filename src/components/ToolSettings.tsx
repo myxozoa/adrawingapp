@@ -6,14 +6,13 @@ import { useToolStore } from "@/stores/ToolStore"
 
 import type { EyeDropperSampleSizes } from "@/types"
 
-import { BarChart } from "lucide-react"
+import { ArrowSortDownLinesRegular } from "@fluentui/react-icons"
+import { CaretDownIcon } from "@radix-ui/react-icons"
 import { Toggle } from "@/components/ui/toggle"
 import { SettingSlider } from "@/components/SettingSlider"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { memo } from "react"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
-
-import { ChevronDown } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 
@@ -115,7 +114,7 @@ function _ToolSettings() {
                   name="Tool Size"
                   id="tool_size"
                   type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                  className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                   pattern="[0-9]*"
                   min={1}
                   max={500}
@@ -125,7 +124,7 @@ function _ToolSettings() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button className="rounded-none" size="xs" variant="ghost">
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -146,7 +145,7 @@ function _ToolSettings() {
                         onPressedChange={() => changeCurrentToolSetting({ sizePressure: !settings.sizePressure })}
                         disabled={!prefs.usePressure}
                       >
-                        <BarChart className="h-4 w-4" />
+                        <ArrowSortDownLinesRegular className="h-4 w-4" />
                       </Toggle>
                     </div>
                   </PopoverContent>
@@ -164,7 +163,7 @@ function _ToolSettings() {
                   name="Tool Flow"
                   id="tool_flow"
                   type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                  className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                   pattern="[0-9]*"
                   min={1}
                   max={500}
@@ -174,7 +173,7 @@ function _ToolSettings() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button className="rounded-none" size="xs" variant="ghost">
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -195,7 +194,7 @@ function _ToolSettings() {
                         onPressedChange={() => changeCurrentToolSetting({ flowPressure: !settings.flowPressure })}
                         disabled={!prefs.usePressure}
                       >
-                        <BarChart className="h-4 w-4" />
+                        <ArrowSortDownLinesRegular className="h-4 w-4" />
                       </Toggle>
                     </div>
                   </PopoverContent>
@@ -213,7 +212,7 @@ function _ToolSettings() {
                   name="Tool Opacity"
                   id="tool_opacity"
                   type="number"
-                  className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                  className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                   pattern="[0-9]*"
                   min={1}
                   max={500}
@@ -223,7 +222,7 @@ function _ToolSettings() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button className="rounded-none" size="xs" variant="ghost">
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -277,7 +276,7 @@ function _ToolSettings() {
           <Popover>
             <PopoverTrigger asChild>
               <Button className="ml-2" size="xs" variant="outline">
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent>
@@ -301,7 +300,7 @@ function _ToolSettings() {
                         name="Tool Spacing"
                         id="tool_spacing"
                         type="number"
-                        className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                        className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                         pattern="[0-9]*"
                         min={1}
                         max={500}
@@ -332,7 +331,7 @@ function _ToolSettings() {
                         name="Tool Hardness"
                         id="tool_hardness"
                         type="number"
-                        className="h-6 w-[4ch] rounded-none border-0 bg-background p-0 text-center focus:bg-input"
+                        className="h-6 w-[4ch] rounded-none border-0 bg-input p-0 text-center"
                         pattern="[0-9]*"
                         min={1}
                         max={500}
@@ -348,7 +347,7 @@ function _ToolSettings() {
                         }
                         disabled={!prefs.usePressure}
                       >
-                        <BarChart className="h-4 w-4" />
+                        <ArrowSortDownLinesRegular className="h-4 w-4" />
                       </Toggle>
                     </div>
                   </div>

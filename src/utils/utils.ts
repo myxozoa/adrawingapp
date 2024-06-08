@@ -1,38 +1,38 @@
-import {
-  Maybe,
-  HexColor,
-  ColorArray,
-  ColorValue,
-  ColorValueString,
-  IPoint,
-  MouseState,
-  IPoints,
-  ExportImageFormatsMIME,
-  ExportImageFormats,
-} from "@/types"
+import { IPoint, MouseState, IPoints, ExportImageFormatsMIME, ExportImageFormats } from "@/types"
 import { vec2 } from "gl-matrix"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
 
-interface CanvasSizeCache {
+interface IAppViewportSizeCache {
   width: number
   height: number
   offsetWidth: number
   offsetHeight: number
+  toString: () => string
+  reset: () => void
 }
 
-export const CanvasSizeCache: CanvasSizeCache = {
+export const AppViewportSizeCache: IAppViewportSizeCache = {
   width: 0,
   height: 0,
   offsetHeight: 0,
   offsetWidth: 0,
+  toString(): string {
+    return `width: ${this.width}, height: ${this.height}, offsetWidth: ${this.offsetWidth}, offsetHeight: ${this.offsetHeight}`
+  },
+  reset() {
+    this.width = 0
+    this.height = 0
+    this.offsetHeight = 0
+    this.offsetWidth = 0
+  },
 }
 
 export function getRelativePosition<T extends MouseState | { x: number; y: number }>(mouseState: T): T {
-  mouseState.x = mouseState.x * (CanvasSizeCache.width / CanvasSizeCache.offsetWidth)
-  mouseState.y = mouseState.y * (CanvasSizeCache.height / CanvasSizeCache.offsetHeight)
+  mouseState.x = mouseState.x * (AppViewportSizeCache.width / AppViewportSizeCache.offsetWidth)
+  mouseState.y = mouseState.y * (AppViewportSizeCache.height / AppViewportSizeCache.offsetHeight)
 
   return mouseState
 }
@@ -80,36 +80,10 @@ export function getDistance(
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
-/**
- * Parse hex color to rgb color array
- *
- */
-export function hexToRgb(hex: HexColor): Maybe<ColorArray> {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : undefined
-}
+export const lerp = (x: number, y: number, t: number) => (1 - t) * x + t * y
 
-/**
- * Number to hex with 1 left padding
- */
-export function componentToHex(color: ColorValue): ColorValueString {
-  const hex = color.toString(16)
-  return hex.length == 1 ? "0" + hex : hex
-}
-
-/**
- * Translates array of 8bit rgb colors to hex
- *
- * @returns css style `#FFFFFF` color
- */
-export function rgbToHex(color: ColorArray): HexColor {
-  return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2])
-}
-
-export const lerp = (x: number, y: number, a: number) => x * (1 - a) + y * a
-
-let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
-let resizeObserver: ResizeObserver
+export let canvasToDisplaySizeMap: Map<HTMLCanvasElement, number[]>
+export let resizeObserver: ResizeObserver
 
 interface Options {
   desynchronized: boolean
@@ -144,7 +118,7 @@ export function initializeCanvas(
     // Setting alpha to false is known to have strange performance implications on some platforms (eg. intel iGPU macbooks) (possibly fixed when metal backed ANGLE was released?)
     // However it is required to be false for desynchronized to work and have DOM elements composited above the canvas
     alpha: false,
-    premultipliedAlpha: true,
+    premultipliedAlpha: false,
     colorSpace: "srgb",
     preserveDrawingBuffer: false,
     antialias: false,
@@ -158,13 +132,13 @@ export function initializeCanvas(
   const newWidth = Math.round(width * targetDpi)
   const newHeight = Math.round(height * targetDpi)
 
-  CanvasSizeCache.width = newWidth
-  CanvasSizeCache.height = newHeight
+  AppViewportSizeCache.width = newWidth
+  AppViewportSizeCache.height = newHeight
   canvas.width = newWidth
   canvas.height = newHeight
 
-  CanvasSizeCache.offsetHeight = canvas.offsetHeight
-  CanvasSizeCache.offsetWidth = canvas.offsetWidth
+  AppViewportSizeCache.offsetHeight = canvas.offsetHeight
+  AppViewportSizeCache.offsetWidth = canvas.offsetWidth
 
   if (!options.resize) {
     canvas.style.width = `${width.toString()}px`
@@ -230,10 +204,10 @@ export function setCanvasSizeCache(
   width?: number,
   height?: number,
 ) {
-  CanvasSizeCache.offsetWidth = offsetWidth || canvas.offsetWidth
-  CanvasSizeCache.offsetHeight = offsetHeight || canvas.offsetHeight
-  CanvasSizeCache.width = width || canvas.width
-  CanvasSizeCache.height = height || canvas.height
+  AppViewportSizeCache.offsetWidth = offsetWidth || canvas.offsetWidth
+  AppViewportSizeCache.offsetHeight = offsetHeight || canvas.offsetHeight
+  AppViewportSizeCache.width = width || canvas.width
+  AppViewportSizeCache.height = height || canvas.height
 }
 
 export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: () => void) {
@@ -249,84 +223,6 @@ export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: 
     setCanvasSizeCache(canvas)
 
     if (callback) callback()
-  }
-}
-
-// https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately/35363027#35363027
-
-/**
- * @example
- * ```
- *  const { r, g, b } = HSVtoRGB(hsvState.hue / 360, saturationPercentage, 1 - valuePercentage)
- * ```
- */
-export function HSVtoRGB(h: number, s: number, v: number) {
-  let r = 0
-  let g = 0
-  let b = 0
-
-  const i = Math.floor(h * 6)
-  const f = h * 6 - i
-  const p = v * (1 - s)
-  const q = v * (1 - f * s)
-  const t = v * (1 - (1 - f) * s)
-  switch (i % 6) {
-    case 0:
-      ;(r = v), (g = t), (b = p)
-      break
-    case 1:
-      ;(r = q), (g = v), (b = p)
-      break
-    case 2:
-      ;(r = p), (g = v), (b = t)
-      break
-    case 3:
-      ;(r = p), (g = q), (b = v)
-      break
-    case 4:
-      ;(r = t), (g = p), (b = v)
-      break
-    case 5:
-      ;(r = v), (g = p), (b = q)
-      break
-  }
-  return {
-    r: Math.round(r * 255),
-    g: Math.round(g * 255),
-    b: Math.round(b * 255),
-  }
-}
-
-export function RGBtoHSV(r: number, g: number, b: number) {
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const d = max - min
-  let h = 0
-  const s = max === 0 ? 0 : d / max
-  const v = max / 255
-
-  switch (max) {
-    case min:
-      h = 0
-      break
-    case r:
-      h = g - b + d * (g < b ? 6 : 0)
-      h /= 6 * d
-      break
-    case g:
-      h = b - r + d * 2
-      h /= 6 * d
-      break
-    case b:
-      h = r - g + d * 4
-      h /= 6 * d
-      break
-  }
-
-  return {
-    h: h,
-    s: s,
-    v: v,
   }
 }
 
@@ -354,16 +250,6 @@ export function scaleNumberToRange(
   const clampedOutput = Math.min(Math.max(scaledValue, minOutput), maxOutput)
 
   return clampedOutput
-}
-
-/**
- * Translates array of 8bit rgb colors to rgba
- *
- * @returns css style `rgba()` string
- */
-export const getCanvasColor = function (color: ColorArray, opacity?: number) {
-  const useOpacity = opacity !== undefined ? (opacity / 100).toFixed(2) : 1
-  return `rgba(${color[0]},${color[1]},${color[2]}, ${useOpacity})`
 }
 
 /**
@@ -521,8 +407,8 @@ const tempVec2 = vec2.create()
  */
 export function toClipSpace(point: { x: number; y: number }): vec2 {
   // Calculate clip space coordinates for x and y
-  const clipX = (2 * point.x) / CanvasSizeCache.width - 1
-  const clipY = 1 - (2 * point.y) / CanvasSizeCache.height
+  const clipX = (2 * point.x) / AppViewportSizeCache.width - 1
+  const clipY = 1 - (2 * point.y) / AppViewportSizeCache.height
 
   return vec2.set(tempVec2, clipX, clipY)
 }
@@ -614,17 +500,10 @@ export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
 export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
   return `image/${string}`
 }
+
 export function compareProps<T>(fields: (keyof T)[]) {
   return (prevProps: T, nextProps: T) =>
     fields.every((field) => {
       return prevProps[field] === nextProps[field]
     })
-}
-
-export function sRGBToLinear(sRGB: number) {
-  return sRGB <= 0.04045 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4)
-}
-
-export function linearTosRGB(linearRGB: number) {
-  return linearRGB <= 0.0031308 ? linearRGB * 12.92 : 1.055 * Math.pow(linearRGB, 1 / 2.4) - 0.055
 }

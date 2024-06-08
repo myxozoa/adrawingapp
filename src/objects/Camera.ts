@@ -1,6 +1,6 @@
 import { mat3, vec2 } from "gl-matrix"
 
-import { CanvasSizeCache, toClipSpace } from "@/utils/utils"
+import { AppViewportSizeCache, toClipSpace } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 
 const one = vec2.fromValues(1, 1)
@@ -45,7 +45,7 @@ class _Camera {
   }
 
   set x(value: number) {
-    vec2.set(this.info.position, value, this.info.position[1])
+    this.info.position[0] = value
   }
 
   get y() {
@@ -53,7 +53,7 @@ class _Camera {
   }
 
   set y(value: number) {
-    vec2.set(this.info.position, this.info.position[0], value)
+    this.info.position[1] = value
   }
 
   public init = () => {
@@ -69,7 +69,7 @@ class _Camera {
   }
 
   public updateViewProjectionMatrix = () => {
-    mat3.projection(this.viewProjectionMatrix, CanvasSizeCache.width, CanvasSizeCache.height)
+    mat3.projection(this.viewProjectionMatrix, AppViewportSizeCache.width, AppViewportSizeCache.height)
     this.updateViewMatrix()
     mat3.invert(this.tempMat3, this.viewMatrix)
     mat3.multiply(this.viewProjectionMatrix, this.viewProjectionMatrix, this.tempMat3)
@@ -93,27 +93,29 @@ class _Camera {
 
   public fitToView = () => {
     // Minimum space between canvas edges and screen edges
-    // Should be greater than the UI width (TODO: Automate)
-    const margin = (Math.max(CanvasSizeCache.width, CanvasSizeCache.height) / 100) * 4
+    const topBottomMargin = (Application.canvasInfo.height / 100) * 4
+    const sideMargin = (Application.canvasInfo.width / 100) * 4
 
     // Start with a zoom that allows the whole canvas to be in view
-    const widthZoomTarget = CanvasSizeCache.width - margin * 2
-    const heightZoomTarget = CanvasSizeCache.height - margin * 2
+    const widthZoomTarget = AppViewportSizeCache.width - sideMargin * 2
+    const heightZoomTarget = AppViewportSizeCache.height - topBottomMargin * 2
     Camera.zoom = Math.min(
       widthZoomTarget / Application.canvasInfo.width,
       heightZoomTarget / Application.canvasInfo.height,
     )
 
+    Camera.updateViewProjectionMatrix()
+
     const screenMiddle = {
-      x: CanvasSizeCache.width / 2,
-      y: CanvasSizeCache.height / 2,
+      x: AppViewportSizeCache.width / 2,
+      y: AppViewportSizeCache.height / 2,
     }
 
     const screenMiddleWorldPosition = this.getWorldPosition(screenMiddle)
 
     // Start with a camera position that centers the canvas in view
-    Camera.x = -Math.max(margin, margin + screenMiddleWorldPosition[0] - Application.canvasInfo.width / 2)
-    Camera.y = -Math.max(margin, margin + screenMiddleWorldPosition[1] - Application.canvasInfo.height / 2)
+    Camera.x = -(sideMargin + screenMiddleWorldPosition[0] - Application.canvasInfo.width / 2)
+    Camera.y = -(topBottomMargin + screenMiddleWorldPosition[1] - Application.canvasInfo.height / 2)
 
     Camera.updateViewProjectionMatrix()
   }
@@ -123,8 +125,6 @@ class _Camera {
     this.x = 0
     this.y = 0
     this.updateViewProjectionMatrix()
-
-    this.fitToView()
   }
 }
 

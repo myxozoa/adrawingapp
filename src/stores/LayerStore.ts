@@ -7,6 +7,7 @@ import { DrawingManager } from "@/managers/DrawingManager"
 
 import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
+import type { blend_modes } from "@/constants"
 
 interface State {
   layerStorage: Map<LayerID, Layer>
@@ -23,7 +24,10 @@ interface Action {
   removeLayer: () => void
   saveNewName: (id: LayerID, name: LayerName) => void
   setOpacity: (id: LayerID, opacity: number) => void
+  setBlendMode: (id: LayerID, blendMode: blend_modes) => void
+  setClippingMask: (id: LayerID, clippingMask: boolean) => void
   keepCurrentLayerInSync: () => void
+  deleteAll: () => void
 }
 
 const baseLayer = new Layer("New Layer")
@@ -77,7 +81,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, currentLayer: newLayer.id, layers: [...state.layers, newLayer.id] }
     })
 
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },
@@ -99,7 +103,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return state
     })
 
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },
@@ -112,7 +116,7 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       return { ...state, currentLayer: id }
     })
 
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
   },
@@ -134,9 +138,43 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }
     })
-    DrawingManager.recomposite()
+    DrawingManager.fullyRecomposite()
     DrawingManager.beginDraw()
     DrawingManager.pauseDrawNextFrame()
+  },
+  setBlendMode: (id: LayerID, blendMode: blend_modes) => {
+    set((state) => {
+      const layer = state.layerStorage.get(id)
+
+      if (layer) layer.blendMode = blendMode
+      else throw new Error("Layer not found")
+
+      return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }
+    })
+    DrawingManager.fullyRecomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
+  },
+  setClippingMask: (id: LayerID, clippingMask: boolean) => {
+    set((state) => {
+      const layer = state.layerStorage.get(id)
+
+      if (layer) layer.clippingMask = clippingMask
+      else throw new Error("Layer not found")
+
+      return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }
+    })
+    DrawingManager.fullyRecomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
+  },
+  deleteAll: () => {
+    set((state) => {
+      baseLayer.reset()
+      state.layerStorage.clear()
+      state.layerStorage.set(baseLayer.id, baseLayer)
+      return { ...state, currentLayer: baseLayer.id, layers: [baseLayer.id], editingLayer: null }
+    })
   },
 }))
 

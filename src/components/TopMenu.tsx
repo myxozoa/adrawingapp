@@ -1,4 +1,5 @@
-import { memo, useState } from "react"
+import { memo, useCallback, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import {
   Menubar,
@@ -17,6 +18,7 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { DrawingManager } from "@/managers/DrawingManager"
 import { ExportDialog } from "@/components/ExportDialog"
 import { Camera } from "@/objects/Camera"
+import { Application } from "@/managers/ApplicationManager"
 
 enum Dialogs {
   export = 0,
@@ -24,7 +26,33 @@ enum Dialogs {
 }
 
 function _TopMenu() {
+  const router = useRouter()
   const [currentDialog, setCurrentDialog] = useState(Dialogs.export)
+
+  const newProject = useCallback(() => {
+    Application.destroy()
+    router.push("/")
+  }, [])
+
+  const openExport = useCallback(() => {
+    setCurrentDialog(Dialogs.export)
+  }, [])
+
+  const openPreferences = useCallback(() => {
+    setCurrentDialog(Dialogs.preferences)
+  }, [])
+
+  const resetPreferences = useCallback(() => {
+    localStorage.clear()
+    usePreferenceStore.getState().resetToDefault()
+  }, [])
+
+  const resetCamera = useCallback(() => {
+    Camera.reset()
+    Camera.fitToView()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
+  }, [])
 
   return (
     <>
@@ -33,8 +61,8 @@ function _TopMenu() {
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
-              <MenubarItem disabled>New</MenubarItem>
-              <DialogTrigger asChild onClick={() => setCurrentDialog(Dialogs.export)}>
+              <MenubarItem onSelect={newProject}>New</MenubarItem>
+              <DialogTrigger asChild onClick={openExport}>
                 <MenubarItem>Save Image</MenubarItem>
               </DialogTrigger>
 
@@ -47,10 +75,10 @@ function _TopMenu() {
               <MenubarItem disabled>Undo</MenubarItem>
               <MenubarItem disabled>Redo</MenubarItem>
               <MenubarSeparator />
-              <MenubarItem onSelect={() => DrawingManager.clearAll()}>Clear All</MenubarItem>
+              <MenubarItem onSelect={DrawingManager.clearAll}>Clear All</MenubarItem>
               <MenubarSeparator />
               <MenubarItem disabled>Project Name</MenubarItem>
-              <DialogTrigger asChild onClick={() => setCurrentDialog(Dialogs.preferences)}>
+              <DialogTrigger asChild onClick={openPreferences}>
                 <MenubarItem>Preferences</MenubarItem>
               </DialogTrigger>
             </MenubarContent>
@@ -58,23 +86,8 @@ function _TopMenu() {
           <MenubarMenu>
             <MenubarTrigger>Help</MenubarTrigger>
             <MenubarContent>
-              <MenubarItem
-                onSelect={() => {
-                  localStorage.clear()
-                  usePreferenceStore.getState().resetToDefault()
-                }}
-              >
-                Reset Preferences
-              </MenubarItem>
-              <MenubarItem
-                onSelect={() => {
-                  Camera.reset()
-                  DrawingManager.beginDraw()
-                  DrawingManager.pauseDrawNextFrame()
-                }}
-              >
-                Reset Camera
-              </MenubarItem>
+              <MenubarItem onSelect={resetPreferences}>Reset Preferences</MenubarItem>
+              <MenubarItem onSelect={resetCamera}>Reset Camera</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
         </Menubar>

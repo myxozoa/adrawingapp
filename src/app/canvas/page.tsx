@@ -1,7 +1,9 @@
+import "@/index.css"
+
 import dynamic from "next/dynamic"
 
 const App = dynamic(() => import("@/App"), { ssr: true })
 
-export function ClientOnly() {
+export default function Page() {
   return <App />
 }

@@ -1,6 +1,6 @@
-import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize } from "@/utils/utils"
+import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize, resizeObserver } from "@/utils/utils"
 
-import { DrawingManager } from "@/managers/DrawingManager"
+import { DrawingManager, scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"
 
 import { tools, useToolStore } from "@/stores/ToolStore"
@@ -12,6 +12,10 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
+import { ResourceManager } from "@/managers/ResourceManager"
+import { useLayerStore } from "@/stores/LayerStore"
+import { resetPointerManager } from "@/managers/PointerManager"
+import { InteractionManager } from "@/managers/InteractionManager"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -95,11 +99,9 @@ class _Application {
       maxSamples: 0,
     }
 
-    const prefs = usePreferenceStore.getState().prefs
-
     this.canvasInfo = {
-      width: prefs.canvasWidth,
-      height: prefs.canvasHeight,
+      width: 0,
+      height: 0,
     }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
@@ -218,10 +220,17 @@ class _Application {
 
     const gl = this.gl
 
+    const prefs = usePreferenceStore.getState().prefs
+
+    this.canvasInfo = {
+      width: prefs.canvasWidth,
+      height: prefs.canvasHeight,
+    }
+
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    this.getSupportedTextureInfo(16)
+    this.getSupportedTextureInfo(prefs.colorDepth)
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
@@ -248,11 +257,64 @@ class _Application {
 
     this.initialized = true
 
+    // Set these bounding boxes to the size of the canvas initially so everything draws
+    // in the beginning before any brush interactions happen. Interactions will set them to the proper size
+    scratchLayerBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
+    strokeFrameBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
+
     DrawingManager.start()
   }
 
   public destroy = () => {
+    if (!this.initialized) return
+
+    Camera.reset()
     InputManager.destroy()
+    ResourceManager.deleteAll()
+    DrawingManager.reset()
+    InteractionManager.reset()
+    ModifierKeyManager.reset()
+    resetPointerManager()
+
+    for (const tool of Object.values(tools)) {
+      tool.reset()
+    }
+
+    this.currentOperation.reset()
+
+    this.gl = {} as WebGL2RenderingContextDOM
+    this.currentOperation = {} as Operation
+    this.extensions = {
+      colorBufferFloat: null,
+      floatBlend: null,
+      textureFloat: null,
+      textureFloatLinear: null,
+      textureHalfFloat: null,
+      textureHalfFloatLinear: null,
+      colorBufferHalfFloat: null,
+      provokingVertex: null,
+    }
+    this.systemConstraints = {
+      maxTextureSize: 0,
+      maxTextureImageUnits: 0,
+      maxRenderBufferSize: 0,
+      maxDrawBuffers: 0,
+      maxColorAttachments: 0,
+      maxSamples: 0,
+    }
+    this.canvasInfo = {
+      width: 0,
+      height: 0,
+    }
+    this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
+    this.drawing = false
+
+    this.supportedExportImageFormats = ["png"]
+
+    this.initialized = false
+
+    useLayerStore.getState().deleteAll()
+    resizeObserver.disconnect()
   }
 }
 

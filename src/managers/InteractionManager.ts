@@ -1,26 +1,20 @@
 import type { MouseState } from "@/types"
 import { tool_types } from "@/constants.tsx"
-import { getDistance, calculateFromPressure, CanvasSizeCache, calculateSpacing, lerp } from "@/utils/utils"
+import { getDistance, calculateFromPressure, AppViewportSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
-import { ExponentialSmoothingFilter } from "@/objects/ExponentialSmoothingFilter"
-import { DrawingManager, resetScratchBoundingBox } from "@/managers/DrawingManager"
+import { DrawingManager, scratchLayerBoundingBox } from "@/managers/DrawingManager"
 import { useLayerStore } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
 import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
 import { useToolStore } from "@/stores/ToolStore"
+import { LocationStorage } from "@/objects/utils"
 
-const pressureFilter = new ExponentialSmoothingFilter(0.6, 1)
-const positionFilter = new ExponentialSmoothingFilter(0.5, 2)
-
-const positionArray = positionFilter.getInputArray()
-const pressureArray = pressureFilter.getInputArray()
-
-const currentMousePosition = { x: 0, y: 0 }
+const currentMousePosition = new LocationStorage()
 let mergeEvent = false
-const mergeEventCache = { x: 0, y: 0 }
+const mergeEventCache = new LocationStorage()
 
 function prepareOperation(relativeMouseState: MouseState) {
   if (DrawingManager.waitUntilInteractionEnd) return
@@ -29,40 +23,24 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const prefs = usePreferenceStore.getState().prefs
 
-  if (pressureFilter.smoothAmount !== prefs.pressureFiltering) pressureFilter.changeSetting(prefs.pressureFiltering)
-  if (positionFilter.smoothAmount !== prefs.mouseFiltering) positionFilter.changeSetting(prefs.mouseFiltering)
-
   const prevPoint = operation.points.getPoint(-1).active ? operation.points.getPoint(-1) : operation.points.currentPoint
 
+  let zoomAdjustment = 0
+
   // To counteract the fact that the pointer position resolution gets much lower the
-  // more zoomed out the canvas becomes we raise filtering to compensate
-  if (Camera.zoom < 1) {
+  // more zoomed out the canvas becomes we raise smoothing to compensate
+  if (Camera.zoom < 1 && prefs.zoomCompensation) {
     // These values are just tuned to feel right
-    const maxZoomFilteringAdjustment = Math.max(0.7 - (1 - prefs.mouseFiltering), 0)
 
-    const zoomFilteringAdjustment = Math.min((1 - Camera.zoom) * 0.3, maxZoomFilteringAdjustment)
-
-    positionFilter.changeSetting(Math.min(Math.max(prefs.mouseFiltering - zoomFilteringAdjustment, 0.01), 1))
+    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.1, 0.05)
   }
-
-  positionArray[0] = relativeMouseState.x
-  positionArray[1] = relativeMouseState.y
-  const filteredPositions = positionFilter.filter(positionArray)
-
-  operation.points.currentPoint.x = filteredPositions[0]
-  operation.points.currentPoint.y = filteredPositions[1]
 
   operation.points.currentPoint.pointerType = relativeMouseState.pointerType
 
-  pressureArray[0] = relativeMouseState.pressure
-  const filteredPressure = pressureFilter.filter(pressureArray)
-
-  operation.points.currentPoint.pressure = filteredPressure[0]
-
   operation.points.currentPoint.pressure = lerp(
-    operation.points.currentPoint.pressure,
-    prevPoint.pressure,
-    1 - prefs.pressureSmoothing,
+    operation.points.getPoint(-1).active ? prevPoint.pressure : 0,
+    relativeMouseState.pressure,
+    prefs.pressureSmoothing,
   )
 
   const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
@@ -84,17 +62,20 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
 
+  operation.points.currentPoint.x = relativeMouseState.x
+  operation.points.currentPoint.y = relativeMouseState.y
+
   vec2.lerp(
     operation.points.currentPoint.location,
     prevPoint.location,
     operation.points.currentPoint.location,
-    Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment, 0.01), 1),
+    Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment - zoomAdjustment, 0.01), 1),
   )
 
   // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
   if (mergeEvent) {
-    operation.points.currentPoint.x = lerp(mergeEventCache.x, operation.points.currentPoint.x, 0.7)
-    operation.points.currentPoint.y = lerp(mergeEventCache.y, operation.points.currentPoint.y, 0.7)
+    operation.points.currentPoint.x = lerp(mergeEventCache.x, operation.points.currentPoint.x, 0.5)
+    operation.points.currentPoint.y = lerp(mergeEventCache.y, operation.points.currentPoint.y, 0.5)
 
     mergeEvent = false
   }
@@ -160,7 +141,7 @@ function executeOperation() {
 function process(pointerState: MouseState) {
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
   prepareOperation(pointerState)
 }
@@ -187,16 +168,21 @@ function endInteraction(save = true) {
   }
   DrawingManager.clearSpecific(scratchLayer)
 
-  DrawingManager.recomposite()
+  DrawingManager.fullyRecomposite()
   DrawingManager.pauseDrawNextFrame()
 
   DrawingManager.waitUntilInteractionEnd = false
-  positionFilter.reset()
-  pressureFilter.reset()
-  Application.currentOperation.reset()
-  resetScratchBoundingBox()
 
-  currentTool.reset()
+  Application.currentOperation.reset()
+  scratchLayerBoundingBox.reset()
+
+  currentTool.end()
+}
+
+function reset() {
+  currentMousePosition.reset()
+  mergeEvent = false
+  mergeEventCache.reset()
 }
 
 export const InteractionManager = {
@@ -204,4 +190,5 @@ export const InteractionManager = {
   endInteraction,
   process,
   executeOperation,
+  reset,
 }

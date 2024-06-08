@@ -1,4 +1,5 @@
 import { vec2, mat3 } from "gl-matrix"
+import { type Point } from "@/objects/Point"
 
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
@@ -151,6 +152,7 @@ export type LayerName = string
 export type LayerID = string
 export interface ILayer {
   blendMode: number
+  clippingMask: boolean
   name: LayerName
   id: LayerID
   redoSnapshotQueue: Float32Array[]

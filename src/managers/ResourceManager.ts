@@ -41,6 +41,12 @@ class _ResourceManager {
 
     return fetched
   }
+
+  deleteAll = () => {
+    for (const resource of this.resources) {
+      this.delete(resource[0])
+    }
+  }
 }
 
 export const ResourceManager = new _ResourceManager()

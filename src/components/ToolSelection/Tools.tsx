@@ -8,10 +8,10 @@ import { useToolStore } from "@/stores/ToolStore"
 
 import { tools } from "@/stores/ToolStore"
 
-import { hexToRgb, rgbToHex } from "@/utils/utils"
+import { hexToRgb, rgbToHex } from "@/utils/colors"
 import { useMainStore } from "@/stores/MainStore"
 import { Application } from "@/managers/ApplicationManager"
-import type { ToolName } from "@/types"
+import type { ToolName, AvailableTools } from "@/types"
 
 function _Tools() {
   const currentTool = useToolStore.use.currentTool()
@@ -30,21 +30,17 @@ function _Tools() {
     _setCurrentTool(name)
   }, [])
 
+  const renderTool = useCallback(
+    (tool: AvailableTools) => {
+      return <Tool key={tool.name} name={tool.name} select={setCurrentTool} selected={currentTool.name === tool.name} />
+    },
+    [currentTool.name],
+  )
+
   return (
     <Container className="absolute top-1/2 z-10 w-11 -translate-y-1/2 shadow-md">
       <Panel className="flex w-full grow flex-col justify-between">
-        <div>
-          {Object.values(tools).map((tool) => {
-            return (
-              <Tool
-                key={tool.name}
-                name={tool.name}
-                select={setCurrentTool}
-                selected={currentTool.name === tool.name}
-              />
-            )
-          })}
-        </div>
+        <div>{Object.values(tools).map(renderTool)}</div>
         <input className="w-auto rounded-sm	" type="color" value={rgbToHex(color)} onChange={changeColor} />
       </Panel>
     </Container>

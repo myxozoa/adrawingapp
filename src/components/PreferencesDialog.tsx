@@ -4,18 +4,42 @@ import { usePreferenceStore } from "@/stores/PreferenceStore"
 
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { useCallback } from "react"
 
 export const PreferenesDialog = () => {
   const setPrefs = usePreferenceStore.use.setPrefs()
   const prefs = usePreferenceStore.use.prefs()
 
+  const coalescedEventsSupported = PointerEvent.prototype.getCoalescedEvents !== undefined
+
+  const handlePressureSensitivity = useCallback((pressureSensitivity: number) => setPrefs({ pressureSensitivity }), [])
+  const handlePressureSmoothing = useCallback(
+    (pressureSmoothing: number) => setPrefs({ pressureSmoothing: 1 - pressureSmoothing }),
+    [],
+  )
+  const handleMouseSmoothing = useCallback(
+    (mouseSmoothing: number) => setPrefs({ mouseSmoothing: 1 - mouseSmoothing }),
+    [],
+  )
+  const handleUsePressure = useCallback(() => setPrefs({ usePressure: !prefs.usePressure }), [prefs.usePressure])
+  const handleCoalescedEvents = useCallback(
+    () => setPrefs({ useCoalescedEvents: !prefs.useCoalescedEvents }),
+    [prefs.useCoalescedEvents],
+  )
+  const handleZoomCompensation = useCallback(
+    () => setPrefs({ zoomCompensation: !prefs.zoomCompensation }),
+    [prefs.zoomCompensation],
+  )
   return (
-    <DialogHeader>
-      <DialogTitle>Preferences</DialogTitle>
+    <>
+      <DialogHeader>
+        <DialogTitle>Preferences</DialogTitle>
+      </DialogHeader>
+
       <SettingSlider
         name={"Pressure Sensitivity"}
         value={prefs.pressureSensitivity}
-        onValueChange={(pressureSensitivity) => setPrefs({ pressureSensitivity })}
+        onValueChange={handlePressureSensitivity}
         fractionDigits={2}
         min={0}
         max={1}
@@ -23,29 +47,9 @@ export const PreferenesDialog = () => {
       />
 
       <SettingSlider
-        name={"Pressure Filtering"}
-        value={((1 - prefs.pressureFiltering) * 10) / 10}
-        onValueChange={(pressureFiltering) => setPrefs({ pressureFiltering: 1 - pressureFiltering })}
-        fractionDigits={2}
-        min={0}
-        max={0.99}
-        step={0.01}
-      />
-
-      <SettingSlider
         name={"Pressure Smoothing"}
         value={((1 - prefs.pressureSmoothing) * 10) / 10}
-        onValueChange={(pressureSmoothing) => setPrefs({ pressureSmoothing: 1 - pressureSmoothing })}
-        fractionDigits={2}
-        min={0}
-        max={0.99}
-        step={0.01}
-      />
-
-      <SettingSlider
-        name={"Mouse Filtering"}
-        value={((1 - prefs.mouseFiltering) * 10) / 10}
-        onValueChange={(mouseFiltering) => setPrefs({ mouseFiltering: 1 - mouseFiltering })}
+        onValueChange={handlePressureSmoothing}
         fractionDigits={2}
         min={0}
         max={0.99}
@@ -55,7 +59,7 @@ export const PreferenesDialog = () => {
       <SettingSlider
         name={"Mouse Smoothing"}
         value={((1 - prefs.mouseSmoothing) * 10) / 10}
-        onValueChange={(mouseSmoothing) => setPrefs({ mouseSmoothing: 1 - mouseSmoothing })}
+        onValueChange={handleMouseSmoothing}
         fractionDigits={2}
         min={0}
         max={0.99}
@@ -63,13 +67,26 @@ export const PreferenesDialog = () => {
       />
 
       <div className="flex items-center space-x-2">
-        <Switch
-          id="pressure"
-          onCheckedChange={() => setPrefs({ usePressure: !prefs.usePressure })}
-          checked={prefs.usePressure}
-        />
+        <Switch id="pressure" onCheckedChange={handleUsePressure} checked={prefs.usePressure} />
         <Label htmlFor="pressure">Use Pen Pressure</Label>
       </div>
-    </DialogHeader>
+
+      {!coalescedEventsSupported ? (
+        <p className="text-sm text-destructive"> It seems your device does not support Coalesced Events</p>
+      ) : null}
+      <div className="flex items-center space-x-2">
+        <Switch
+          disabled={!coalescedEventsSupported}
+          id="coalescedEvents"
+          onCheckedChange={handleCoalescedEvents}
+          checked={prefs.useCoalescedEvents}
+        />
+        <Label htmlFor="coalescedEvents">Use Coalesced Pointer Events</Label>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Switch id="zoomCompensation" onCheckedChange={handleZoomCompensation} checked={prefs.zoomCompensation} />
+        <Label htmlFor="zoomCompensation">Use Zoom Smoothing Compensation</Label>
+      </div>
+    </>
   )
 }

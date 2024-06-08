@@ -7,7 +7,7 @@ import {
   throttleRAF,
   getDistance,
   calculateWorldPosition,
-  CanvasSizeCache,
+  AppViewportSizeCache,
   calculatePointerWorldPosition,
 } from "@/utils/utils"
 
@@ -15,6 +15,8 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
+import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { LocationStorage } from "@/objects/utils"
 
 const wheelThrottle = throttleRAF()
 
@@ -54,10 +56,7 @@ class TouchManager {
   constructor(maxTouches = 2) {
     this.maxTouches = maxTouches
     this.touches = []
-    this.midPoint = {
-      x: 0,
-      y: 0,
-    }
+    this.midPoint = new LocationStorage()
   }
 
   addTouch = (event: PointerEvent) => {
@@ -70,6 +69,9 @@ class TouchManager {
 
   removeTouch = (event: PointerEvent) => {
     const index = this.touches.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+
+    if (index === -1) throw new Error("Touch could not be found to be removed")
+
     this.touches.splice(index, 1)
   }
 
@@ -87,7 +89,11 @@ class TouchManager {
   }
 
   getTouchByID = (pointerId: number) => {
-    return this.touches.find((touch) => touch.pointerId === pointerId)
+    const touch = this.touches.find((touch) => touch.pointerId === pointerId)
+
+    if (typeof touch === "undefined") throw new Error("Touch could not be found by ID")
+
+    return
   }
 
   getTouch = (index: number) => {
@@ -99,10 +105,13 @@ class TouchManager {
 
   updateTouch = (event: PointerEvent) => {
     const index = findLastIndex(this.touches, (cachedEvent) => cachedEvent.pointerId === event.pointerId)
+
+    if (index === -1) throw new Error("Touch could not be found in order to be updated")
+
     this.touches[index] = event
   }
 
-  clearTouches = () => {
+  clear = () => {
     this.touches.length = 0
   }
 
@@ -114,8 +123,8 @@ class TouchManager {
 const touches = new TouchManager()
 let prevTouchDistance = -1
 
-const startMidPoint = { x: 0, y: 0 }
-const lastMidPoint = { x: 0, y: 0 }
+const startMidPoint = new LocationStorage()
+const lastMidPoint = new LocationStorage()
 
 let idleTime = 0
 
@@ -150,9 +159,9 @@ function pinchZoom(midPoint: { x: number; y: number }, distance: number) {
 function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
-  const mousePositionBeforeZoom = calculateWorldPosition({ ...pointerPosition })
+  const mousePositionBeforeZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
   const mouseXBeforeZoom = mousePositionBeforeZoom[0]
   const mouseYBeforeZoom = mousePositionBeforeZoom[1]
 
@@ -160,7 +169,7 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   Camera.updateViewProjectionMatrix()
 
-  const mousePositionAfterZoom = calculateWorldPosition({ ...pointerPosition })
+  const mousePositionAfterZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
   const mouseXAfterZoom = mousePositionAfterZoom[0]
   const mouseYAfterZoom = mousePositionAfterZoom[1]
 
@@ -178,7 +187,7 @@ function pan(midPoint: { x: number; y: number }) {
   if (lastMidPoint.x === 0 && lastMidPoint.y === 0) return
   const gl = Application.gl
 
-  gl.viewport(0, 0, CanvasSizeCache.width, CanvasSizeCache.height)
+  gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
   let dx = midPoint.x - lastMidPoint.x
   let dy = midPoint.y - lastMidPoint.y
@@ -196,6 +205,8 @@ function pan(midPoint: { x: number; y: number }) {
 }
 
 function touchPanZoom() {
+  if (touches.length < 2) throw new Error("Too few touches to be able to pan/zoom")
+
   const distance = getDistance(touches.getTouch(0), touches.getTouch(1))
 
   const midPoint = touches.getMidPoint()
@@ -209,15 +220,16 @@ function touchPanZoom() {
 function pointerdown(event: PointerEvent) {
   idleTime = 0
   Application.gl.canvas.setPointerCapture(event.pointerId)
-
-  document.body.style.cursor = "none"
   ;(event.target as HTMLCanvasElement).focus()
+
+  if (event.pointerType !== "touch") touches.clear()
 
   if (event.pointerType === "touch") {
     DrawingManager.disableCursor()
     touches.addTouch(event)
 
     if (touches.length > 2) {
+      touches.clear()
       InteractionManager.endInteraction(false)
 
       return
@@ -287,15 +299,31 @@ function pointermove(event: PointerEvent) {
   }
 
   if (currentInteractionState === InteractionState.useTool) {
-    if (PointerEvent.prototype.getCoalescedEvents !== undefined) {
-      const coalesced = event.getCoalescedEvents()
+    const useCoalescedEvents = usePreferenceStore.getState().prefs.useCoalescedEvents
 
-      for (const coalescedEvent of coalesced) {
-        const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
+    let coalesced: PointerEvent[] | undefined
+    if (PointerEvent.prototype.getCoalescedEvents !== undefined && useCoalescedEvents) {
+      coalesced = event.getCoalescedEvents()
 
-        InteractionManager.process(coalescedRelativeMouseState)
+      if (coalesced !== undefined) {
+        for (const coalescedEvent of coalesced) {
+          const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
+
+          InteractionManager.process(coalescedRelativeMouseState)
+        }
       }
-    } else {
+    }
+
+    // At least on some platforms and browsers it seems the main pointer event is not included in the coalesced events array
+
+    // We check to see if there were no coalesced events or if the last coalesced event in the list matches the main event
+    // Processing the main event here seems to help responsiveness on some devices
+    if (
+      coalesced === undefined ||
+      (coalesced !== undefined &&
+        coalesced.length >= 1 &&
+        (coalesced[coalesced.length - 1].x !== position.x || coalesced[coalesced.length - 1].y !== position.y))
+    ) {
       InteractionManager.process(position)
     }
 
@@ -309,8 +337,6 @@ function pointermove(event: PointerEvent) {
 
 function pointerup(event: PointerEvent) {
   idleTime = 0
-
-  document.body.style.cursor = "default"
 
   Application.drawing = false
   Application.gl.canvas.releasePointerCapture(event.pointerId)
@@ -353,21 +379,18 @@ function keyup(event: KeyboardEvent) {
 
 function pointercancel(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
-  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
 
 function pointerout(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
-  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
 
 function pointerleave(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
-  document.body.style.cursor = "default"
 
   event.stopPropagation()
 }
@@ -489,11 +512,13 @@ function reset() {
   lastMidPoint.y = 0
   prevTouchDistance = -1
 
+  touches.clear()
+
   currentInteractionState = InteractionState.none
-  document.body.style.cursor = "default"
 }
 
 function destroy() {
+  reset()
   for (const [name, callback] of objectEntries(pointer_listeners)) {
     ;(Application.gl.canvas as EventEmitter).removeEventListener(name, callback)
   }
@@ -527,4 +552,5 @@ export const InputManager = {
   windowResize,
   init,
   destroy,
+  reset,
 }

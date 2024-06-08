@@ -27,11 +27,27 @@ export enum blend_modes {
   softLight,
   difference,
   exclusion,
-  hue,
-  saturation,
-  color,
-  luminosity,
+  // hue,
+  // saturation,
+  // color,
+  // luminosity,
 }
+
+export const blendModeNames = [
+  "Clear",
+  "Normal",
+  "Multiply",
+  "Screen",
+  "Overlay",
+  "Darken",
+  "Lighten",
+  "Color Dodge",
+  "Color Burn",
+  "Hard Light",
+  "Soft Light",
+  "Difference",
+  "Exclusion",
+] as const
 
 export const key_modifers: Record<string, Modifier> = {
   ctrl: "ctrl",

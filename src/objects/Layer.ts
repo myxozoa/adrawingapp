@@ -2,9 +2,9 @@ import { blend_modes } from "../constants"
 
 import type { ILayer, LayerID, LayerName, Box } from "@/types"
 
-// TODO: Fix this
 export class Layer implements ILayer {
   blendMode: blend_modes
+  clippingMask: boolean
   name: LayerName
   id: LayerID
   undoSnapshotQueue: Float32Array[]
@@ -16,6 +16,7 @@ export class Layer implements ILayer {
 
   constructor(name: LayerName) {
     this.blendMode = blend_modes.normal
+    this.clippingMask = false
     this.name = name
     this.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random() * Math.random()).toString()
     this.undoSnapshotQueue = []
@@ -55,6 +56,16 @@ export class Layer implements ILayer {
 
     this.boundingBox.width = newWidth
     this.boundingBox.height = newHeight
+  }
+
+  reset = () => {
+    this.blendMode = blend_modes.normal
+    this.clippingMask = false
+    this.name = "New Layer"
+    this.noDraw = false
+    this.boundingBox = { x: 0, y: 0, width: 1, height: 1 }
+    this.opacity = 100
+    this.drawnTo = false
   }
 
   // addCurrentToUndoSnapshotQueue = (gl: WebGL2RenderingContext) => {

@@ -28,7 +28,12 @@ function init() {
   window.addEventListener("keyup", handleKeys)
 }
 
+function reset() {
+  keys.clear()
+}
+
 export const ModifierKeyManager = {
   keys,
   init,
+  reset,
 }

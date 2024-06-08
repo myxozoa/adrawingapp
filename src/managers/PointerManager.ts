@@ -8,7 +8,7 @@ export const PointerManager: MouseState = {
   rightMouseDown: false,
   middleMouseDown: false,
   pressure: 0,
-  pointerType: "pen",
+  pointerType: "mouse",
 }
 
 function parseMouseButtons(event: PointerEvent | WheelEvent) {
@@ -30,4 +30,14 @@ export const updatePointer = (event: PointerEvent | WheelEvent): MouseState => {
   }
 
   return PointerManager
+}
+
+export const resetPointerManager = () => {
+  PointerManager.x = 0
+  PointerManager.y = 0
+  PointerManager.leftMouseDown = false
+  PointerManager.rightMouseDown = false
+  PointerManager.middleMouseDown = false
+  PointerManager.pressure = 0
+  PointerManager.pointerType = "mouse"
 }
