@@ -1,5 +1,4 @@
 import { vec2, mat3 } from "gl-matrix"
-import { type Point } from "@/objects/Point"
 
 export type Nullable<T> = T | null
 export type Maybe<T> = T | undefined
@@ -100,6 +99,7 @@ export interface ITool {
 
   init: (gl: WebGL2RenderingContext) => void
   reset: () => void
+  end: () => void
 }
 
 export interface IBrush extends ITool {
