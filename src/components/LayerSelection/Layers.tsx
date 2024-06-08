@@ -5,8 +5,10 @@ import { Container } from "@/components/Container"
 import { Layer } from "@/components/LayerSelection/Layer"
 
 import { Button } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
 
 import { TrashIcon, FilePlusIcon, LayersIcon } from "@radix-ui/react-icons"
+import { ShapeIntersectRegular } from "@fluentui/react-icons"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { useLayerStore } from "@/stores/LayerStore"
@@ -68,8 +70,9 @@ function _Layers() {
             max={100}
           />
         </Panel>
-        <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
+        <Panel className="mb-1 flex w-full shrink-0 items-center justify-between py-2 shadow-md">
           <Select
+            disabled={LayerStore.currentLayer === LayerStore.layers[0]}
             value={currentLayer.blendMode.toString()}
             onValueChange={(value) =>
               LayerStore.setBlendMode(LayerStore.currentLayer, Number(value) as unknown as blend_modes)
@@ -90,6 +93,18 @@ function _Layers() {
               </SelectGroup>
             </SelectContent>
           </Select>
+
+          <Toggle
+            className="h-full"
+            disabled={LayerStore.currentLayer === LayerStore.layers[0]}
+            size="xs"
+            aria-label="Toggle Layer Clipping Mask"
+            pressed={currentLayer.clippingMask}
+            variant="outline"
+            onPressedChange={() => LayerStore.setClippingMask(LayerStore.currentLayer, !currentLayer.clippingMask)}
+          >
+            <ShapeIntersectRegular className="h-5 w-5" />
+          </Toggle>
         </Panel>
 
         <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">

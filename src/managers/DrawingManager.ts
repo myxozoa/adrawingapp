@@ -271,7 +271,7 @@ function scissorStrokeFrameSection() {
 function compositeLayers() {
   const gl = Application.gl
 
-  const intermediaryLayer = ResourceManager.get("IntermediaryLayer")
+  const intermediaryLayer0 = ResourceManager.get("IntermediaryLayer0")
   const intermediaryLayer3 = ResourceManager.get("IntermediaryLayer3")
   const emptyLayer = ResourceManager.get("EmptyLayer")
 
@@ -280,7 +280,7 @@ function compositeLayers() {
 
   const layers = useLayerStore.getState().layers
   const currentLayerID = useLayerStore.getState().currentLayer
-  gl.useProgram(intermediaryLayer.programInfo?.program)
+  gl.useProgram(intermediaryLayer0.programInfo?.program)
   gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
   gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
 
@@ -297,18 +297,23 @@ function compositeLayers() {
   viewportCanvas()
   scissorStrokeFrameSection()
 
+  gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_clipping_mask, 0)
   if (isBrush(currentTool)) {
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, blend_modes.normal)
-    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+    gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_blend_mode, blend_modes.normal)
+    gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
   } else if (isEraser(currentTool)) {
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, blend_modes.clear)
-    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
+    gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_blend_mode, blend_modes.clear)
+    gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, currentTool.settings.opacity / 100)
   } else {
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, blend_modes.normal)
-    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, 1)
+    gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_blend_mode, blend_modes.normal)
+    gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, 1)
   }
 
   compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
+
+  // Copy the scratch + current layer composite to avoid feedback errors
+  const intermediaryLayer4 = ResourceManager.get("IntermediaryLayer4")
+  blit(intermediaryLayer3, intermediaryLayer4, shouldFullyRecomposite ? undefined : strokeFrameBoundingBox)
 
   // Composite First layer against an empty texture
   const firstLayerID = layers[0]
@@ -319,8 +324,9 @@ function compositeLayers() {
   viewportCanvas()
   scissorStrokeFrameSection()
 
-  gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, firstLayer.blendMode)
-  gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
+  gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_blend_mode, firstLayer.blendMode)
+  gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
+  gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_clipping_mask, 0)
 
   if (firstLayer.id !== currentLayerID) {
     compositeLayer(firsLayerResource.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
@@ -335,6 +341,9 @@ function compositeLayers() {
 
   // Layers above first layer
   for (let i = 1; i < layers.length; i++) {
+    const previousLayerID = layers[i - 1]
+    const previousLayer = layerStorage.get(previousLayerID)!
+    const previousLayerResource = ResourceManager.get(`Layer${previousLayerID}`)
     const layerID = layers[i]
     const layer = layerStorage.get(layerID)!
     const layerResource = ResourceManager.get(`Layer${layerID}`)
@@ -343,13 +352,31 @@ function compositeLayers() {
     viewportCanvas()
     scissorStrokeFrameSection()
 
-    gl.uniform1i(intermediaryLayer.programInfo.uniforms.u_blend_mode, layer.blendMode)
-    gl.uniform1f(intermediaryLayer.programInfo.uniforms.u_opacity, layer.opacity / 100)
+    gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_blend_mode, layer.blendMode)
+    gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, layer.opacity / 100)
+    gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_clipping_mask, Number(layer.clippingMask))
+
+    // To support changing the base layer mid stroke we need to
+    // use a copy of the scratch + current layer composite
+    const previousLayerTexure =
+      previousLayer.id === currentLayerID
+        ? intermediaryLayer4.bufferInfo.textures[0]
+        : previousLayerResource.bufferInfo.textures[0]
+
+    const clippingMask = layer.clippingMask ? previousLayerTexure : undefined
 
     if (layer.id !== currentLayerID) {
-      compositeLayer(layerResource.bufferInfo.textures[0], framebuffers[readFramebuffer].bufferInfo.textures[0])
+      compositeLayer(
+        layerResource.bufferInfo.textures[0],
+        framebuffers[readFramebuffer].bufferInfo.textures[0],
+        clippingMask,
+      )
     } else {
-      compositeLayer(intermediaryLayer3.bufferInfo.textures[0], framebuffers[readFramebuffer].bufferInfo.textures[0])
+      compositeLayer(
+        intermediaryLayer3.bufferInfo.textures[0],
+        framebuffers[readFramebuffer].bufferInfo.textures[0],
+        clippingMask,
+      )
 
       clearSpecific(intermediaryLayer3)
     }
@@ -363,8 +390,13 @@ function compositeLayers() {
   shouldRecomposite = false
 }
 
-function compositeLayer(top: WebGLTexture, bottom: WebGLTexture) {
+function compositeLayer(top: WebGLTexture, bottom: WebGLTexture, clippingMask?: WebGLTexture) {
   const gl = Application.gl
+
+  if (clippingMask) {
+    gl.activeTexture(gl.TEXTURE2)
+    gl.bindTexture(gl.TEXTURE_2D, clippingMask)
+  }
 
   gl.activeTexture(gl.TEXTURE1)
   gl.bindTexture(gl.TEXTURE_2D, top)
@@ -387,6 +419,8 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
   viewportCanvas()
   scissorCanvas()
   gl.disable(gl.BLEND)
+
+  gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_clipping_mask, 0)
 
   if (isBrush(currentTool)) {
     gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_blend_mode, blend_modes.normal)
@@ -450,6 +484,57 @@ function copy(source: WebGLFramebuffer, destination: WebGLTexture) {
   gl.bindTexture(gl.TEXTURE_2D, destination)
 
   gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
+}
+
+function createIntermediaryLayers(number: number) {
+  const gl = Application.gl
+
+  const intermediaryLayerUniforms = [
+    "u_bottom_texture",
+    "u_top_texture",
+    "u_clipping_mask_texture",
+    "u_blend_mode",
+    "u_opacity",
+    "u_clipping_mask",
+  ]
+
+  for (let i = 0; i <= number; i++) {
+    const intermediaryLayer = ResourceManager.create(
+      `IntermediaryLayer${i}`,
+      createCanvasRenderTexture(
+        gl,
+        Application.canvasInfo.width,
+        Application.canvasInfo.height,
+        layerCompositionFragment,
+        layerCompositionVertex,
+        false,
+        intermediaryLayerUniforms,
+      ),
+    )
+
+    // TODO: clean up these assertions
+    mat3.scale(
+      intermediaryLayer.data!.matrix!,
+      intermediaryLayer.data!.matrix!,
+      vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
+    )
+
+    mat3.translate(
+      intermediaryLayer.data!.matrix!,
+      intermediaryLayer.data!.matrix!,
+      vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
+    )
+
+    gl.useProgram(intermediaryLayer.programInfo?.program)
+
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_bottom_texture, 0)
+
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_top_texture, 1)
+
+    gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_clipping_mask_texture, 2)
+
+    gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data!.matrix!)
+  }
 }
 
 /**
@@ -538,117 +623,14 @@ function init() {
     Application.canvasInfo.height,
   )
 
-  const intermediaryLayer = ResourceManager.create(
-    "IntermediaryLayer",
-    createCanvasRenderTexture(
-      gl,
-      Application.canvasInfo.width,
-      Application.canvasInfo.height,
-      layerCompositionFragment,
-      layerCompositionVertex,
-      false,
-      ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
-    ),
-  )
-
-  const intermediaryLayer2 = ResourceManager.create(
-    "IntermediaryLayer2",
-    createCanvasRenderTexture(
-      gl,
-      Application.canvasInfo.width,
-      Application.canvasInfo.height,
-      layerCompositionFragment,
-      layerCompositionVertex,
-      false,
-      ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
-    ),
-  )
-
-  const intermediaryLayer3 = ResourceManager.create(
-    "IntermediaryLayer3",
-    createCanvasRenderTexture(
-      gl,
-      Application.canvasInfo.width,
-      Application.canvasInfo.height,
-      layerCompositionFragment,
-      layerCompositionVertex,
-      false,
-      ["u_bottom_texture", "u_top_texture", "u_blend_mode", "u_opacity"],
-    ),
-  )
-
-  // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
-
-  // TODO: clean up these assertions
-  mat3.scale(
-    intermediaryLayer.data!.matrix!,
-    intermediaryLayer.data!.matrix!,
-    vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
-  )
-
-  mat3.translate(
-    intermediaryLayer.data!.matrix!,
-    intermediaryLayer.data!.matrix!,
-    vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
-  )
-
-  gl.useProgram(intermediaryLayer.programInfo?.program)
-
-  gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_bottom_texture, 0)
-
-  gl.uniform1i(intermediaryLayer.programInfo?.uniforms.u_top_texture, 1)
-
-  gl.uniformMatrix3fv(intermediaryLayer.programInfo?.uniforms.u_matrix, false, intermediaryLayer.data!.matrix!)
-
-  // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
-
-  // TODO: clean up these assertions
-  mat3.scale(
-    intermediaryLayer2.data!.matrix!,
-    intermediaryLayer2.data!.matrix!,
-    vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
-  )
-
-  mat3.translate(
-    intermediaryLayer2.data!.matrix!,
-    intermediaryLayer2.data!.matrix!,
-    vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
-  )
-
-  gl.useProgram(intermediaryLayer2.programInfo?.program)
-
-  gl.uniform1i(intermediaryLayer2.programInfo?.uniforms.u_bottom_texture, 0)
-
-  gl.uniform1i(intermediaryLayer2.programInfo?.uniforms.u_top_texture, 1)
-
-  gl.uniformMatrix3fv(intermediaryLayer2.programInfo?.uniforms.u_matrix, false, intermediaryLayer2.data!.matrix!)
-
-  // Prepare a matrix for -1/1 viewport coordinates so this can be drawn inside a canvas texture
-
-  // TODO: clean up these assertions
-  mat3.scale(
-    intermediaryLayer3.data!.matrix!,
-    intermediaryLayer3.data!.matrix!,
-    vec2.fromValues(1 / (Application.canvasInfo.width / 2), 1 / (Application.canvasInfo.height / 2)),
-  )
-
-  mat3.translate(
-    intermediaryLayer3.data!.matrix!,
-    intermediaryLayer3.data!.matrix!,
-    vec2.fromValues(-Application.canvasInfo.width / 2, -Application.canvasInfo.height / 2),
-  )
-
-  gl.useProgram(intermediaryLayer3.programInfo?.program)
-
-  gl.uniform1i(intermediaryLayer3.programInfo?.uniforms.u_bottom_texture, 0)
-
-  gl.uniform1i(intermediaryLayer3.programInfo?.uniforms.u_top_texture, 1)
-
-  gl.uniformMatrix3fv(intermediaryLayer3.programInfo?.uniforms.u_matrix, false, intermediaryLayer3.data!.matrix!)
+  createIntermediaryLayers(4)
 
   Cursor.init(gl)
 
-  framebuffers = [intermediaryLayer, intermediaryLayer2]
+  const intermediaryLayer0 = ResourceManager.get("IntermediaryLayer0")
+  const intermediaryLayer1 = ResourceManager.get("IntermediaryLayer1")
+
+  framebuffers = [intermediaryLayer0, intermediaryLayer1]
 }
 
 function newLayer(layer: Layer) {

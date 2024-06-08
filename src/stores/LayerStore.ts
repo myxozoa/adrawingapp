@@ -25,6 +25,7 @@ interface Action {
   saveNewName: (id: LayerID, name: LayerName) => void
   setOpacity: (id: LayerID, opacity: number) => void
   setBlendMode: (id: LayerID, blendMode: blend_modes) => void
+  setClippingMask: (id: LayerID, clippingMask: boolean) => void
   keepCurrentLayerInSync: () => void
   deleteAll: () => void
 }
@@ -146,6 +147,19 @@ const useLayerStoreBase = create<State & Action>((set) => ({
       const layer = state.layerStorage.get(id)
 
       if (layer) layer.blendMode = blendMode
+      else throw new Error("Layer not found")
+
+      return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }
+    })
+    DrawingManager.fullyRecomposite()
+    DrawingManager.beginDraw()
+    DrawingManager.pauseDrawNextFrame()
+  },
+  setClippingMask: (id: LayerID, clippingMask: boolean) => {
+    set((state) => {
+      const layer = state.layerStorage.get(id)
+
+      if (layer) layer.clippingMask = clippingMask
       else throw new Error("Layer not found")
 
       return { ...state, currentLayer: state.currentLayer, layers: [...state.layers], editingLayer: null }

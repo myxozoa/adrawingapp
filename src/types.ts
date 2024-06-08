@@ -152,6 +152,7 @@ export type LayerName = string
 export type LayerID = string
 export interface ILayer {
   blendMode: number
+  clippingMask: boolean
   name: LayerName
   id: LayerID
   redoSnapshotQueue: Float32Array[]

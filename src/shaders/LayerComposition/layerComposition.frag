@@ -6,11 +6,13 @@ in vec2 v_tex_coord;
 out vec4 fragColor;
 
 uniform float u_opacity;
+uniform bool u_clipping_mask;
 uniform int u_blend_mode;
 
 // With float textures iOS requires explicit precision or it will default to low
 uniform highp sampler2D u_bottom_texture;
 uniform highp sampler2D u_top_texture;
+uniform highp sampler2D u_clipping_mask_texture;
 
 float tosRGBValue(float linearRGBValue) {
     return linearRGBValue <= 0.0031308 ? linearRGBValue * 12.92 :( 1.055 * pow(linearRGBValue, 1. / 2.4)) - 0.055;
@@ -382,6 +384,12 @@ void main() {
   top = toLinearRGB(top);
 
   top *= u_opacity;
+  
+  if (u_clipping_mask) {
+    vec4 clippingMask = texture(u_clipping_mask_texture, v_tex_coord);
+
+    top *= clippingMask.a;
+  }
 
   // Error Color
   vec4 outColor = vec4(1., 0., 1., 1.);
