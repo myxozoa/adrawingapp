@@ -8,6 +8,8 @@ function _Board() {
   const boardRef = useRef() as React.MutableRefObject<HTMLCanvasElement>
 
   useLayoutEffect(() => {
+    if (Application.initialized) return
+
     const rect = boardRef.current.parentElement!.getBoundingClientRect()
 
     Application.createCanvas(boardRef.current, rect.width, rect.height)
@@ -15,7 +17,10 @@ function _Board() {
   }, [])
 
   useEffect(() => {
-    Application.init()
+    if (!Application.initialized) {
+      Application.init()
+    }
+
     return () => {
       Application.destroy()
     }
@@ -28,4 +33,4 @@ function _Board() {
   )
 }
 
-export const Board = memo(_Board, () => true)
+export const Board = memo(_Board)
