@@ -308,9 +308,10 @@ class _Application {
   public destroy = () => {
     if (!this.initialized) return
 
-    Camera.reset()
-    InputManager.destroy()
+    useLayerStore.getState().deleteAll()
     ResourceManager.deleteAll()
+
+    Camera.reset()
     DrawingManager.reset()
     InteractionManager.reset()
     ModifierKeyManager.reset()
@@ -321,6 +322,9 @@ class _Application {
     }
 
     this.currentOperation.reset()
+
+    InputManager.destroy()
+    resizeObserver.disconnect()
 
     this.gl = {} as WebGL2RenderingContextDOM
     this.currentOperation = {} as Operation
@@ -356,9 +360,6 @@ class _Application {
     this.supportedExportImageFormats = ["png"]
 
     this.initialized = false
-
-    useLayerStore.getState().deleteAll()
-    resizeObserver.disconnect()
   }
 }
 
