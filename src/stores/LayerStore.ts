@@ -181,3 +181,17 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 }))
 
 export const useLayerStore = createSelectors(useLayerStoreBase)
+
+export const getLayer = (id: LayerID) => {
+  const layer = useLayerStore.getState().layerStorage.get(id)
+
+  if (layer === undefined) throw new Error(`Layer ${id} not found`)
+
+  return layer
+}
+
+export const getCurrentLayer = () => {
+  const currentLayerID = useLayerStore.getState().currentLayer
+
+  return getLayer(currentLayerID)
+}

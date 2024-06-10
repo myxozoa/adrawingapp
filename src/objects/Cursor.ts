@@ -6,7 +6,7 @@ import { useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { mat3, vec2 } from "gl-matrix"
 import { calculateFromPressure } from "@/utils/utils"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 import { Application } from "@/managers/ApplicationManager"
 
 const hoverOpacity = 1
@@ -119,7 +119,7 @@ export class _Cursor {
    * Moves quad around and draws it based on brush settings and point info
    */
   public draw = (gl: WebGL2RenderingContext, point: { x: number; y: number }, pressure: number) => {
-    const usePressure = usePreferenceStore.getState().prefs.usePressure
+    const usePressure = getPreference("usePressure")
     gl.useProgram(this.programInfo.program)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)

@@ -9,7 +9,7 @@ import { readPixelsAsync } from "@/utils/asyncReadback"
 import { uint16ToFloat16 } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
 import { toolDefaults, toolProperties } from "@/stores/ToolStore"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 
 export class Eyedropper extends Tool implements IEyedropper {
   settings: {
@@ -39,7 +39,7 @@ export class Eyedropper extends Tool implements IEyedropper {
    */
   // TODO: Implement multiple pixel sampling/averaging
   use = async (gl: WebGL2RenderingContext, operation: IOperation) => {
-    const colorDepth = usePreferenceStore.getState().prefs.colorDepth
+    const colorDepth = getPreference("colorDepth")
     const setColor = useMainStore.getState().setColor
 
     const point = operation.points.list[0]

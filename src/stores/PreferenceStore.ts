@@ -60,3 +60,6 @@ const usePreferenceStoreBase = create<State & Action>()(
 )
 
 export const usePreferenceStore = createSelectors(usePreferenceStoreBase)
+
+export const getPreference = <T extends keyof State["prefs"]>(request: T): State["prefs"][T] =>
+  usePreferenceStore.getState().prefs[request]

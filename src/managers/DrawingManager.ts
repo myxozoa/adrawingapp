@@ -16,7 +16,7 @@ import layerCompositionVertex from "@/shaders/LayerComposition/layerComposition.
 import { createTransparencyGrid } from "@/resources/transparencyGrid"
 import { createFullscreenQuad } from "@/resources/fullscreenQuad"
 import { Application } from "@/managers/ApplicationManager"
-import { useLayerStore } from "@/stores/LayerStore"
+import { getCurrentLayer, getLayer, useLayerStore } from "@/stores/LayerStore"
 
 import { InteractionManager } from "@/managers/InteractionManager"
 
@@ -26,7 +26,7 @@ import { Cursor } from "@/objects/Cursor"
 import { isBrush, isEraser } from "@/utils/typeguards"
 import { PointerManager } from "@/managers/PointerManager"
 import { InputManager } from "@/managers/InputManager"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 import { blend_modes } from "@/constants"
 import { createSimpleTexture } from "@/resources/simpleTexture"
 import { readPixelsAsync } from "@/utils/asyncReadback"
@@ -225,7 +225,7 @@ function render() {
   renderToScreen(displayLayer, true, renderUniforms)
 
   if (shouldShowCursor) {
-    const usePressure = usePreferenceStore.getState().prefs.usePressure
+    const usePressure = getPreference("usePressure")
     const pressure = usePressure ? PointerManager.pressure : 1
     Cursor.draw(gl, InteractionManager.currentMousePosition, pressure)
   }
@@ -279,10 +279,9 @@ function compositeLayers() {
   const emptyLayer = ResourceManager.get("EmptyLayer")
 
   const currentTool = useToolStore.getState().currentTool
-  const layerStorage = useLayerStore.getState().layerStorage
 
   const layers = useLayerStore.getState().layers
-  const currentLayerID = useLayerStore.getState().currentLayer
+  const currentLayer = getCurrentLayer()
   gl.useProgram(intermediaryLayer0.programInfo?.program)
   gl.bindBuffer(gl.ARRAY_BUFFER, framebuffers[writeFramebuffer].programInfo?.VBO)
   gl.bindVertexArray(framebuffers[writeFramebuffer].programInfo?.VAO)
@@ -294,7 +293,7 @@ function compositeLayers() {
 
   // Composite scratch layer with current layer into intermediaryLayer3
   const scratchLayer = ResourceManager.get("ScratchLayer")
-  const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+  const currentLayerResource = ResourceManager.get(`Layer${currentLayer.id}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, intermediaryLayer3.bufferInfo.framebuffer)
   viewportCanvas()
@@ -312,16 +311,16 @@ function compositeLayers() {
     gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, 1)
   }
 
-  compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayer.bufferInfo.textures[0])
+  compositeLayer(scratchLayer.bufferInfo.textures[0], currentLayerResource.bufferInfo.textures[0])
 
   // Copy the scratch + current layer composite to avoid feedback errors
   const intermediaryLayer4 = ResourceManager.get("IntermediaryLayer4")
   blit(intermediaryLayer3, intermediaryLayer4, shouldFullyRecomposite ? undefined : strokeFrameBoundingBox)
 
   // Composite First layer against an empty texture
-  const firstLayerID = layers[0]
-  const firstLayer = layerStorage.get(firstLayerID)!
-  const firsLayerResource = ResourceManager.get(`Layer${firstLayerID}`)
+  const firstLayer = getLayer(layers[0])
+
+  const firsLayerResource = ResourceManager.get(`Layer${firstLayer.id}`)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
   viewportCanvas()
@@ -331,7 +330,7 @@ function compositeLayers() {
   gl.uniform1f(intermediaryLayer0.programInfo.uniforms.u_opacity, firstLayer.opacity / 100)
   gl.uniform1i(intermediaryLayer0.programInfo.uniforms.u_clipping_mask, 0)
 
-  if (firstLayer.id !== currentLayerID) {
+  if (firstLayer.id !== currentLayer.id) {
     compositeLayer(firsLayerResource.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
   } else {
     compositeLayer(intermediaryLayer3.bufferInfo.textures[0], emptyLayer.bufferInfo.textures[0])
@@ -344,12 +343,10 @@ function compositeLayers() {
 
   // Layers above first layer
   for (let i = 1; i < layers.length; i++) {
-    const previousLayerID = layers[i - 1]
-    const previousLayer = layerStorage.get(previousLayerID)!
-    const previousLayerResource = ResourceManager.get(`Layer${previousLayerID}`)
-    const layerID = layers[i]
-    const layer = layerStorage.get(layerID)!
-    const layerResource = ResourceManager.get(`Layer${layerID}`)
+    const previousLayer = getLayer(layers[i - 1])
+    const previousLayerResource = ResourceManager.get(`Layer${previousLayer.id}`)
+    const layer = getLayer(layers[i])
+    const layerResource = ResourceManager.get(`Layer${layer.id}`)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeFramebuffer].bufferInfo.framebuffer)
     viewportCanvas()
@@ -362,13 +359,13 @@ function compositeLayers() {
     // To support changing the base layer mid stroke we need to
     // use a copy of the scratch + current layer composite
     const previousLayerTexure =
-      previousLayer.id === currentLayerID
+      previousLayer.id === currentLayer.id
         ? intermediaryLayer4.bufferInfo.textures[0]
         : previousLayerResource.bufferInfo.textures[0]
 
     const clippingMask = layer.clippingMask ? previousLayerTexure : undefined
 
-    if (layer.id !== currentLayerID) {
+    if (layer.id !== currentLayer.id) {
       compositeLayer(
         layerResource.bufferInfo.textures[0],
         framebuffers[readFramebuffer].bufferInfo.textures[0],
@@ -472,11 +469,9 @@ async function writeThumbnail() {
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, thumbnailResource.bufferInfo?.framebuffer)
 
-  const currentLayerID = useLayerStore.getState().currentLayer
-  const layerStorage = useLayerStore.getState().layerStorage
-  const currentLayer = layerStorage.get(currentLayerID)!
+  const currentLayer = getCurrentLayer()
 
-  const colorDepth = usePreferenceStore.getState().prefs.colorDepth
+  const colorDepth = getPreference("colorDepth")
   gl.readBuffer(gl.COLOR_ATTACHMENT0)
 
   const data = new (colorDepth === 8 ? Uint8Array : Uint16Array)(
@@ -689,16 +684,13 @@ function init() {
     ),
   )
 
-  const layerStorage = useLayerStore.getState().layerStorage
-
   for (const layerID of layers) {
-    newLayer(layerStorage.get(layerID)!)
+    newLayer(getLayer(layerID))
   }
 
-  const currentLayerID = useLayerStore.getState().currentLayer
-  const currentLayer = layerStorage.get(currentLayerID)!
+  const currentLayer = getCurrentLayer()
 
-  const currentLayerResource = ResourceManager.get(`Layer${currentLayerID}`)
+  const currentLayerResource = ResourceManager.get(`Layer${currentLayer.id}`)
 
   clearSpecific(currentLayerResource, white)
   currentLayer.calculateNewBoundingBox(

@@ -4,8 +4,9 @@ import { useMainStore } from "@/stores/MainStore"
 import type { IFill } from "@/types"
 import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 import { Application } from "@/managers/ApplicationManager"
-import { useLayerStore } from "@/stores/LayerStore"
+import { getCurrentLayer } from "@/stores/LayerStore"
 import { scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
+
 export class Fill extends Tool implements IFill {
   settings: {
     flood: boolean
@@ -34,10 +35,7 @@ export class Fill extends Tool implements IFill {
   // TODO: Implement flood fill
   use = (gl: WebGL2RenderingContext) => {
     const color = useMainStore.getState().color
-    const currentLayerID = useLayerStore.getState().currentLayer
-    const layerStorage = useLayerStore.getState().layerStorage
-
-    const currentLayer = layerStorage.get(currentLayerID)!
+    const currentLayer = getCurrentLayer()
 
     scratchLayerBoundingBox.calculate(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)
     strokeFrameBoundingBox.calculate(0, 0, Application.canvasInfo.width, Application.canvasInfo.height)

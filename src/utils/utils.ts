@@ -1,6 +1,6 @@
 import { IPoint, MouseState, IPoints, ExportImageFormatsMIME, ExportImageFormats } from "@/types"
 import { vec2 } from "gl-matrix"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
@@ -431,12 +431,10 @@ export function throttleRAF() {
 }
 
 export function calculateFromPressure(value: number, pressure: number, usePressureSensitivity: boolean) {
-  const prefs = usePreferenceStore.getState().prefs
-
   let result = value
 
   if (usePressureSensitivity) {
-    const pressureSensitivity = prefs.pressureSensitivity * 10
+    const pressureSensitivity = getPreference("pressureSensitivity") * 10
 
     result = value - (value * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
   }

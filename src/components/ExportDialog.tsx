@@ -18,7 +18,7 @@ import type { ExportImageFormats } from "@/types"
 import { Input } from "@/components/ui/input"
 
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 
 export function flipVertically(imageData: ImageData) {
   const width = imageData.width
@@ -47,7 +47,7 @@ export function flipVertically(imageData: ImageData) {
 
 const saveImage = async (filename: string, exportFormat: ExportImageFormats, exportQuality: number) => {
   const gl = Application.gl
-  const colorDepth = usePreferenceStore.getState().prefs.colorDepth
+  const colorDepth = getPreference("colorDepth")
 
   const displayLayer = ResourceManager.get("DisplayLayer")
 

@@ -11,7 +11,7 @@ import { TrashIcon, FilePlusIcon, LayersIcon } from "@radix-ui/react-icons"
 import { ShapeIntersectRegular } from "@fluentui/react-icons"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { useLayerStore } from "@/stores/LayerStore"
+import { getCurrentLayer, getLayer, useLayerStore } from "@/stores/LayerStore"
 
 import { SettingSlider } from "@/components/SettingSlider"
 import { blendModeNames, blend_modes } from "@/constants"
@@ -20,15 +20,13 @@ function _Layers() {
   const [showLayers, setShowLayers] = useState(false)
   const LayerStore = useLayerStore()
 
-  const currentLayer = LayerStore.layerStorage.get(LayerStore.currentLayer)!
-
   const toggleLayers = useCallback(() => {
     setShowLayers(!showLayers)
   }, [showLayers])
 
   const changeOpacity = useCallback(
-    (opacity: number) => LayerStore.setOpacity(LayerStore.currentLayer, opacity),
-    [LayerStore.currentLayer],
+    (opacity: number) => LayerStore.setOpacity(getCurrentLayer().id, opacity),
+    [getCurrentLayer().id],
   )
 
   const select = useCallback((id: string) => {
@@ -37,7 +35,8 @@ function _Layers() {
 
   const renderLayer = useCallback(
     (layerID: string, idx: number) => {
-      const layer = LayerStore.layerStorage.get(layerID)!
+      const layer = getLayer(layerID)
+
       return (
         <Layer
           saveNewName={LayerStore.saveNewName}
@@ -46,7 +45,7 @@ function _Layers() {
           name={layer.name}
           id={layerID}
           select={select}
-          selected={LayerStore.currentLayer === layerID}
+          selected={getCurrentLayer().id === layerID}
         />
       )
     },
@@ -62,7 +61,7 @@ function _Layers() {
         <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
           <SettingSlider
             name={"Opacity"}
-            value={currentLayer.opacity}
+            value={getCurrentLayer().opacity}
             id={LayerStore.currentLayer}
             onValueChange={changeOpacity}
             fractionDigits={0}
@@ -73,7 +72,7 @@ function _Layers() {
         <Panel className="mb-1 flex w-full shrink-0 items-center justify-between py-2 shadow-md">
           <Select
             disabled={LayerStore.currentLayer === LayerStore.layers[0]}
-            value={currentLayer.blendMode.toString()}
+            value={getCurrentLayer().blendMode.toString()}
             onValueChange={(value) =>
               LayerStore.setBlendMode(LayerStore.currentLayer, Number(value) as unknown as blend_modes)
             }
@@ -99,9 +98,9 @@ function _Layers() {
             disabled={LayerStore.currentLayer === LayerStore.layers[0]}
             size="xs"
             aria-label="Toggle Layer Clipping Mask"
-            pressed={currentLayer.clippingMask}
+            pressed={getCurrentLayer().clippingMask}
             variant="outline"
-            onPressedChange={() => LayerStore.setClippingMask(LayerStore.currentLayer, !currentLayer.clippingMask)}
+            onPressedChange={() => LayerStore.setClippingMask(getCurrentLayer().id, !getCurrentLayer().clippingMask)}
           >
             <ShapeIntersectRegular className="h-5 w-5" />
           </Toggle>

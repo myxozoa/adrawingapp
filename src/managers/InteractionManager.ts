@@ -2,11 +2,11 @@ import type { MouseState } from "@/types"
 import { tool_types } from "@/constants.tsx"
 import { getDistance, calculateFromPressure, AppViewportSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
 import { DrawingManager, scratchLayerBoundingBox } from "@/managers/DrawingManager"
-import { useLayerStore } from "@/stores/LayerStore"
+import { getCurrentLayer } from "@/stores/LayerStore"
 import { Camera } from "@/objects/Camera"
 import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
 import { useToolStore } from "@/stores/ToolStore"
@@ -21,15 +21,13 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const operation = Application.currentOperation
 
-  const prefs = usePreferenceStore.getState().prefs
-
   const prevPoint = operation.points.getPoint(-1).active ? operation.points.getPoint(-1) : operation.points.currentPoint
 
   let zoomAdjustment = 0
 
   // To counteract the fact that the pointer position resolution gets much lower the
   // more zoomed out the canvas becomes we raise smoothing to compensate
-  if (Camera.zoom < 1 && prefs.zoomCompensation) {
+  if (Camera.zoom < 1 && getPreference("zoomCompensation")) {
     // These values are just tuned to feel right
 
     zoomAdjustment = Math.min((1 - Camera.zoom) * 0.1, 0.05)
@@ -40,13 +38,13 @@ function prepareOperation(relativeMouseState: MouseState) {
   operation.points.currentPoint.pressure = lerp(
     operation.points.getPoint(-1).active ? prevPoint.pressure : 0,
     relativeMouseState.pressure,
-    prefs.pressureSmoothing,
+    getPreference("pressureSmoothing"),
   )
 
   const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
 
   const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
-  const usePressure = usePreferenceStore.getState().prefs.usePressure
+  const usePressure = getPreference("usePressure")
   const basePressure = usePressure && relativeMouseState.pointerType === "pen"
 
   const size = calculateFromPressure(
@@ -58,7 +56,7 @@ function prepareOperation(relativeMouseState: MouseState) {
   const stampSpacing = calculateSpacing(spacing, size)
 
   // These values are just tuned to feel right
-  const maxSmoothAdjustment = Math.max(0.8 - (1 - prefs.mouseSmoothing), 0)
+  const maxSmoothAdjustment = Math.max(0.8 - (1 - getPreference("mouseSmoothing")), 0)
 
   const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
 
@@ -69,7 +67,7 @@ function prepareOperation(relativeMouseState: MouseState) {
     operation.points.currentPoint.location,
     prevPoint.location,
     operation.points.currentPoint.location,
-    Math.min(Math.max(prefs.mouseSmoothing - pointerPositionLerpAdjustment - zoomAdjustment, 0.01), 1),
+    Math.min(Math.max(getPreference("mouseSmoothing") - pointerPositionLerpAdjustment - zoomAdjustment, 0.01), 1),
   )
 
   // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
@@ -161,8 +159,7 @@ function endInteraction(save = true) {
 
   // TODO: More elegant solution here
   if (save && Application.currentOperation.tool.name !== "EYEDROPPER") {
-    const currentLayerID = useLayerStore.getState().currentLayer
-    const currentLayer = ResourceManager.get(`Layer${currentLayerID}`)
+    const currentLayer = ResourceManager.get(`Layer${getCurrentLayer().id}`)
 
     DrawingManager.commitLayer(scratchLayer, currentLayer, currentLayer)
   }

@@ -7,13 +7,13 @@ import { tools, useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { Operation } from "@/objects/Operation"
 
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
 import { ResourceManager } from "@/managers/ResourceManager"
-import { useLayerStore } from "@/stores/LayerStore"
+import { getLayer, useLayerStore } from "@/stores/LayerStore"
 import { resetPointerManager } from "@/managers/PointerManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 
@@ -237,11 +237,9 @@ class _Application {
 
     const gl = this.gl
 
-    const prefs = usePreferenceStore.getState().prefs
-
     this.canvasInfo = {
-      width: prefs.canvasWidth,
-      height: prefs.canvasHeight,
+      width: getPreference("canvasWidth"),
+      height: getPreference("canvasHeight"),
     }
 
     // Thumbnail should fit inside a 50x50 box if this ends up larger than the canvas, use the canvas size
@@ -254,7 +252,7 @@ class _Application {
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    this.getSupportedTextureInfo(prefs.colorDepth)
+    this.getSupportedTextureInfo(getPreference("colorDepth"))
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
@@ -275,13 +273,12 @@ class _Application {
 
     this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
 
-    const layerStorage = useLayerStore.getState().layerStorage
     const layers = useLayerStore.getState().layers
 
     const layerThumbnailSetup = []
 
-    for (const layerName of layers) {
-      const layer = layerStorage.get(layerName)
+    for (const layerID of layers) {
+      const layer = getLayer(layerID)
 
       layerThumbnailSetup.push(layer?.setupThumbnail())
     }
