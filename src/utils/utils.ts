@@ -474,21 +474,6 @@ export function calculateSpacing(spacing: number, size: number) {
   return Math.max(0.5, size * 2 * (spacing / 100))
 }
 
-export function uint16ToFloat16(uint16: number) {
-  const exponent = (uint16 >> 10) & 0x1f
-  const fraction = uint16 & 0x3ff
-  const sign = (uint16 >> 15) & 0x1
-
-  if (exponent === 0) {
-    return (sign ? -1 : 1) * Math.pow(2, -14) * (fraction / Math.pow(2, 10))
-  } else if (exponent === 31) {
-    return fraction === 0 ? (sign ? -Infinity : Infinity) : NaN
-  }
-
-  // Normalize
-  return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10))
-}
-
 export function getFileExtensionFromMIME(string: ExportImageFormatsMIME) {
   const fileExtension = string.replace(/^(image\/)/g, "")
 

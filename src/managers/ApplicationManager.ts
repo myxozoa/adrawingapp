@@ -17,6 +17,8 @@ import { getLayer, useLayerStore } from "@/stores/LayerStore"
 import { resetPointerManager } from "@/managers/PointerManager"
 import { InteractionManager } from "@/managers/InteractionManager"
 
+import { ThumbnailController } from "@/managers/ThumbnailController"
+
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
   floatBlend: EXT_float_blend | null
@@ -78,9 +80,9 @@ class _Application {
   supportedExportImageFormats: ExportImageFormats[]
 
   canvasInfo: CanvasInfo
-  thumbnailCanvas: OffscreenCanvas
-  thumbnailCanvasContext: ImageBitmapRenderingContext
+
   thumbnailSize: ThumbnailSize
+  thumbnailWorker: ThumbnailController
 
   opfsRoot: FileSystemDirectoryHandle
 
@@ -126,6 +128,8 @@ class _Application {
     this.supportedExportImageFormats = ["png"]
 
     this.initialized = false
+
+    this.thumbnailWorker = new ThumbnailController()
   }
 
   private getSupportedExportImageTypes = () => {
@@ -249,6 +253,8 @@ class _Application {
       height: Math.min(Math.max(Application.canvasInfo.height / scaleFactor, 1), Application.canvasInfo.height),
     }
 
+    this.thumbnailWorker.config(this.thumbnailSize)
+
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
@@ -266,11 +272,6 @@ class _Application {
 
     if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
 
-    this.thumbnailCanvas = new OffscreenCanvas(this.thumbnailSize.width, this.thumbnailSize.height)
-    this.thumbnailCanvasContext = this.thumbnailCanvas.getContext("bitmaprenderer")!
-
-    if (!this.thumbnailCanvasContext) throw new Error("unable to get thumbnailcanvas context")
-
     this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
 
     const layers = useLayerStore.getState().layers
@@ -279,8 +280,13 @@ class _Application {
 
     for (const layerID of layers) {
       const layer = getLayer(layerID)
+      if (layer === undefined) throw new Error(`Layer ${layerID} not found`)
 
-      layerThumbnailSetup.push(layer?.setupThumbnail())
+      layer.setupThumbnail()
+
+      layerThumbnailSetup.push(
+        this.thumbnailWorker.getNewThumbnail(layer.thumbnailBuffer.buffer, getPreference("colorDepth"), layer.id),
+      )
     }
 
     Camera.init()

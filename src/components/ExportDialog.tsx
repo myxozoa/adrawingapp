@@ -11,39 +11,17 @@ import { SettingSlider } from "@/components/SettingSlider"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { getMIMEFromImageExtension, uint16ToFloat16 } from "@/utils/utils"
+import { getMIMEFromImageExtension } from "@/utils/utils"
+
+import { uint16ToFloat16 } from "@/utils/sharedUtils"
 
 import type { ExportImageFormats } from "@/types"
+import { flipVertically } from "@/utils/sharedUtils"
 
 import { Input } from "@/components/ui/input"
 
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getPreference } from "@/stores/PreferenceStore"
-
-export function flipVertically(imageData: ImageData) {
-  const width = imageData.width
-  const height = imageData.height
-  const data = imageData.data
-  const bytesPerPixel = 4 // RGBA
-  const rowSize = width * bytesPerPixel
-  const tempRow = new Uint8ClampedArray(rowSize)
-
-  for (let y = 0; y < height / 2; y++) {
-    const topRowStart = y * rowSize
-    const bottomRowStart = (height - 1 - y) * rowSize
-
-    // Save the top row to the temp row
-    tempRow.set(data.subarray(topRowStart, topRowStart + rowSize))
-
-    // Copy the bottom row to the top row
-    data.copyWithin(topRowStart, bottomRowStart, bottomRowStart + rowSize)
-
-    // Copy the saved top row to the bottom row
-    data.set(tempRow, bottomRowStart)
-  }
-
-  return imageData
-}
 
 const saveImage = async (filename: string, exportFormat: ExportImageFormats, exportQuality: number) => {
   const gl = Application.gl

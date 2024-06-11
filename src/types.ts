@@ -193,3 +193,42 @@ export interface RenderInfo {
 
 export type ExportImageFormatsMIME = "image/png" | "image/jpeg" | "image/webp" | "image/bmp"
 export type ExportImageFormats = "png" | "jpeg" | "webp" | "bmp"
+
+export interface IThumbnailConfig {
+  type: "CONFIG"
+  thumbnailWidth: number
+  thumbnailHeight: number
+}
+
+export interface IThumbnailRequest {
+  type: "REQUEST"
+  pixelBuffer: ArrayBuffer
+  colorDepth: 8 | 16
+  layerID: string
+}
+
+export interface IThumbnailResponse {
+  type: "COMPLETE"
+  pixelBuffer: ArrayBuffer
+  imageURL: string
+  layerID: string
+}
+
+export interface IAppMessageResponseEvent extends MessageEvent {
+  data: IThumbnailResponse
+}
+
+export interface IAppMessageDebugLogEvent extends MessageEvent {
+  data: {
+    type: "DEBUG_LOG"
+    msg: string
+  }
+}
+
+export interface IAppMessageRequestEvent extends MessageEvent {
+  data: IThumbnailRequest
+}
+
+export interface IAppMessageConfigEvent extends MessageEvent {
+  data: IThumbnailConfig
+}

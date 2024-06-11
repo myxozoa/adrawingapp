@@ -6,7 +6,7 @@ import { useMainStore } from "@/stores/MainStore"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { uint16ToFloat16 } from "@/utils/utils"
+import { uint16ToFloat16 } from "@/utils/sharedUtils"
 import { Application } from "@/managers/ApplicationManager"
 import { toolDefaults, toolProperties } from "@/stores/ToolStore"
 import { getPreference } from "@/stores/PreferenceStore"

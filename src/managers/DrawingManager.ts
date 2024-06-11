@@ -1,4 +1,4 @@
-import { AppViewportSizeCache, uint16ToFloat16 } from "@/utils/utils"
+import { AppViewportSizeCache } from "@/utils/utils"
 
 import type { Box, RenderInfo } from "@/types"
 
@@ -30,7 +30,6 @@ import { getPreference } from "@/stores/PreferenceStore"
 import { blend_modes } from "@/constants"
 import { createSimpleTexture } from "@/resources/simpleTexture"
 import { readPixelsAsync } from "@/utils/asyncReadback"
-import { flipVertically } from "@/components/ExportDialog"
 
 export function renderUniforms(gl: WebGL2RenderingContext, reference: RenderInfo) {
   gl.uniformMatrix3fv(reference.programInfo?.uniforms.u_matrix, false, Camera.project(reference.data!.matrix!))
@@ -471,55 +470,32 @@ async function writeThumbnail() {
 
   const currentLayer = getCurrentLayer()
 
+  // if (!currentLayer.hasThumbnail) return
+
   const colorDepth = getPreference("colorDepth")
   gl.readBuffer(gl.COLOR_ATTACHMENT0)
-
-  const data = new (colorDepth === 8 ? Uint8Array : Uint16Array)(
-    Application.thumbnailSize.width * Application.thumbnailSize.height * 4,
-  )
 
   const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT) as number
   const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE) as number
 
-  await readPixelsAsync(gl, 0, 0, Application.thumbnailSize.width, Application.thumbnailSize.height, format, type, data)
+  await readPixelsAsync(
+    gl,
+    0,
+    0,
+    Application.thumbnailSize.width,
+    Application.thumbnailSize.height,
+    format,
+    type,
+    currentLayer.thumbnailBuffer,
+  )
 
-  const data8bit = Uint8ClampedArray.from(data, (num) => {
-    if (colorDepth === 8) return num
+  const response = await Application.thumbnailWorker.getNewThumbnail(
+    currentLayer.thumbnailBuffer.buffer,
+    colorDepth,
+    currentLayer.id,
+  )
 
-    return uint16ToFloat16(num)
-  })
-
-  for (let i = 0; i < data8bit.length; i += 4) {
-    const alpha = colorDepth === 8 ? data8bit[i + 3] / 255 : data8bit[i + 3]
-
-    data8bit[i] /= alpha
-    data8bit[i + 1] /= alpha
-    data8bit[i + 2] /= alpha
-
-    if (colorDepth === 16) {
-      data8bit[i] *= 255
-      data8bit[i + 1] *= 255
-      data8bit[i + 2] *= 255
-      data8bit[i + 3] *= 255
-    }
-  }
-
-  const imageData = new ImageData(data8bit, Application.thumbnailSize.width, Application.thumbnailSize.height)
-
-  flipVertically(imageData)
-
-  const imageBitmap = await createImageBitmap(imageData)
-  Application.thumbnailCanvasContext.transferFromImageBitmap(imageBitmap)
-
-  const blob = await Application.thumbnailCanvas.convertToBlob({ type: "image/png", quality: 1.0 })
-
-  const writable = await currentLayer.thumbnailFileHandle.createWritable()
-  await writable.write(blob)
-  await writable.close()
-
-  const file = await currentLayer.thumbnailFileHandle.getFile()
-  const objectURL = URL.createObjectURL(file)
-  ;(document.getElementById(`thumbnail_${currentLayer.id}`) as unknown as HTMLImageElement).src = objectURL
+  ;(document.getElementById(`thumbnail_${currentLayer.id}`) as unknown as HTMLImageElement).src = response.imageURL
 }
 
 function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {

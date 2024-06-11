@@ -2,6 +2,7 @@ import { Application } from "@/managers/ApplicationManager"
 import { blend_modes } from "../constants"
 
 import type { ILayer, LayerID, LayerName, Box } from "@/types"
+import { getPreference } from "@/stores/PreferenceStore"
 
 export class Layer implements ILayer {
   blendMode: blend_modes
@@ -14,7 +15,8 @@ export class Layer implements ILayer {
   boundingBox: Box
   opacity: number
   drawnTo: boolean
-  thumbnailFileHandle: FileSystemFileHandle
+  thumbnailBuffer: Uint8Array | Uint16Array
+  // hasThumbnail: boolean
 
   constructor(name: LayerName) {
     this.blendMode = blend_modes.normal
@@ -27,6 +29,7 @@ export class Layer implements ILayer {
     this.boundingBox = { x: 0, y: 0, width: 1, height: 1 } //  TODO: Calculate every time drawn to
     this.opacity = 100
     this.drawnTo = false
+    // this.hasThumbnail = false
   }
 
   setBoundingBox = (x: number, y: number, width: number, height: number) => {
@@ -60,28 +63,10 @@ export class Layer implements ILayer {
     this.boundingBox.height = newHeight
   }
 
-  setupThumbnail = async () => {
-    const root = await navigator.storage.getDirectory()
-    this.thumbnailFileHandle = await root.getFileHandle(`thumbnail_${this.id}.png`, { create: true })
-
-    const imageData = new ImageData(
-      new Uint8ClampedArray(Application.thumbnailSize.width * Application.thumbnailSize.height * 4).fill(0),
-      Application.thumbnailSize.width,
-      Application.thumbnailSize.height,
+  setupThumbnail = () => {
+    this.thumbnailBuffer = new (getPreference("colorDepth") === 8 ? Uint8Array : Uint16Array)(
+      Application.thumbnailSize.width * Application.thumbnailSize.height * 4,
     )
-
-    const imageBitmap = await createImageBitmap(imageData)
-    Application.thumbnailCanvasContext.transferFromImageBitmap(imageBitmap)
-
-    const blob = await Application.thumbnailCanvas.convertToBlob({ type: "image/png", quality: 0.5 })
-
-    const writable = await this.thumbnailFileHandle.createWritable()
-    await writable.write(blob)
-    await writable.close()
-
-    const file = await this.thumbnailFileHandle.getFile()
-    const objectURL = URL.createObjectURL(file)
-    ;(document.getElementById(`thumbnail_${this.id}`) as unknown as HTMLImageElement).src = objectURL
   }
 
   reset = () => {

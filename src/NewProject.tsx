@@ -53,7 +53,7 @@ function App() {
       canvasHeight: height,
       colorDepth,
     })
-    document.cookie = "allow-edit=true"
+    document.cookie = "allow-edit=true;SameSite=Strict"
     router.push("/canvas")
   }, [width, height, colorDepth])
 

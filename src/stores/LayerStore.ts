@@ -8,6 +8,8 @@ import { DrawingManager } from "@/managers/DrawingManager"
 import { createSelectors } from "@/stores/selectors"
 import { ResourceManager } from "@/managers/ResourceManager"
 import type { blend_modes } from "@/constants"
+import { Application } from "@/managers/ApplicationManager"
+import { getPreference } from "@/stores/PreferenceStore"
 
 interface State {
   layerStorage: Map<LayerID, Layer>
@@ -72,7 +74,17 @@ const useLayerStoreBase = create<State & Action>((set) => ({
 
       const newLayer = new Layer(`New Layer (${state.layers.length})`)
 
-      void newLayer.setupThumbnail()
+      newLayer.setupThumbnail()
+
+      void (async () => {
+        const response = await Application.thumbnailWorker.getNewThumbnail(
+          newLayer.thumbnailBuffer.buffer,
+          getPreference("colorDepth"),
+          newLayer.id,
+        )
+
+        ;(document.getElementById(`thumbnail_${newLayer.id}`) as unknown as HTMLImageElement).src = response.imageURL
+      })()
 
       state.layerStorage.set(newLayer.id, newLayer)
 
