@@ -42,6 +42,8 @@ function config(event: IAppThumbnailMessageConfigEvent) {
 }
 
 function createThumbnail(event: IAppThumbnailMessageRequestEvent) {
+  if (typeof self === "undefined") return
+
   const pixelBuffer = event.data.pixelBuffer
   const colorDepth = event.data.colorDepth
   const layerID = event.data.layerID
@@ -83,6 +85,11 @@ function createThumbnail(event: IAppThumbnailMessageRequestEvent) {
 
     const thumbnailFileHandle = await opfsRoot.getFileHandle(`thumbnail_${layerID}.png`, { create: true })
 
+    // TODO: fix this
+    // something seems to be causing typescript to not think this file is a worker.
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore This error only shows up in the build
+    // this has to be a ts-ignore because ts-expect-error cant be eslint-disabled from what i can tell
     const accessHandle = await thumbnailFileHandle.createSyncAccessHandle()
 
     accessHandle.write(blobBuffer)

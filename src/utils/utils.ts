@@ -1,4 +1,4 @@
-import { IPoint, MouseState, IPoints, ExportImageFormatsMIME, ExportImageFormats } from "@/types"
+import { IPoint, MouseState, IPoints, ExportImageFormatsMIME } from "@/types"
 import { vec2 } from "gl-matrix"
 import { getPreference } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
