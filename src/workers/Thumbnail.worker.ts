@@ -73,18 +73,19 @@ function createThumbnail(event: IAppMessageRequestEvent) {
 
     const blob = await thumbnailCanvas.convertToBlob({ type: "image/png", quality: 1.0 })
 
+    const blobBuffer = await blob.arrayBuffer()
+
     const opfsRoot = await navigator.storage.getDirectory()
 
     const thumbnailFileHandle = await opfsRoot.getFileHandle(`thumbnail_${layerID}.png`, { create: true })
 
-    try {
-      const writable = await thumbnailFileHandle.createWritable()
-      await writable.write(blob)
-      await writable.close()
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      log(`ERROR ${error}`)
-    }
+    const accessHandle = await thumbnailFileHandle.createSyncAccessHandle()
+
+    accessHandle.write(blobBuffer)
+
+    accessHandle.flush()
+
+    accessHandle.close()
 
     const file = await thumbnailFileHandle.getFile()
     const imageURL = URL.createObjectURL(file)
@@ -100,8 +101,9 @@ function createThumbnail(event: IAppMessageRequestEvent) {
   })()
 }
 
-function log(msg: string) {
-  worker.postMessage({ type: "DEBUG_LOG", msg })
-}
+// iOS compatible console.log inside worker
+// function log(msg: string) {
+//   worker.postMessage({ type: "DEBUG_LOG", msg })
+// }
 
 self.onmessage = onMessage
