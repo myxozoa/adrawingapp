@@ -20,6 +20,7 @@ export class ThumbnailController {
   }
 
   onMessage(event: IAppMessageResponseEvent | IAppMessageDebugLogEvent) {
+    // To allow console.log inside worker on iOS
     if (event.data.type === "DEBUG_LOG") {
       console.log(event.data.msg)
       return
