@@ -11,12 +11,7 @@ import { SettingSlider } from "@/components/SettingSlider"
 
 import { readPixelsAsync } from "@/utils/asyncReadback"
 
-import { getMIMEFromImageExtension } from "@/utils/utils"
-
-import { uint16ToFloat16 } from "@/utils/sharedUtils"
-
-import type { ExportImageFormats } from "@/types"
-import { flipVertically } from "@/utils/sharedUtils"
+import type { ExportImageFormats, IAppExportMessageResponseEvent, IExportConfig, IExportRequest } from "@/types"
 
 import { Input } from "@/components/ui/input"
 
@@ -24,8 +19,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { getPreference } from "@/stores/PreferenceStore"
 
 const saveImage = async (filename: string, exportFormat: ExportImageFormats, exportQuality: number) => {
+  // So next will build properly
+  if (typeof window === "undefined") return
+
   const gl = Application.gl
-  const colorDepth = getPreference("colorDepth")
 
   const displayLayer = ResourceManager.get("DisplayLayer")
 
@@ -40,9 +37,10 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
 
   gl.readBuffer(gl.COLOR_ATTACHMENT0)
 
-  const data = new (colorDepth === 8 ? Uint8Array : Uint16Array)(
+  const data = new (getPreference("colorDepth") === 8 ? Uint8Array : Uint16Array)(
     Application.canvasInfo.width * Application.canvasInfo.height * 4,
   )
+
   await readPixelsAsync(
     gl,
     0,
@@ -54,60 +52,42 @@ const saveImage = async (filename: string, exportFormat: ExportImageFormats, exp
     data,
   )
 
-  queueMicrotask(() => {
-    const data8bit = Uint8ClampedArray.from(data, (num) => {
-      if (colorDepth === 8) return num
-
-      return uint16ToFloat16(num)
-    })
-
-    for (let i = 0; i < data8bit.length; i += 4) {
-      const alpha = colorDepth === 8 ? data8bit[i + 3] / 255 : data8bit[i + 3]
-
-      data8bit[i] /= alpha
-      data8bit[i + 1] /= alpha
-      data8bit[i + 2] /= alpha
-
-      if (colorDepth === 16) {
-        data8bit[i] *= 255
-        data8bit[i + 1] *= 255
-        data8bit[i + 2] *= 255
-        data8bit[i + 3] *= 255
-      }
-    }
-
-    const imageData = new ImageData(data8bit, Application.canvasInfo.width, Application.canvasInfo.height)
-
-    queueMicrotask(() => {
-      flipVertically(imageData)
-    })
-
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    queueMicrotask(async () => {
-      const imageBitmap = await createImageBitmap(imageData)
-      Application.exportCanvasContext.transferFromImageBitmap(imageBitmap)
-
-      const exportFormatMIME = getMIMEFromImageExtension(exportFormat)
-
-      const blob = await Application.exportCanvas.convertToBlob({ type: exportFormatMIME, quality: exportQuality })
-
-      if (!blob) {
-        console.error("Unable to create blob and save image")
-        return
-      }
-
-      const fullFilename = `${filename}.${exportFormat}`
-
-      const fileData = new File([blob], fullFilename, { type: exportFormatMIME })
-      const url = URL.createObjectURL(fileData)
-
-      Application.exportDownloadLink.setAttribute("href", url)
-      Application.exportDownloadLink.download = fullFilename
-      Application.exportDownloadLink.click()
-
-      URL.revokeObjectURL(url)
-    })
+  const worker = new Worker(new URL("@/workers/ExportImage.worker.ts", import.meta.url), {
+    type: "module",
+    name: "export",
   })
+
+  const configRequest: IExportConfig = {
+    type: "CONFIG",
+    height: Application.canvasInfo.height,
+    width: Application.canvasInfo.width,
+  }
+
+  worker.postMessage(configRequest)
+
+  const exportRequest: IExportRequest = {
+    type: "REQUEST",
+    colorDepth: getPreference("colorDepth"),
+    exportFormat,
+    exportQuality,
+    filename,
+    pixelBuffer: data.buffer,
+  }
+
+  worker.postMessage(exportRequest, [data.buffer])
+
+  worker.onmessage = (event: IAppExportMessageResponseEvent) => {
+    const url = event.data.imageURL
+    const fullFilename = event.data.fullFilename
+
+    Application.exportDownloadLink.setAttribute("href", url)
+    Application.exportDownloadLink.download = fullFilename
+    Application.exportDownloadLink.click()
+
+    URL.revokeObjectURL(url)
+
+    worker.terminate()
+  }
 }
 
 function _ExportDialog() {
@@ -135,8 +115,8 @@ function _ExportDialog() {
       <DialogHeader>
         <DialogTitle>Save Image</DialogTitle>
         <DialogDescription>
-          This is quite slow at the moment so the page may become unresponsive for a few seconds depending on your
-          hardware and the canvas size. Improvement coming soon.
+          When clicking save the browser may notify you that an image was downloaded or prompt you may be prompted to
+          download the image explicitly.
         </DialogDescription>
       </DialogHeader>
 

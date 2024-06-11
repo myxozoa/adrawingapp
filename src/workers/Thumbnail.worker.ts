@@ -1,43 +1,47 @@
 import { flipVertically, uint16ToFloat16 } from "@/utils/sharedUtils"
 
-import type { IAppMessageConfigEvent, IAppMessageRequestEvent, IThumbnailResponse } from "@/types"
+import type { IAppThumbnailMessageConfigEvent, IAppThumbnailMessageRequestEvent, IThumbnailResponse } from "@/types"
 
 // Without this typescript thinks postMessage is window.postMessage which has a different signature
 const worker: Worker = self as unknown as Worker
 
-const thumbnailCanvas = new OffscreenCanvas(50, 50)
-const thumbnailCanvasContext = thumbnailCanvas.getContext("bitmaprenderer")!
+const canvas = new OffscreenCanvas(50, 50)
+const canvasContext = canvas.getContext("bitmaprenderer")!
 
-if (!thumbnailCanvasContext) throw new Error("unable to get thumbnailcanvas context")
+if (!canvasContext) throw new Error("unable to get thumbnailcanvas context")
 
 const thumbnailSize = {
   width: 50,
   height: 50,
 }
 
-function isRequest(event: IAppMessageRequestEvent | IAppMessageConfigEvent): event is IAppMessageRequestEvent {
+function isRequest(
+  event: IAppThumbnailMessageRequestEvent | IAppThumbnailMessageConfigEvent,
+): event is IAppThumbnailMessageRequestEvent {
   return event.data.type === "REQUEST"
 }
 
-function isConfig(event: IAppMessageRequestEvent | IAppMessageConfigEvent): event is IAppMessageConfigEvent {
+function isConfig(
+  event: IAppThumbnailMessageRequestEvent | IAppThumbnailMessageConfigEvent,
+): event is IAppThumbnailMessageConfigEvent {
   return event.data.type === "CONFIG"
 }
 
-function onMessage(event: IAppMessageRequestEvent | IAppMessageConfigEvent) {
+function onMessage(event: IAppThumbnailMessageRequestEvent | IAppThumbnailMessageConfigEvent) {
   // Cant seem to get a switch statement to narrow the type properly here
   if (isRequest(event)) createThumbnail(event)
   if (isConfig(event)) config(event)
 }
 
-function config(event: IAppMessageConfigEvent) {
+function config(event: IAppThumbnailMessageConfigEvent) {
   thumbnailSize.width = event.data.thumbnailWidth
   thumbnailSize.height = event.data.thumbnailHeight
 
-  thumbnailCanvas.width = thumbnailSize.width
-  thumbnailCanvas.height = thumbnailSize.height
+  canvas.width = thumbnailSize.width
+  canvas.height = thumbnailSize.height
 }
 
-function createThumbnail(event: IAppMessageRequestEvent) {
+function createThumbnail(event: IAppThumbnailMessageRequestEvent) {
   const pixelBuffer = event.data.pixelBuffer
   const colorDepth = event.data.colorDepth
   const layerID = event.data.layerID
@@ -69,22 +73,23 @@ function createThumbnail(event: IAppMessageRequestEvent) {
 
   void (async () => {
     const imageBitmap = await createImageBitmap(imageData)
-    thumbnailCanvasContext.transferFromImageBitmap(imageBitmap)
+    canvasContext.transferFromImageBitmap(imageBitmap)
 
-    const blob = await thumbnailCanvas.convertToBlob({ type: "image/png", quality: 1.0 })
+    const blob = await canvas.convertToBlob({ type: "image/png", quality: 1.0 })
+
+    const blobBuffer = await blob.arrayBuffer()
 
     const opfsRoot = await navigator.storage.getDirectory()
 
     const thumbnailFileHandle = await opfsRoot.getFileHandle(`thumbnail_${layerID}.png`, { create: true })
 
-    try {
-      const writable = await thumbnailFileHandle.createWritable()
-      await writable.write(blob)
-      await writable.close()
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      log(`ERROR ${error}`)
-    }
+    const accessHandle = await thumbnailFileHandle.createSyncAccessHandle()
+
+    accessHandle.write(blobBuffer)
+
+    accessHandle.flush()
+
+    accessHandle.close()
 
     const file = await thumbnailFileHandle.getFile()
     const imageURL = URL.createObjectURL(file)
@@ -100,8 +105,9 @@ function createThumbnail(event: IAppMessageRequestEvent) {
   })()
 }
 
-function log(msg: string) {
-  worker.postMessage({ type: "DEBUG_LOG", msg })
-}
+// iOS compatible console.log inside worker
+// function log(msg: string) {
+//   worker.postMessage({ type: "DEBUG_LOG", msg })
+// }
 
 self.onmessage = onMessage

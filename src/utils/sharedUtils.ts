@@ -1,5 +1,7 @@
 // Anything I want to use in workers seems to need to be in a separate util file
 
+import type { ExportImageFormats, ExportImageFormatsMIME } from "@/types"
+
 export function flipVertically(imageData: ImageData) {
   const width = imageData.width
   const height = imageData.height
@@ -38,4 +40,8 @@ export function uint16ToFloat16(uint16: number) {
 
   // Normalize
   return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / Math.pow(2, 10))
+}
+
+export function getMIMEFromImageExtension(string: ExportImageFormats): ExportImageFormatsMIME {
+  return `image/${string}`
 }

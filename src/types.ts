@@ -214,21 +214,61 @@ export interface IThumbnailResponse {
   layerID: string
 }
 
-export interface IAppMessageResponseEvent extends MessageEvent {
+export interface IAppThumbnailMessageResponseEvent extends MessageEvent {
   data: IThumbnailResponse
 }
 
-export interface IAppMessageDebugLogEvent extends MessageEvent {
+export interface IAppThumbnailMessageDebugLogEvent extends MessageEvent {
   data: {
     type: "DEBUG_LOG"
     msg: string
   }
 }
 
-export interface IAppMessageRequestEvent extends MessageEvent {
+export interface IAppThumbnailMessageRequestEvent extends MessageEvent {
   data: IThumbnailRequest
 }
 
-export interface IAppMessageConfigEvent extends MessageEvent {
+export interface IAppThumbnailMessageConfigEvent extends MessageEvent {
   data: IThumbnailConfig
+}
+
+export interface IExportConfig {
+  type: "CONFIG"
+  width: number
+  height: number
+}
+
+export interface IExportRequest {
+  type: "REQUEST"
+  pixelBuffer: ArrayBuffer
+  colorDepth: 8 | 16
+  exportFormat: ExportImageFormats
+  exportQuality: number
+  filename: string
+}
+
+export interface IExportResponse {
+  type: "COMPLETE"
+  imageURL: string
+  fullFilename: string
+}
+
+export interface IAppExportMessageResponseEvent extends MessageEvent {
+  data: IExportResponse
+}
+
+export interface IAppExportMessageDebugLogEvent extends MessageEvent {
+  data: {
+    type: "DEBUG_LOG"
+    msg: string
+  }
+}
+
+export interface IAppExportMessageRequestEvent extends MessageEvent {
+  data: IExportRequest
+}
+
+export interface IAppExportMessageConfigEvent extends MessageEvent {
+  data: IExportConfig
 }

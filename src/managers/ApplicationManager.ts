@@ -1,4 +1,5 @@
-import { getMIMEFromImageExtension, initializeCanvas, resizeCanvasToDisplaySize, resizeObserver } from "@/utils/utils"
+import { initializeCanvas, resizeCanvasToDisplaySize, resizeObserver } from "@/utils/utils"
+import { getMIMEFromImageExtension } from "@/utils/sharedUtils"
 
 import { DrawingManager, scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
 import { InputManager } from "@/managers/InputManager"

@@ -1,7 +1,12 @@
 import { getLayer } from "@/stores/LayerStore"
 import { getPreference } from "@/stores/PreferenceStore"
-import type { IAppMessageDebugLogEvent, LayerID } from "@/types"
-import type { IAppMessageResponseEvent, IThumbnailConfig, IThumbnailRequest, IThumbnailResponse } from "@/types"
+import type { IAppThumbnailMessageDebugLogEvent, LayerID } from "@/types"
+import type {
+  IAppThumbnailMessageResponseEvent,
+  IThumbnailConfig,
+  IThumbnailRequest,
+  IThumbnailResponse,
+} from "@/types"
 
 export class ThumbnailController {
   worker: Worker
@@ -19,7 +24,8 @@ export class ThumbnailController {
     this.worker.onmessage = this.onMessage.bind(this)
   }
 
-  onMessage(event: IAppMessageResponseEvent | IAppMessageDebugLogEvent) {
+  onMessage(event: IAppThumbnailMessageResponseEvent | IAppThumbnailMessageDebugLogEvent) {
+    // To allow console.log inside worker on iOS
     if (event.data.type === "DEBUG_LOG") {
       console.log(event.data.msg)
       return
