@@ -1,3 +1,4 @@
+import { Application } from "@/managers/ApplicationManager"
 import { getLayer } from "@/stores/LayerStore"
 import { getPreference } from "@/stores/PreferenceStore"
 import type { IAppThumbnailMessageDebugLogEvent, LayerID } from "@/types"
@@ -62,6 +63,7 @@ export class ThumbnailController {
         pixelBuffer,
         colorDepth,
         layerID,
+        useOPFS: Application.supportsOPFS,
       }
 
       this.worker.postMessage(message, [pixelBuffer])

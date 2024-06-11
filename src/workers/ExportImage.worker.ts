@@ -96,9 +96,11 @@ function createImage(event: IAppExportMessageRequestEvent) {
       type: "COMPLETE",
       fullFilename,
       imageURL,
+      pixelBuffer,
     }
 
-    worker.postMessage(response)
+    // Transfer buffer back to main thread otherwise it may get missed by GC
+    worker.postMessage(response, [pixelBuffer])
   })()
 }
 

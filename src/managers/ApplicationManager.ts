@@ -74,8 +74,6 @@ class _Application {
   textureSupport: SupportedTextureInfo
   systemConstraints: SystemConstraints
 
-  exportCanvas: OffscreenCanvas
-  exportCanvasContext: ImageBitmapRenderingContext
   exportDownloadLink: HTMLAnchorElement
 
   supportedExportImageFormats: ExportImageFormats[]
@@ -85,7 +83,7 @@ class _Application {
   thumbnailSize: ThumbnailSize
   thumbnailWorker: ThumbnailController
 
-  opfsRoot: FileSystemDirectoryHandle
+  supportsOPFS: boolean
 
   initialized: boolean
   drawing: boolean
@@ -129,6 +127,8 @@ class _Application {
     this.supportedExportImageFormats = ["png"]
 
     this.initialized = false
+
+    this.supportsOPFS = true
 
     this.thumbnailWorker = new ThumbnailController()
   }
@@ -268,27 +268,7 @@ class _Application {
 
     this.resize()
 
-    this.exportCanvas = new OffscreenCanvas(this.canvasInfo.width, this.canvasInfo.height)
-    this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
-
-    if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
-
     this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
-
-    const layers = useLayerStore.getState().layers
-
-    const layerThumbnailSetup = []
-
-    for (const layerID of layers) {
-      const layer = getLayer(layerID)
-      if (layer === undefined) throw new Error(`Layer ${layerID} not found`)
-
-      layer.setupThumbnail()
-
-      layerThumbnailSetup.push(
-        this.thumbnailWorker.getNewThumbnail(layer.thumbnailBuffer.buffer, getPreference("colorDepth"), layer.id),
-      )
-    }
 
     Camera.init()
 
@@ -304,10 +284,36 @@ class _Application {
     scratchLayerBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
     strokeFrameBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
 
-    Promise.all(layerThumbnailSetup)
+    const layers = useLayerStore.getState().layers
+    const getOPFSSuport = async () => {
+      try {
+        await navigator.storage.getDirectory()
+      } catch (error) {
+        this.supportsOPFS = false
+      }
+    }
+
+    getOPFSSuport()
       .then(() => {
-        DrawingManager.init()
-        DrawingManager.start()
+        const layerThumbnailSetup = []
+
+        for (const layerID of layers) {
+          const layer = getLayer(layerID)
+          if (layer === undefined) throw new Error(`Layer ${layerID} not found`)
+
+          layer.setupThumbnail()
+
+          layerThumbnailSetup.push(
+            this.thumbnailWorker.getNewThumbnail(layer.thumbnailBuffer.buffer, getPreference("colorDepth"), layer.id),
+          )
+        }
+
+        Promise.all(layerThumbnailSetup)
+          .then(() => {
+            DrawingManager.init()
+            DrawingManager.start()
+          })
+          .catch((error) => console.error(error))
       })
       .catch((error) => console.error(error))
   }

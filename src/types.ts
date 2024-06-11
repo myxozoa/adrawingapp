@@ -205,6 +205,7 @@ export interface IThumbnailRequest {
   pixelBuffer: ArrayBuffer
   colorDepth: 8 | 16
   layerID: string
+  useOPFS: boolean
 }
 
 export interface IThumbnailResponse {
@@ -252,6 +253,7 @@ export interface IExportResponse {
   type: "COMPLETE"
   imageURL: string
   fullFilename: string
+  pixelBuffer: ArrayBuffer
 }
 
 export interface IAppExportMessageResponseEvent extends MessageEvent {
