@@ -24,9 +24,9 @@ import {
 import * as glUtils from "@/utils/glUtils"
 import { tool_list } from "@/constants"
 import { Application } from "@/managers/ApplicationManager"
-import { useLayerStore } from "@/stores/LayerStore"
+import { getCurrentLayer } from "@/stores/LayerStore"
 import { scratchLayerBoundingBox, strokeFrameBoundingBox } from "@/managers/DrawingManager"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 
 export class Brush extends Tool implements IBrush {
   interpolationPoint: Point
@@ -248,7 +248,7 @@ export class Brush extends Tool implements IBrush {
   private line = (gl: WebGL2RenderingContext, start: IPoint, end: IPoint) => {
     const distance = getDistance(start, end)
 
-    const usePressure = usePreferenceStore.getState().prefs.usePressure
+    const usePressure = getPreference("usePressure")
     const basePressure = usePressure && start.pointerType === "pen"
 
     const size = calculateFromPressure(
@@ -278,10 +278,8 @@ export class Brush extends Tool implements IBrush {
    * Moves quad around and draws it based on brush settings and point info
    */
   private stamp = (gl: WebGL2RenderingContext, point: IPoint) => {
-    const usePressure = usePreferenceStore.getState().prefs.usePressure
-    const currentLayerID = useLayerStore.getState().currentLayer
-    const layerStorage = useLayerStore.getState().layerStorage
-    const currentLayer = layerStorage.get(currentLayerID)!
+    const usePressure = getPreference("usePressure")
+    const currentLayer = getCurrentLayer()
     this.previouslyDrawnPoint.copy(point)
 
     const basePressure = usePressure && point.pointerType === "pen"

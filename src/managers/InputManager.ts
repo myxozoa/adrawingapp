@@ -15,7 +15,7 @@ import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import { Application } from "@/managers/ApplicationManager"
 import { InteractionManager } from "@/managers/InteractionManager"
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 import { LocationStorage } from "@/objects/utils"
 
 const wheelThrottle = throttleRAF()
@@ -299,7 +299,7 @@ function pointermove(event: PointerEvent) {
   }
 
   if (currentInteractionState === InteractionState.useTool) {
-    const useCoalescedEvents = usePreferenceStore.getState().prefs.useCoalescedEvents
+    const useCoalescedEvents = getPreference("useCoalescedEvents")
 
     let coalesced: PointerEvent[] | undefined
     if (PointerEvent.prototype.getCoalescedEvents !== undefined && useCoalescedEvents) {
@@ -441,7 +441,7 @@ function resize() {
   idleTime = 0
 
   Application.resize()
-  Camera.reset()
+  Camera.updateViewProjectionMatrix()
 }
 
 function windowResize() {

@@ -1,6 +1,8 @@
+import { Application } from "@/managers/ApplicationManager"
 import { blend_modes } from "../constants"
 
 import type { ILayer, LayerID, LayerName, Box } from "@/types"
+import { getPreference } from "@/stores/PreferenceStore"
 
 export class Layer implements ILayer {
   blendMode: blend_modes
@@ -13,6 +15,8 @@ export class Layer implements ILayer {
   boundingBox: Box
   opacity: number
   drawnTo: boolean
+  thumbnailBuffer: Uint8Array | Uint16Array
+  // hasThumbnail: boolean
 
   constructor(name: LayerName) {
     this.blendMode = blend_modes.normal
@@ -25,6 +29,7 @@ export class Layer implements ILayer {
     this.boundingBox = { x: 0, y: 0, width: 1, height: 1 } //  TODO: Calculate every time drawn to
     this.opacity = 100
     this.drawnTo = false
+    // this.hasThumbnail = false
   }
 
   setBoundingBox = (x: number, y: number, width: number, height: number) => {
@@ -56,6 +61,12 @@ export class Layer implements ILayer {
 
     this.boundingBox.width = newWidth
     this.boundingBox.height = newHeight
+  }
+
+  setupThumbnail = () => {
+    this.thumbnailBuffer = new (getPreference("colorDepth") === 8 ? Uint8Array : Uint16Array)(
+      Application.thumbnailSize.width * Application.thumbnailSize.height * 4,
+    )
   }
 
   reset = () => {

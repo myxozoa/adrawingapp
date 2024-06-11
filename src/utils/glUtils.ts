@@ -1,4 +1,4 @@
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 
 /**
  * @throws If the shader was unable to be created
@@ -13,7 +13,7 @@ export function createShader(
 
   if (!shader) throw new Error("Unable to create WebGL shader")
 
-  const colorDepth = usePreferenceStore.getState().prefs.colorDepth
+  const colorDepth = getPreference("colorDepth")
   const shaderString = colorDepth === 16 || highColorDepthOverride ? source : source.replaceAll("highp", "mediump")
 
   gl.shaderSource(shader, shaderString)

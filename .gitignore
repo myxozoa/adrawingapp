@@ -24,3 +24,5 @@ out
 *.njsproj
 *.sln
 *.sw?
+
+certificates

@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  env: { browser: true, es2020: true },
+  env: { browser: true, es2020: true, worker: true },
   extends: [
     "prettier",
     "next/core-web-vitals",
@@ -34,7 +34,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
-    project: ["./tsconfig.json"],
+    project: true,
     tsconfigRootDir: __dirname,
     ecmaFeatures: {
       jsx: true,

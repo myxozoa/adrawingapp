@@ -48,6 +48,14 @@ function _Layer({
 
   return (
     <PanelElement className="h-8" selected={selected} select={select} id={id} onDoubleClick={editLayer}>
+      <div className="mr-2 w-fit bg-gray-200">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="layer_thumbnail max-h-5 max-w-[1.25rem]  object-contain"
+          id={`thumbnail_${id}`}
+          alt="thumbnail"
+        />
+      </div>
       {!editing ? (
         <p className="m-0 w-28 truncate text-sm">{name}</p>
       ) : (

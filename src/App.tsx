@@ -9,7 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary"
 
 function App() {
   // To redirect the next time this page is loaded, hacky solution to only allow getting here through the creation page
-  if (typeof document !== "undefined") document.cookie = "allow-edit=false"
+  if (typeof document !== "undefined") document.cookie = "allow-edit=false;SameSite=Strict"
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">

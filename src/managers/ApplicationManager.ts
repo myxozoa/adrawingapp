@@ -7,15 +7,17 @@ import { tools, useToolStore } from "@/stores/ToolStore"
 import { Camera } from "@/objects/Camera"
 import { Operation } from "@/objects/Operation"
 
-import { usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPreference } from "@/stores/PreferenceStore"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
 
 import type { IOperation, AvailableTools, ExportImageFormats } from "@/types"
 import { ResourceManager } from "@/managers/ResourceManager"
-import { useLayerStore } from "@/stores/LayerStore"
+import { getLayer, useLayerStore } from "@/stores/LayerStore"
 import { resetPointerManager } from "@/managers/PointerManager"
 import { InteractionManager } from "@/managers/InteractionManager"
+
+import { ThumbnailController } from "@/managers/ThumbnailController"
 
 interface SupportedExtensions {
   colorBufferFloat: EXT_color_buffer_float | null
@@ -51,6 +53,11 @@ interface CanvasInfo {
   height: number
 }
 
+interface ThumbnailSize {
+  width: number
+  height: number
+}
+
 interface WebGL2RenderingContextDOM extends Omit<WebGL2RenderingContext, "canvas"> {
   canvas: HTMLCanvasElement
 }
@@ -74,6 +81,11 @@ class _Application {
 
   canvasInfo: CanvasInfo
 
+  thumbnailSize: ThumbnailSize
+  thumbnailWorker: ThumbnailController
+
+  opfsRoot: FileSystemDirectoryHandle
+
   initialized: boolean
   drawing: boolean
 
@@ -90,6 +102,7 @@ class _Application {
       colorBufferHalfFloat: null,
       provokingVertex: null,
     }
+
     this.systemConstraints = {
       maxTextureSize: 0,
       maxTextureImageUnits: 0,
@@ -103,12 +116,20 @@ class _Application {
       width: 0,
       height: 0,
     }
+
+    this.thumbnailSize = {
+      width: 0,
+      height: 0,
+    }
+
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
 
     this.supportedExportImageFormats = ["png"]
 
     this.initialized = false
+
+    this.thumbnailWorker = new ThumbnailController()
   }
 
   private getSupportedExportImageTypes = () => {
@@ -220,17 +241,24 @@ class _Application {
 
     const gl = this.gl
 
-    const prefs = usePreferenceStore.getState().prefs
-
     this.canvasInfo = {
-      width: prefs.canvasWidth,
-      height: prefs.canvasHeight,
+      width: getPreference("canvasWidth"),
+      height: getPreference("canvasHeight"),
     }
+
+    // Thumbnail should fit inside a 50x50 box if this ends up larger than the canvas, use the canvas size
+    const scaleFactor = Math.max(Application.canvasInfo.width, Application.canvasInfo.height) / 50
+    this.thumbnailSize = {
+      width: Math.min(Math.max(Application.canvasInfo.width / scaleFactor, 1), Application.canvasInfo.width),
+      height: Math.min(Math.max(Application.canvasInfo.height / scaleFactor, 1), Application.canvasInfo.height),
+    }
+
+    this.thumbnailWorker.config(this.thumbnailSize)
 
     this.getSupportedExportImageTypes()
 
     this.getExtensions()
-    this.getSupportedTextureInfo(prefs.colorDepth)
+    this.getSupportedTextureInfo(getPreference("colorDepth"))
     this.getSystemConstraints()
 
     const currentTool = useToolStore.getState().currentTool
@@ -239,14 +267,27 @@ class _Application {
 
     this.resize()
 
-    DrawingManager.init()
-
     this.exportCanvas = new OffscreenCanvas(this.canvasInfo.width, this.canvasInfo.height)
     this.exportCanvasContext = this.exportCanvas.getContext("bitmaprenderer")!
 
     if (!this.exportCanvasContext) throw new Error("unable to get exportcanvas context")
 
     this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
+
+    const layers = useLayerStore.getState().layers
+
+    const layerThumbnailSetup = []
+
+    for (const layerID of layers) {
+      const layer = getLayer(layerID)
+      if (layer === undefined) throw new Error(`Layer ${layerID} not found`)
+
+      layer.setupThumbnail()
+
+      layerThumbnailSetup.push(
+        this.thumbnailWorker.getNewThumbnail(layer.thumbnailBuffer.buffer, getPreference("colorDepth"), layer.id),
+      )
+    }
 
     Camera.init()
 
@@ -262,15 +303,21 @@ class _Application {
     scratchLayerBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
     strokeFrameBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
 
-    DrawingManager.start()
+    Promise.all(layerThumbnailSetup)
+      .then(() => {
+        DrawingManager.init()
+        DrawingManager.start()
+      })
+      .catch((error) => console.error(error))
   }
 
   public destroy = () => {
     if (!this.initialized) return
 
-    Camera.reset()
-    InputManager.destroy()
+    useLayerStore.getState().deleteAll()
     ResourceManager.deleteAll()
+
+    Camera.reset()
     DrawingManager.reset()
     InteractionManager.reset()
     ModifierKeyManager.reset()
@@ -281,6 +328,9 @@ class _Application {
     }
 
     this.currentOperation.reset()
+
+    InputManager.destroy()
+    resizeObserver.disconnect()
 
     this.gl = {} as WebGL2RenderingContextDOM
     this.currentOperation = {} as Operation
@@ -306,15 +356,16 @@ class _Application {
       width: 0,
       height: 0,
     }
+    this.thumbnailSize = {
+      width: 0,
+      height: 0,
+    }
     this.textureSupport = { pixelType: 0, imageFormat: 0, magFilterType: 0, minFilterType: 0 }
     this.drawing = false
 
     this.supportedExportImageFormats = ["png"]
 
     this.initialized = false
-
-    useLayerStore.getState().deleteAll()
-    resizeObserver.disconnect()
   }
 }
 
