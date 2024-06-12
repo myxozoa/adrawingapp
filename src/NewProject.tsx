@@ -22,19 +22,24 @@ if (typeof document !== "undefined") {
   gl = undefined
 }
 
+const min = 20
+const max = maxTextureSize
+
 const formSchema = z.object({
   width: z
     .number()
-    .min(20, {
-      message: "Width must be at least 20.",
+    .positive()
+    .min(min, {
+      message: `Width must be at least ${min}.`,
     })
-    .max(maxTextureSize, { message: `Width must be less than ${maxTextureSize}.` }),
+    .max(max, { message: `Width must be less than ${max}.` }),
   height: z
     .number()
-    .min(20, {
-      message: "Height must be at least 20.",
+    .positive()
+    .min(min, {
+      message: `Height must be at least ${min}}.`,
     })
-    .max(maxTextureSize, { message: `Height must be less than ${maxTextureSize}.` }),
+    .max(max, { message: `Height must be less than ${max}.` }),
 })
 
 import { useState, useCallback } from "react"
@@ -111,8 +116,7 @@ function NewProject() {
                     <FormControl>
                       <Input
                         {...field}
-                        type="number"
-                        pattern="[0-9]*"
+                        inputMode="numeric"
                         className="w-[6ch] p-0 text-center"
                         onChange={handleWidth}
                       />
@@ -130,8 +134,7 @@ function NewProject() {
                       <FormControl>
                         <Input
                           {...field}
-                          type="number"
-                          pattern="[0-9]*"
+                          inputMode="numeric"
                           className="w-[6ch] p-0 text-center"
                           onChange={handleHeight}
                         />
