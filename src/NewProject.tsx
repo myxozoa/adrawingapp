@@ -48,6 +48,10 @@ function App() {
   const handleColorDepth = useCallback(() => setColorDepth(colorDepth === 8 ? 16 : 8), [colorDepth])
 
   const handleSubmit = useCallback(() => {
+    // TODO: Validate these properly
+    if (width < 20 && height < 20) return
+    if (width > 10000 && height > 10000) return
+
     setPrefs({
       canvasWidth: width,
       canvasHeight: height,
@@ -70,7 +74,7 @@ function App() {
                 type="number"
                 id="new_project_width"
                 pattern="[0-9]*"
-                min={1}
+                min={20}
                 max={500}
                 className="w-[6ch] p-0 text-center"
                 value={width.toString()}
@@ -84,7 +88,7 @@ function App() {
               <Input
                 type="number"
                 pattern="[0-9]*"
-                min={1}
+                min={20}
                 max={500}
                 className="w-[6ch] p-0 text-center"
                 id="new_project_height"
