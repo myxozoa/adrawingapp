@@ -277,8 +277,6 @@ class _Application {
       if (tool.init) tool.init(gl)
     })
 
-    this.initialized = true
-
     // Set these bounding boxes to the size of the canvas initially so everything draws
     // in the beginning before any brush interactions happen. Interactions will set them to the proper size
     scratchLayerBoundingBox._set(0, 0, this.canvasInfo.width, this.canvasInfo.height)
@@ -312,6 +310,8 @@ class _Application {
           .then(() => {
             DrawingManager.init()
             DrawingManager.start()
+
+            this.initialized = true
           })
           .catch((error) => console.error(error))
       })
