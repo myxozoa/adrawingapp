@@ -250,9 +250,17 @@ class _Application {
     // Thumbnail should fit inside a 50x50 box if this ends up larger than the canvas, use the canvas size
     const scaleFactor = Math.max(Application.canvasInfo.width, Application.canvasInfo.height) / 50
     this.thumbnailSize = {
-      width: Math.min(Math.max(Application.canvasInfo.width / scaleFactor, 1), Application.canvasInfo.width),
-      height: Math.min(Math.max(Application.canvasInfo.height / scaleFactor, 1), Application.canvasInfo.height),
+      width: Math.min(
+        Math.max(Math.round(Application.canvasInfo.width / scaleFactor), 1),
+        Application.canvasInfo.width,
+      ),
+      height: Math.min(
+        Math.max(Math.round(Application.canvasInfo.height / scaleFactor), 1),
+        Application.canvasInfo.height,
+      ),
     }
+
+    console.log(this.thumbnailSize)
 
     this.thumbnailWorker.config(this.thumbnailSize)
 
