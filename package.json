@@ -7,8 +7,10 @@
     "dev": "next dev",
     "devS": "next dev  --experimental-https",
     "build": "next build",
+    "build-analyze": "npx cross-env ANALYZE=true next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npx next telemetry disable"
   },
   "browsersList": [
     "last 5 versions"
@@ -29,11 +31,10 @@
     "@radix-ui/react-toggle": "^1.0.3",
     "gl-matrix": "^3.4.3",
     "next": "^14.2.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.4",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
