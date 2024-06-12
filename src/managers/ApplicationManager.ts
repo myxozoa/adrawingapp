@@ -272,11 +272,7 @@ class _Application {
 
     this.currentOperation = new Operation(currentTool)
 
-    this.resize()
-
     this.exportDownloadLink = document.getElementById("local_filesaver")! as HTMLAnchorElement
-
-    Camera.init()
 
     // Initialize tools
     Object.values(tools).forEach((tool) => {
@@ -314,7 +310,12 @@ class _Application {
 
         Promise.all(layerThumbnailSetup)
           .then(() => {
+            this.resize()
+
+            Camera.init()
+
             DrawingManager.init()
+
             DrawingManager.start()
 
             this.initialized = true
