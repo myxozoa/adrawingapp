@@ -49,7 +49,9 @@ function createThumbnail(event: IAppThumbnailMessageRequestEvent) {
   const layerID = event.data.layerID
   const useOPFS = event.data.useOPFS
 
-  const data8bit = new Uint8ClampedArray(pixelBuffer).map((num) => {
+  const pixels = new (colorDepth === 8 ? Uint8Array : Uint16Array)(pixelBuffer)
+
+  const data8bit = Uint8ClampedArray.from(pixels, (num) => {
     if (colorDepth === 8) return num
 
     return uint16ToFloat16(num)

@@ -260,8 +260,6 @@ class _Application {
       ),
     }
 
-    console.log(this.thumbnailSize)
-
     this.thumbnailWorker.config(this.thumbnailSize)
 
     this.getSupportedExportImageTypes()
