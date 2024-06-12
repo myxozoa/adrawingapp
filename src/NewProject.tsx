@@ -3,42 +3,80 @@
 import { usePreferenceStore } from "@/stores/PreferenceStore"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Toggle } from "@/components/ui/toggle"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 import { Link1Icon, LinkNone1Icon } from "@radix-ui/react-icons"
 
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+let maxTextureSize = 1000
+if (typeof document !== "undefined") {
+  let gl = document.createElement("canvas").getContext("webgl") as WebGL2RenderingContext
+  maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number
+  // @ts-expect-error This is set on purpose
+  gl = undefined
+}
+
+const formSchema = z.object({
+  width: z
+    .number()
+    .min(20, {
+      message: "Width must be at least 20.",
+    })
+    .max(maxTextureSize, { message: `Width must be less than ${maxTextureSize}.` }),
+  height: z
+    .number()
+    .min(20, {
+      message: "Height must be at least 20.",
+    })
+    .max(maxTextureSize, { message: `Height must be less than ${maxTextureSize}.` }),
+})
+
 import { useState, useCallback } from "react"
 
-function App() {
+function NewProject() {
   const router = useRouter()
   const prefs = usePreferenceStore.use.prefs()
 
-  const [width, setWidth] = useState(prefs.canvasWidth)
-  const [height, setHeight] = useState(prefs.canvasHeight)
   const [link, setLink] = useState(false)
   const [colorDepth, setColorDepth] = useState<8 | 16>(8)
   const setPrefs = usePreferenceStore.use.setPrefs()
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      width: prefs.canvasWidth,
+      height: prefs.canvasHeight,
+    },
+    reValidateMode: "onBlur",
+  })
+
   const handleWidth = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      form.clearErrors()
       const value = Number(event.target.value)
-      setWidth(value)
 
-      if (link) setHeight(value)
+      form.setValue("width", value)
+
+      if (link) form.setValue("height", value)
     },
     [link],
   )
 
   const handleHeight = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      form.clearErrors()
+
       const value = Number(event.target.value)
 
-      setHeight(value)
+      form.setValue("height", value)
 
-      if (link) setWidth(value)
+      if (link) form.setValue("width", value)
     },
     [link],
   )
@@ -47,85 +85,98 @@ function App() {
 
   const handleColorDepth = useCallback(() => setColorDepth(colorDepth === 8 ? 16 : 8), [colorDepth])
 
-  const handleSubmit = useCallback(() => {
-    // TODO: Validate these properly
-    if (width < 20 && height < 20) return
-    if (width > 10000 && height > 10000) return
-
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
     setPrefs({
-      canvasWidth: width,
-      canvasHeight: height,
+      canvasWidth: values.width,
+      canvasHeight: values.height,
       colorDepth,
     })
     document.cookie = "allow-edit=true;SameSite=Strict"
     router.push("/canvas")
-  }, [width, height, colorDepth])
+  }
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center overflow-hidden">
-      <div className="rounded-sm border p-10">
-        <div className="flex w-full items-center">
-          <div className="pr-5">
-            <div className="flex items-center pb-2">
-              <Label className="pr-12" htmlFor="new_project_width">
-                Width:
-              </Label>
-              <Input
-                type="number"
-                id="new_project_width"
-                pattern="[0-9]*"
-                min={20}
-                max={500}
-                className="w-[6ch] p-0 text-center"
-                value={width.toString()}
-                onChange={handleWidth}
+      <Form {...form}>
+        {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="rounded-sm border p-10">
+          <div className="flex w-full items-center">
+            <div className="pr-5">
+              <FormField
+                control={form.control}
+                name="width"
+                render={({ field }) => (
+                  <FormItem className="flex items-center pb-2">
+                    <FormLabel className="pr-12">Width:</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        pattern="[0-9]*"
+                        className="w-[6ch] p-0 text-center"
+                        onChange={handleWidth}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="height"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <div className="flex flex-row items-center pb-2">
+                      <FormLabel className="pr-11">Height:</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          pattern="[0-9]*"
+                          className="w-[6ch] p-0 text-center"
+                          onChange={handleHeight}
+                        />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="flex items-center pb-2">
-              <Label className="pr-11" htmlFor="new_project_height">
-                Height:
-              </Label>
-              <Input
-                type="number"
-                pattern="[0-9]*"
-                min={20}
-                max={500}
-                className="w-[6ch] p-0 text-center"
-                id="new_project_height"
-                value={height.toString()}
-                onChange={handleHeight}
-              />
+
+            <div>
+              <Toggle variant={"outline"} className="h-8 w-8 p-0" onClick={handleLink}>
+                {link ? <Link1Icon className="h-4 w-4" /> : <LinkNone1Icon className="h-4 w-4" />}
+              </Toggle>
             </div>
           </div>
 
-          <div>
-            <Toggle variant={"outline"} className="h-8 w-8 p-0" onClick={handleLink}>
-              {link ? <Link1Icon className="h-4 w-4" /> : <LinkNone1Icon className="h-4 w-4" />}
-            </Toggle>
+          <div className="flex w-full items-center pb-2">
+            <p className="cursor-default pr-2.5 text-sm font-normal leading-none text-muted-foreground">
+              Color Depth:{" "}
+            </p>
+            <Select defaultValue={colorDepth.toString()} onValueChange={handleColorDepth}>
+              <SelectTrigger className="pl-4">
+                <SelectValue placeholder="Format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value={"8"}>8bit</SelectItem>
+                  <SelectItem value={"16"}>16bit</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
 
-        <div className="flex w-full items-center pb-2">
-          <p className="cursor-default pr-2.5 text-sm font-normal leading-none text-muted-foreground">Color Depth: </p>
-          <Select defaultValue={colorDepth.toString()} onValueChange={handleColorDepth}>
-            <SelectTrigger className="pl-4">
-              <SelectValue placeholder="Format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value={"8"}>8bit</SelectItem>
-                <SelectItem value={"16"}>16bit</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+          <Button variant={"outline"} type="submit">
+            New Project
+          </Button>
 
-        <Button variant={"outline"} onClick={handleSubmit}>
-          New Project
-        </Button>
-      </div>
+          {Object.entries(form.formState.errors).map((error) => {
+            return <FormMessage key={error[0]}>{error[1].message}</FormMessage>
+          })}
+        </form>
+      </Form>
     </div>
   )
 }
 
-export default App
+export default NewProject
