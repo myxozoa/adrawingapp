@@ -226,7 +226,7 @@ function render() {
   if (shouldShowCursor) {
     const usePressure = getPreference("usePressure")
     const pressure = usePressure ? PointerManager.pressure : 1
-    Cursor.draw(gl, InteractionManager.currentMousePosition, pressure)
+    Cursor.draw(gl, InteractionManager.currentPointerPosition, pressure)
   }
 
   strokeFrameBoundingBox.reset()

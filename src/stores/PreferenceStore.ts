@@ -7,7 +7,7 @@ interface State {
   prefs: {
     pressureSensitivity: number
     pressureSmoothing: number
-    mouseSmoothing: number
+    pointerSmoothing: number
     canvasWidth: number
     canvasHeight: number
     usePressure: boolean
@@ -27,7 +27,7 @@ export const defaultPreferences = {
 
   // These preferences are inverted (1-n)
   pressureSmoothing: 0.2,
-  mouseSmoothing: 0.6,
+  pointerSmoothing: 0.6,
 
   canvasWidth: 10 * 300,
   canvasHeight: 8 * 300,
@@ -63,3 +63,15 @@ export const usePreferenceStore = createSelectors(usePreferenceStoreBase)
 
 export const getPreference = <T extends keyof State["prefs"]>(request: T): State["prefs"][T] =>
   usePreferenceStore.getState().prefs[request]
+
+export const getPointerSmoothing = () => {
+  const smoothing = getPreference("pointerSmoothing")
+
+  return 0.2 + (1 - smoothing) * 0.8
+}
+
+export const getPressureSmoothing = () => {
+  const smoothing = getPreference("pressureSmoothing")
+
+  return 0.2 + (1 - smoothing) * 0.8
+}

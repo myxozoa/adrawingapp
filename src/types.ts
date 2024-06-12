@@ -64,7 +64,7 @@ export interface IOperation {
 export type Operations = IOperation[]
 
 export type PointerType = "mouse" | "pen" | "touch"
-export interface MouseState extends Location {
+export interface PointerState extends Location {
   leftMouseDown: boolean
   rightMouseDown: boolean
   middleMouseDown: boolean
@@ -80,7 +80,7 @@ export interface WheelState {
 }
 
 export interface UIInteraction {
-  mouseState: MouseState
+  pointerState: PointerState
   modifierState: ModifierState
   wheelState: WheelState
 }

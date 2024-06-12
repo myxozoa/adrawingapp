@@ -161,21 +161,21 @@ function zoom(pointerPosition: { x: number; y: number }, zoomTarget: number) {
 
   gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
 
-  const mousePositionBeforeZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
-  const mouseXBeforeZoom = mousePositionBeforeZoom[0]
-  const mouseYBeforeZoom = mousePositionBeforeZoom[1]
+  const pointerPositionBeforeZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
+  const pointerXBeforeZoom = pointerPositionBeforeZoom[0]
+  const pointerYBeforeZoom = pointerPositionBeforeZoom[1]
 
   Camera.zoom = Math.max(0.001, Math.min(100, zoomTarget))
 
   Camera.updateViewProjectionMatrix()
 
-  const mousePositionAfterZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
-  const mouseXAfterZoom = mousePositionAfterZoom[0]
-  const mouseYAfterZoom = mousePositionAfterZoom[1]
+  const pointerPositionAfterZoom = calculateWorldPosition({ x: pointerPosition.x, y: pointerPosition.y })
+  const pointerXAfterZoom = pointerPositionAfterZoom[0]
+  const pointerYAfterZoom = pointerPositionAfterZoom[1]
 
   // Repositioning to make the pointer closer to the world space position it had before the zoom
-  const dx = mouseXAfterZoom - mouseXBeforeZoom
-  const dy = mouseYAfterZoom - mouseYBeforeZoom
+  const dx = pointerXAfterZoom - pointerXBeforeZoom
+  const dy = pointerYAfterZoom - pointerYBeforeZoom
 
   Camera.x -= dx
   Camera.y -= dy
@@ -262,8 +262,8 @@ function pointerdown(event: PointerEvent) {
   }
 
   const position = calculatePointerWorldPosition(event)
-  InteractionManager.currentMousePosition.x = position.x
-  InteractionManager.currentMousePosition.y = position.y
+  InteractionManager.currentPointerPosition.x = position.x
+  InteractionManager.currentPointerPosition.y = position.y
   if (currentInteractionState === InteractionState.none) {
     Application.drawing = true
 
@@ -284,8 +284,8 @@ function pointermove(event: PointerEvent) {
 
   const position = calculatePointerWorldPosition(event)
 
-  InteractionManager.currentMousePosition.x = position.x
-  InteractionManager.currentMousePosition.y = position.y
+  InteractionManager.currentPointerPosition.x = position.x
+  InteractionManager.currentPointerPosition.y = position.y
 
   if (event.pointerType === "touch") {
     touches.updateTouch(event)
@@ -307,9 +307,9 @@ function pointermove(event: PointerEvent) {
 
       if (coalesced !== undefined) {
         for (const coalescedEvent of coalesced) {
-          const coalescedRelativeMouseState = calculatePointerWorldPosition(coalescedEvent)
+          const coalescedRelativePointerState = calculatePointerWorldPosition(coalescedEvent)
 
-          InteractionManager.process(coalescedRelativeMouseState)
+          InteractionManager.process(coalescedRelativePointerState)
         }
       }
     }
