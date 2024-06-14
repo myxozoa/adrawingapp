@@ -8,6 +8,7 @@ out vec4 fragColor;
 uniform vec3 u_point_random;
 uniform vec3 u_brush_color;
 uniform vec4 u_brush_qualities;
+uniform bool u_pencil;
 
 // book of shaders
 float random(vec2 st)
@@ -48,13 +49,15 @@ void main()
     // Color brush circle with transparent falloff
     vec3 main_color = u_brush_color.rgb;
 
-    float brush_alpha = mix(1., 0., smoothstep(u_softness - ((size) * (4. - sqrt(size))), 1., dist)) * u_flow;
+    float brush_alpha = 1.;
 
-    vec4 color = vec4(main_color, brush_alpha);
+    if (u_pencil) {
+        brush_alpha = step(dist, (1. - size));
+    } else {
+        brush_alpha = mix(1., 0., smoothstep(u_softness - ((size) * (4. - sqrt(size))), 1., dist));
+    }
 
-    // Discarding here appears to be faster
-    if (color.a == 0.)
-        discard;
+    vec4 color = vec4(main_color, brush_alpha * u_flow);
 
     // Add a small amount of noise to the alpha channel
 
@@ -65,9 +68,8 @@ void main()
     float alpha = (alpha_random * (noise_amount));
 
     color.a = clamp(color.a + alpha - (u_random * 0.001), 0., 1.);
-    
-    // color.rgb *= color.a;
-    // color.rgb = toLinearRGB(color.rgb);
+
+    color.rgb *= color.a;
     
     fragColor = color;
 }

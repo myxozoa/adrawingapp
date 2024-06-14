@@ -83,7 +83,7 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_point_random", "u_brush_color", "u_brush_qualities"]
+    const uniformNames = ["u_point_random", "u_brush_color", "u_brush_qualities", "u_pencil"]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -379,8 +379,10 @@ export class Brush extends Tool implements IBrush {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
 
-    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.uniform1i(this.programInfo.uniforms.u_pencil, 0)
+
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    // gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.enable(gl.BLEND)
 
