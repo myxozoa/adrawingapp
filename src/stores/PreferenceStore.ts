@@ -27,7 +27,7 @@ export const defaultPreferences = {
 
   // These preferences are inverted (1-n)
   pressureSmoothing: 0.2,
-  pointerSmoothing: 0.6,
+  pointerSmoothing: 0.4,
 
   canvasWidth: 10 * 300,
   canvasHeight: 8 * 300,
@@ -64,14 +64,18 @@ export const usePreferenceStore = createSelectors(usePreferenceStoreBase)
 export const getPreference = <T extends keyof State["prefs"]>(request: T): State["prefs"][T] =>
   usePreferenceStore.getState().prefs[request]
 
+const exp = (value: number) => {
+  return value ** 0.7
+}
+
 export const getPointerSmoothing = () => {
   const smoothing = getPreference("pointerSmoothing")
 
-  return 0.2 + (1 - smoothing) * 0.8
+  return 1 - exp(smoothing)
 }
 
 export const getPressureSmoothing = () => {
   const smoothing = getPreference("pressureSmoothing")
 
-  return 0.2 + (1 - smoothing) * 0.8
+  return 1 - exp(smoothing)
 }
