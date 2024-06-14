@@ -288,8 +288,6 @@ function compositeLayers() {
   viewportCanvas()
   scissorStrokeFrameSection()
 
-  gl.disable(gl.BLEND)
-
   // Composite scratch layer with current layer into intermediaryLayer3
   const scratchLayer = ResourceManager.get("ScratchLayer")
   const currentLayerResource = ResourceManager.get(`Layer${currentLayer.id}`)
@@ -384,8 +382,6 @@ function compositeLayers() {
     writeFramebuffer = Number(!writeFramebuffer)
   }
 
-  gl.enable(gl.BLEND)
-
   shouldRecomposite = false
 }
 
@@ -417,7 +413,6 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
 
   viewportCanvas()
   scissorCanvas()
-  gl.disable(gl.BLEND)
 
   gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_clipping_mask, 0)
 
@@ -457,8 +452,6 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
   void writeThumbnail()
 
   clearSpecific(intermediaryLayer3)
-
-  gl.enable(gl.BLEND)
 }
 
 async function writeThumbnail() {
@@ -603,9 +596,9 @@ function init() {
   const gl = Application.gl
 
   gl.enable(gl.SCISSOR_TEST)
-  gl.enable(gl.BLEND)
   gl.enable(gl.DEPTH_TEST)
 
+  gl.disable(gl.BLEND)
   gl.disable(gl.CULL_FACE)
   gl.disable(gl.RASTERIZER_DISCARD)
   gl.disable(gl.POLYGON_OFFSET_FILL)
