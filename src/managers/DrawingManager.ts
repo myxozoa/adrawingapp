@@ -514,7 +514,7 @@ function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {
       area.y,
       area.x + area.width,
       area.y + area.height,
-      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
+      gl.COLOR_BUFFER_BIT,
       gl.NEAREST,
     )
   } else {
@@ -527,7 +527,7 @@ function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {
       0,
       Application.canvasInfo.width,
       Application.canvasInfo.height,
-      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
+      gl.COLOR_BUFFER_BIT,
       gl.NEAREST,
     )
   }
