@@ -9,7 +9,7 @@ import { calculateFromPressure } from "@/utils/utils"
 import { getPreference } from "@/stores/PreferenceStore"
 import { Application } from "@/managers/ApplicationManager"
 
-const hoverOpacity = 1
+const hoverOpacity = 0.8
 const drawingOpacity = 0.2
 
 export class _Cursor {
@@ -34,7 +34,7 @@ export class _Cursor {
     this.location = vec2.create()
     this.size = vec2.create()
 
-    this.opacity = 1
+    this.opacity = 0.8
     this.hovering = true
   }
 
