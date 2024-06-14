@@ -633,6 +633,9 @@ function init() {
       renderTextureFragment,
       renderTextureVertex,
       false,
+      [],
+      1,
+      true,
     ),
   )
 
