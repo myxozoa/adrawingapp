@@ -382,7 +382,6 @@ export class Brush extends Tool implements IBrush {
     gl.uniform1i(this.programInfo.uniforms.u_pencil, 0)
 
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    // gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.enable(gl.BLEND)
 
@@ -395,6 +394,7 @@ export class Brush extends Tool implements IBrush {
     this.interpolationPoint.reset()
 
     this.drawnPoints.clear()
+    Application.gl.disable(Application.gl.BLEND)
   }
 
   public reset = () => {
