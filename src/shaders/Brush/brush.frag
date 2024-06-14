@@ -59,11 +59,13 @@ void main()
 
     vec4 color = vec4(main_color, brush_alpha * u_flow);
 
+    if (color.a < 0.01) discard;
+
     // Add a small amount of noise to the alpha channel
 
     float alpha_random = random(st);
 
-    float noise_amount = 0.01;
+    float noise_amount = 0.005;
 
     float alpha = (alpha_random * (noise_amount));
 
