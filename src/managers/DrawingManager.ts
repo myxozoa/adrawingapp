@@ -558,6 +558,8 @@ function createIntermediaryLayers(number: number) {
         layerCompositionVertex,
         false,
         intermediaryLayerUniforms,
+        1,
+        true,
       ),
     )
 

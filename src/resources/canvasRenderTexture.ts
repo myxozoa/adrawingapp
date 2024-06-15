@@ -20,7 +20,7 @@ export function createCanvasRenderTexture(
   mipMap: boolean,
   additionalUniforms: string[] = [],
   numTextures = 1,
-  force16bit = false,
+  force32bit = false,
 ) {
   const renderInfo: RenderInfo = {
     bufferInfo: {
@@ -38,7 +38,7 @@ export function createCanvasRenderTexture(
       gl,
       width,
       height,
-      force16bit ? gl.RGBA16F : Application.textureSupport.imageFormat,
+      force32bit ? gl.RGBA32F : Application.textureSupport.imageFormat,
       mipMap,
       Application.textureSupport.minFilterType,
       Application.textureSupport.magFilterType,
