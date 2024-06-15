@@ -10,7 +10,7 @@ out vec2 v_tex_coord;
 uniform mat3 u_matrix;
 
 void main() {
-  vec2 temp = a_position * (1. / u_size);
+  vec2 temp = a_position / u_size;
   temp.y = 1. - temp.y;
   v_tex_coord = temp;
 

@@ -34,7 +34,7 @@ vec4 tosRGB(vec4 linearRGB) {
 }
 
 float toLinearRGBValue(float sRGBValue) {
-    return sRGBValue <= 0.04045 ? sRGBValue * (1. / 12.92) : pow((sRGBValue + 0.055) * (1. / 1.055), 2.4);
+    return sRGBValue <= 0.04045 ? sRGBValue / 12.92 : pow((sRGBValue + 0.055) / 1.055, 2.4);
 }
 vec3 toLinearRGB(vec3 sRGB) {
   return vec3 (
@@ -363,8 +363,16 @@ vec4 blendColor(vec4 base, vec4 blend) {
 
   // Co = αs x Cs + αb x (1 - αs) x Cb
   // Fa = 1; Fb = 1 - αs
+  vec4 blended = vec4(1., 0., 1., 1.);
 
-  vec4 blended = pdOver(base, blend);
+  if (u_blend_mode == 0) {
+    // base * (1. - blend.a)
+    blended = base * (1. - blend.a);
+
+
+  } else {
+    blended = pdOver(base, blend);
+  }
 
   return blended;
 }
@@ -377,11 +385,11 @@ void main() {
     discard;
   }
 
-  bottom = max(min(bottom, 1.), 0.);
-  top = max(min(top, 1.), 0.);
+  // bottom = max(min(bottom, 1.), 0.);
+  // top = max(min(top, 1.), 0.);
 
-  bottom = toLinearRGB(bottom);
-  top = toLinearRGB(top);
+  // bottom = toLinearRGB(bottom);
+  // top = toLinearRGB(top);
 
   top *= u_opacity;
   
@@ -394,24 +402,13 @@ void main() {
   // Error Color
   vec4 outColor = vec4(1., 0., 1., 1.);
 
-  if (u_blend_mode == 0) {
-    bottom.rgb /= bottom.a;
+  vec4 blended = blendColor(bottom, top);
 
-    // base * (1. - blend.a)
-    vec4 blended = vec4(bottom.rgb, bottom.a * (1. - top.a));
+  outColor = blended;
 
-    blended.rgb *= blended.a;
+  // outColor = max(min(outColor, 1.), 0.);
 
-    outColor = blended;
-  } else {
-    vec4 blended = blendColor(bottom, top);
-
-    outColor = blended;
-  }
-
-  outColor = max(min(outColor, 1.), 0.);
-
-  outColor = tosRGB(outColor);
+  // outColor = tosRGB(outColor);
 
   fragColor = outColor;
 }
