@@ -68,7 +68,7 @@ export const getPreference = <T extends keyof State["prefs"]>(request: T): State
   usePreferenceStore.getState().prefs[request]
 
 const exp = (value: number) => {
-  return value ** 0.7
+  return value ** 0.8
 }
 
 export const getPointerSmoothing = () => {
