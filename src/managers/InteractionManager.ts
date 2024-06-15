@@ -23,16 +23,6 @@ function prepareOperation(pointerState: PointerState) {
 
   const prevPoint = operation.points.getPoint(-1).active ? operation.points.getPoint(-1) : operation.points.currentPoint
 
-  let zoomAdjustment = 0
-
-  // To counteract the fact that the pointer position resolution gets much lower the
-  // more zoomed out the canvas becomes we raise smoothing to compensate
-  if (Camera.zoom < 1 && getPreference("zoomCompensation")) {
-    // These values are just tuned to feel right
-
-    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.1, 0.05)
-  }
-
   operation.points.currentPoint.pointerType = pointerState.pointerType
 
   operation.points.currentPoint.pressure = lerp(
@@ -55,19 +45,24 @@ function prepareOperation(pointerState: PointerState) {
 
   const stampSpacing = calculateSpacing(spacing, size)
 
-  // These values are just tuned to feel right
-  const maxSmoothAdjustment = Math.max(0.8 - getPointerSmoothing(), 0)
-
-  const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
-
   operation.points.currentPoint.x = pointerState.x
   operation.points.currentPoint.y = pointerState.y
+
+  let zoomAdjustment = 0
+
+  // To counteract the fact that the pointer position resolution gets much lower the
+  // more zoomed out the canvas becomes we raise smoothing to compensate
+  if (Camera.zoom < 1 && getPreference("zoomCompensation")) {
+    // These values are just tuned to feel right
+
+    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.7, getPointerSmoothing() * 0.8)
+  }
 
   vec2.lerp(
     operation.points.currentPoint.location,
     prevPoint.location,
     operation.points.currentPoint.location,
-    Math.min(Math.max(getPointerSmoothing() - pointerPositionLerpAdjustment - zoomAdjustment, 0.01), 1),
+    Math.min(Math.max(getPointerSmoothing() - zoomAdjustment, 0.01), 0.98),
   )
 
   // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
