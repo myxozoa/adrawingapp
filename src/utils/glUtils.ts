@@ -1,22 +1,12 @@
-import { getPreference } from "@/stores/PreferenceStore"
-
 /**
  * @throws If the shader was unable to be created
  */
-export function createShader(
-  gl: WebGL2RenderingContext,
-  type: number,
-  source: string,
-  highColorDepthOverride?: boolean,
-) {
+export function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
   const shader = gl.createShader(type)
 
   if (!shader) throw new Error("Unable to create WebGL shader")
 
-  const colorDepth = getPreference("colorDepth")
-  const shaderString = colorDepth === 16 || highColorDepthOverride ? source : source.replaceAll("highp", "mediump")
-
-  gl.shaderSource(shader, shaderString)
+  gl.shaderSource(shader, source)
   gl.compileShader(shader)
 
   return shader

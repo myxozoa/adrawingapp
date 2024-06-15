@@ -37,7 +37,7 @@ class _ResourceManager {
   get = (name: string): RenderInfo => {
     const fetched = this.resources.get(name)
 
-    if (!fetched) throw new Error("Resource not found")
+    if (!fetched) throw new Error(`Resource ${name} not found`)
 
     return fetched
   }

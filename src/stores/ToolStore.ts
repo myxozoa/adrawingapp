@@ -1,5 +1,15 @@
 import { create } from "zustand"
-import type { AvailableTools, ToolName, WithoutMethods, IBrush, IEyedropper, IFill, ITool, IEraser } from "@/types"
+import type {
+  AvailableTools,
+  ToolName,
+  WithoutMethods,
+  IBrush,
+  IPencil,
+  IEyedropper,
+  IFill,
+  ITool,
+  IEraser,
+} from "@/types"
 
 import { createSelectors } from "@/stores/selectors"
 
@@ -10,10 +20,12 @@ import { Eraser } from "@/objects/Eraser"
 import { Fill } from "@/objects/Fill"
 // import { Pen } from "@/objects/Pen"
 import { Eyedropper } from "@/objects/Eyedropper"
+import { Pencil } from "@/objects/Pencil"
 
 interface ToolMap {
   // PEN: IPen
   BRUSH: IBrush
+  PENCIL: IPencil
   ERASER: IEraser
   FILL: IFill
   EYEDROPPER: IEyedropper
@@ -40,6 +52,12 @@ export const toolProperties: ToolProperties = {
   // },
   BRUSH: {
     availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
+    type: tool_types.STROKE,
+    continuous: true,
+    numberOfPoints: 8,
+  },
+  PENCIL: {
+    availableSettings: ["size", "opacity", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
     numberOfPoints: 8,
@@ -80,6 +98,17 @@ export const toolDefaults: ToolSettings = {
     hardnessPressure: false,
     spacing: 5,
   },
+  PENCIL: {
+    size: 10,
+    sizePressure: false,
+    opacity: 100,
+    opacityPressure: false,
+    flow: 100,
+    flowPressure: false,
+    hardness: 100,
+    hardnessPressure: false,
+    spacing: 5,
+  },
   ERASER: {
     size: 20,
     sizePressure: false,
@@ -102,6 +131,7 @@ export const toolDefaults: ToolSettings = {
 export const tools: Tools = {
   // PEN: new Pen(),
   BRUSH: new Brush(),
+  PENCIL: new Pencil(),
   ERASER: new Eraser(),
   FILL: new Fill(),
   EYEDROPPER: new Eyedropper(),

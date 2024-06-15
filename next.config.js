@@ -1,3 +1,9 @@
+import withBundleAnalyzer from "@next/bundle-analyzer"
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async redirects() {
@@ -25,6 +31,9 @@ const nextConfig = {
 
     return config
   },
+  experimental: {
+    optimizePackageImports: ["@fluentui/react-icons", "@radix-ui/react-icons"],
+  },
 }
 
-export default nextConfig
+export default bundleAnalyzer(nextConfig)

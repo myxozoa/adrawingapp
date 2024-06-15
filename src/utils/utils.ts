@@ -1,6 +1,6 @@
-import { IPoint, MouseState, IPoints, ExportImageFormatsMIME } from "@/types"
+import { IPoint, PointerState, IPoints, ExportImageFormatsMIME } from "@/types"
 import { vec2 } from "gl-matrix"
-import { getPreference } from "@/stores/PreferenceStore"
+import { getPreference, usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
@@ -30,11 +30,11 @@ export const AppViewportSizeCache: IAppViewportSizeCache = {
   },
 }
 
-export function getRelativePosition<T extends MouseState | { x: number; y: number }>(mouseState: T): T {
-  mouseState.x = mouseState.x * (AppViewportSizeCache.width / AppViewportSizeCache.offsetWidth)
-  mouseState.y = mouseState.y * (AppViewportSizeCache.height / AppViewportSizeCache.offsetHeight)
+export function getRelativePosition<T extends PointerState | { x: number; y: number }>(pointerState: T): T {
+  pointerState.x = pointerState.x * (AppViewportSizeCache.width / AppViewportSizeCache.offsetWidth)
+  pointerState.y = pointerState.y * (AppViewportSizeCache.height / AppViewportSizeCache.offsetHeight)
 
-  return mouseState
+  return pointerState
 }
 
 export function throttle(func: (...args: any[]) => void, delay = 250): () => void {
@@ -437,6 +437,11 @@ export function calculateFromPressure(value: number, pressure: number, usePressu
     const pressureSensitivity = getPreference("pressureSensitivity") * 10
 
     result = value - (value * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
+
+    if (usePreferenceStore.getState().prefs.clampPressure) {
+      result *= 0.9
+      result += value * 0.1
+    }
   }
 
   return result
@@ -452,14 +457,14 @@ export function calculateCurveLength(start: IPoint, control: IPoint, control2: I
 }
 
 export function calculateWorldPosition(data: { x: number; y: number }): vec2 {
-  const relativeMouseState = getRelativePosition(data)
+  const relativePointerState = getRelativePosition(data)
 
-  const worldPosition = Camera.getWorldPosition(relativeMouseState)
+  const worldPosition = Camera.getWorldPosition(relativePointerState)
 
   return worldPosition
 }
 
-export function calculatePointerWorldPosition(event: PointerEvent): MouseState {
+export function calculatePointerWorldPosition(event: PointerEvent): PointerState {
   const pointerState = updatePointer(event)
 
   const worldPosition = calculateWorldPosition(pointerState)

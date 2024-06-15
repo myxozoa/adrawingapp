@@ -1,7 +1,7 @@
-import type { MouseState, PointerType } from "@/types"
+import type { PointerState, PointerType } from "@/types"
 import { isPointerEvent } from "@/utils/typeguards"
 
-export const PointerManager: MouseState = {
+export const PointerManager: PointerState = {
   x: 0,
   y: 0,
   leftMouseDown: false,
@@ -19,7 +19,7 @@ function parseMouseButtons(event: PointerEvent | WheelEvent) {
   PointerManager.middleMouseDown = (buttons & 0b100) > 0
 }
 
-export const updatePointer = (event: PointerEvent | WheelEvent): MouseState => {
+export const updatePointer = (event: PointerEvent | WheelEvent): PointerState => {
   parseMouseButtons(event)
   ;(PointerManager.x = event.x), (PointerManager.y = event.y)
 

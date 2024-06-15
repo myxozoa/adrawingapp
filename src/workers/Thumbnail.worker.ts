@@ -47,8 +47,11 @@ function createThumbnail(event: IAppThumbnailMessageRequestEvent) {
   const pixelBuffer = event.data.pixelBuffer
   const colorDepth = event.data.colorDepth
   const layerID = event.data.layerID
+  const useOPFS = event.data.useOPFS
 
-  const data8bit = new Uint8ClampedArray(pixelBuffer).map((num) => {
+  const pixels = new (colorDepth === 8 ? Uint8Array : Uint16Array)(pixelBuffer)
+
+  const data8bit = Uint8ClampedArray.from(pixels, (num) => {
     if (colorDepth === 8) return num
 
     return uint16ToFloat16(num)
@@ -79,36 +82,52 @@ function createThumbnail(event: IAppThumbnailMessageRequestEvent) {
 
     const blob = await canvas.convertToBlob({ type: "image/png", quality: 1.0 })
 
-    const blobBuffer = await blob.arrayBuffer()
+    // Can't use OPFS in private tab browsers so we will set thumbnails as dataURLs
+    if (!useOPFS) {
+      const a = new FileReader()
+      a.onload = (readerEvent: ProgressEvent<FileReader>) => {
+        const response: IThumbnailResponse = {
+          type: "COMPLETE",
+          pixelBuffer: pixelBuffer,
+          imageURL: readerEvent.target?.result as string,
+          layerID,
+        }
 
-    const opfsRoot = await navigator.storage.getDirectory()
+        worker.postMessage(response, [pixelBuffer])
+      }
+      a.readAsDataURL(blob)
+    } else {
+      const blobBuffer = await blob.arrayBuffer()
 
-    const thumbnailFileHandle = await opfsRoot.getFileHandle(`thumbnail_${layerID}.png`, { create: true })
+      const opfsRoot = await navigator.storage.getDirectory()
 
-    // TODO: fix this
-    // something seems to be causing typescript to not think this file is a worker.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore This error only shows up in the build
-    // this has to be a ts-ignore because ts-expect-error cant be eslint-disabled from what i can tell
-    const accessHandle = await thumbnailFileHandle.createSyncAccessHandle()
+      const thumbnailFileHandle = await opfsRoot.getFileHandle(`thumbnail_${layerID}.png`, { create: true })
 
-    accessHandle.write(blobBuffer)
+      // TODO: fix this
+      // something seems to be causing typescript to not think this file is a worker.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore This error only shows up in the build
+      // this has to be a ts-ignore because ts-expect-error cant be eslint-disabled from what i can tell
+      const accessHandle = await thumbnailFileHandle.createSyncAccessHandle()
 
-    accessHandle.flush()
+      accessHandle.write(blobBuffer)
 
-    accessHandle.close()
+      accessHandle.flush()
 
-    const file = await thumbnailFileHandle.getFile()
-    const imageURL = URL.createObjectURL(file)
+      accessHandle.close()
 
-    const response: IThumbnailResponse = {
-      type: "COMPLETE",
-      pixelBuffer: event.data.pixelBuffer,
-      imageURL,
-      layerID,
+      const file = await thumbnailFileHandle.getFile()
+      const imageURL = URL.createObjectURL(file)
+
+      const response: IThumbnailResponse = {
+        type: "COMPLETE",
+        pixelBuffer,
+        imageURL,
+        layerID,
+      }
+
+      worker.postMessage(response, [pixelBuffer])
     }
-
-    worker.postMessage(response, [event.data.pixelBuffer])
   })()
 }
 

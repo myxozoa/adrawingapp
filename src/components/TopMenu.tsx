@@ -47,6 +47,21 @@ function _TopMenu() {
     usePreferenceStore.getState().resetToDefault()
   }, [])
 
+  const resetThumbnailCache = useCallback(() => {
+    if (!Application.supportsOPFS) return
+
+    void (async () => {
+      const root = await navigator.storage.getDirectory()
+
+      // TODO: figure out how to get the type definition for this
+      // @ts-expect-error this is a real method, updating ts didn't seem to add its definition
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      for await (const name of root.keys()) {
+        await root.removeEntry(name as string)
+      }
+    })()
+  }, [])
+
   const resetCamera = useCallback(() => {
     Camera.reset()
     Camera.fitToView()
@@ -88,6 +103,7 @@ function _TopMenu() {
             <MenubarContent>
               <MenubarItem onSelect={resetPreferences}>Reset Preferences</MenubarItem>
               <MenubarItem onSelect={resetCamera}>Reset Camera</MenubarItem>
+              <MenubarItem onSelect={resetThumbnailCache}>Reset Thumbnail Cache</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
         </Menubar>

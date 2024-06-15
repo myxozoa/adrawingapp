@@ -34,7 +34,6 @@ function onMessage(event: IAppExportMessageRequestEvent | IAppExportMessageConfi
 }
 
 function config(event: IAppExportMessageConfigEvent) {
-  console.log(imageSize)
   imageSize.width = event.data.width
   imageSize.height = event.data.height
 
@@ -49,7 +48,9 @@ function createImage(event: IAppExportMessageRequestEvent) {
   const exportQuality = event.data.exportQuality
   const filename = event.data.filename
 
-  const data8bit = new Uint8ClampedArray(pixelBuffer).map((num) => {
+  const pixels = new (colorDepth === 8 ? Uint8Array : Uint16Array)(pixelBuffer)
+
+  const data8bit = Uint8ClampedArray.from(pixels, (num) => {
     if (colorDepth === 8) return num
 
     return uint16ToFloat16(num)
@@ -96,9 +97,11 @@ function createImage(event: IAppExportMessageRequestEvent) {
       type: "COMPLETE",
       fullFilename,
       imageURL,
+      pixelBuffer,
     }
 
-    worker.postMessage(response)
+    // Transfer buffer back to main thread otherwise it may get missed by GC
+    worker.postMessage(response, [pixelBuffer])
   })()
 }
 

@@ -226,7 +226,7 @@ function render() {
   if (shouldShowCursor) {
     const usePressure = getPreference("usePressure")
     const pressure = usePressure ? PointerManager.pressure : 1
-    Cursor.draw(gl, InteractionManager.currentMousePosition, pressure)
+    Cursor.draw(gl, InteractionManager.currentPointerPosition, pressure)
   }
 
   strokeFrameBoundingBox.reset()
@@ -287,8 +287,6 @@ function compositeLayers() {
 
   viewportCanvas()
   scissorStrokeFrameSection()
-
-  gl.disable(gl.BLEND)
 
   // Composite scratch layer with current layer into intermediaryLayer3
   const scratchLayer = ResourceManager.get("ScratchLayer")
@@ -384,8 +382,6 @@ function compositeLayers() {
     writeFramebuffer = Number(!writeFramebuffer)
   }
 
-  gl.enable(gl.BLEND)
-
   shouldRecomposite = false
 }
 
@@ -417,7 +413,6 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
 
   viewportCanvas()
   scissorCanvas()
-  gl.disable(gl.BLEND)
 
   gl.uniform1i(intermediaryLayer3.programInfo.uniforms.u_clipping_mask, 0)
 
@@ -457,8 +452,6 @@ function commitLayer(top: RenderInfo, bottom: RenderInfo, destination: RenderInf
   void writeThumbnail()
 
   clearSpecific(intermediaryLayer3)
-
-  gl.enable(gl.BLEND)
 }
 
 async function writeThumbnail() {
@@ -514,7 +507,7 @@ function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {
       area.y,
       area.x + area.width,
       area.y + area.height,
-      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
+      gl.COLOR_BUFFER_BIT,
       gl.NEAREST,
     )
   } else {
@@ -527,7 +520,7 @@ function blit(source: RenderInfo, destination: RenderInfo, area?: Box) {
       0,
       Application.canvasInfo.width,
       Application.canvasInfo.height,
-      gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT,
+      gl.COLOR_BUFFER_BIT,
       gl.NEAREST,
     )
   }
@@ -565,6 +558,8 @@ function createIntermediaryLayers(number: number) {
         layerCompositionVertex,
         false,
         intermediaryLayerUniforms,
+        1,
+        true,
       ),
     )
 
@@ -603,9 +598,9 @@ function init() {
   const gl = Application.gl
 
   gl.enable(gl.SCISSOR_TEST)
-  gl.enable(gl.BLEND)
   gl.enable(gl.DEPTH_TEST)
 
+  gl.disable(gl.BLEND)
   gl.disable(gl.CULL_FACE)
   gl.disable(gl.RASTERIZER_DISCARD)
   gl.disable(gl.POLYGON_OFFSET_FILL)
@@ -633,6 +628,9 @@ function init() {
       renderTextureFragment,
       renderTextureVertex,
       false,
+      [],
+      1,
+      true,
     ),
   )
 

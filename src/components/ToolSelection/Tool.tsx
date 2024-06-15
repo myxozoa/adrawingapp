@@ -5,12 +5,13 @@ import { tool_list } from "@/constants"
 import { PaintBrushRegular, PaintBucketRegular, EyedropperRegular, EraserRegular } from "@fluentui/react-icons"
 import { memo } from "react"
 import { compareProps } from "@/utils/utils"
+import { Pencil1Icon } from "@radix-ui/react-icons"
 
 const toolIcons = {
   [tool_list.BRUSH]: <PaintBrushRegular className="h-5 w-5" />,
   [tool_list.ERASER]: <EraserRegular className="h-5 w-5" />,
+  [tool_list.PENCIL]: <Pencil1Icon className="h-5 w-5" />,
   [tool_list.FILL]: <PaintBucketRegular className="h-5 w-5" />,
-  // [tool_list.PEN]: <PenLine />,
   [tool_list.EYEDROPPER]: <EyedropperRegular className="h-5 w-5" />,
 }
 

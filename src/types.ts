@@ -64,7 +64,7 @@ export interface IOperation {
 export type Operations = IOperation[]
 
 export type PointerType = "mouse" | "pen" | "touch"
-export interface MouseState extends Location {
+export interface PointerState extends Location {
   leftMouseDown: boolean
   rightMouseDown: boolean
   middleMouseDown: boolean
@@ -80,13 +80,13 @@ export interface WheelState {
 }
 
 export interface UIInteraction {
-  mouseState: MouseState
+  pointerState: PointerState
   modifierState: ModifierState
   wheelState: WheelState
 }
 
 export type ToolType = "STROKE" | "POINT"
-export type ToolName = /*"PEN" | */ "BRUSH" | "ERASER" | "FILL" | "EYEDROPPER"
+export type ToolName = "BRUSH" | "PENCIL" | "ERASER" | "FILL" | "EYEDROPPER"
 export type ToolSetting = "size" | "color" | "opacity" | "hardness" | "flow" | "pressureOpacity" | "pressureSize"
 
 export interface ITool {
@@ -135,6 +135,7 @@ export interface IFill extends ITool {
 }
 
 export type IEraser = IBrush
+export type IPencil = IBrush
 
 export type EyeDropperSampleSizes = 1 | 3 | 5
 
@@ -205,6 +206,7 @@ export interface IThumbnailRequest {
   pixelBuffer: ArrayBuffer
   colorDepth: 8 | 16
   layerID: string
+  useOPFS: boolean
 }
 
 export interface IThumbnailResponse {
@@ -252,6 +254,7 @@ export interface IExportResponse {
   type: "COMPLETE"
   imageURL: string
   fullFilename: string
+  pixelBuffer: ArrayBuffer
 }
 
 export interface IAppExportMessageResponseEvent extends MessageEvent {

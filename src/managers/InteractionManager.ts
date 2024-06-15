@@ -1,8 +1,8 @@
-import type { MouseState } from "@/types"
+import type { PointerState } from "@/types"
 import { tool_types } from "@/constants.tsx"
 import { getDistance, calculateFromPressure, AppViewportSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
-import { getPreference } from "@/stores/PreferenceStore"
+import { getPointerSmoothing, getPreference } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
 import { DrawingManager, scratchLayerBoundingBox } from "@/managers/DrawingManager"
@@ -12,32 +12,22 @@ import { canDraw, switchIfPossible, canUse } from "@/utils/typeguards"
 import { useToolStore } from "@/stores/ToolStore"
 import { LocationStorage } from "@/objects/utils"
 
-const currentMousePosition = new LocationStorage()
+const currentPointerPosition = new LocationStorage()
 let mergeEvent = false
 const mergeEventCache = new LocationStorage()
 
-function prepareOperation(relativeMouseState: MouseState) {
+function prepareOperation(pointerState: PointerState) {
   if (DrawingManager.waitUntilInteractionEnd) return
 
   const operation = Application.currentOperation
 
   const prevPoint = operation.points.getPoint(-1).active ? operation.points.getPoint(-1) : operation.points.currentPoint
 
-  let zoomAdjustment = 0
-
-  // To counteract the fact that the pointer position resolution gets much lower the
-  // more zoomed out the canvas becomes we raise smoothing to compensate
-  if (Camera.zoom < 1 && getPreference("zoomCompensation")) {
-    // These values are just tuned to feel right
-
-    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.1, 0.05)
-  }
-
-  operation.points.currentPoint.pointerType = relativeMouseState.pointerType
+  operation.points.currentPoint.pointerType = pointerState.pointerType
 
   operation.points.currentPoint.pressure = lerp(
     operation.points.getPoint(-1).active ? prevPoint.pressure : 0,
-    relativeMouseState.pressure,
+    pointerState.pressure,
     getPreference("pressureSmoothing"),
   )
 
@@ -45,7 +35,7 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
   const usePressure = getPreference("usePressure")
-  const basePressure = usePressure && relativeMouseState.pointerType === "pen"
+  const basePressure = usePressure && pointerState.pointerType === "pen"
 
   const size = calculateFromPressure(
     _size / 2,
@@ -55,19 +45,24 @@ function prepareOperation(relativeMouseState: MouseState) {
 
   const stampSpacing = calculateSpacing(spacing, size)
 
-  // These values are just tuned to feel right
-  const maxSmoothAdjustment = Math.max(0.8 - (1 - getPreference("mouseSmoothing")), 0)
+  operation.points.currentPoint.x = pointerState.x
+  operation.points.currentPoint.y = pointerState.y
 
-  const pointerPositionLerpAdjustment = Camera.zoom < 1 ? Math.min((1 - Camera.zoom) * 0.7, maxSmoothAdjustment) : 0
+  let zoomAdjustment = 0
 
-  operation.points.currentPoint.x = relativeMouseState.x
-  operation.points.currentPoint.y = relativeMouseState.y
+  // To counteract the fact that the pointer position resolution gets much lower the
+  // more zoomed out the canvas becomes we raise smoothing to compensate
+  if (Camera.zoom < 1 && getPreference("zoomCompensation")) {
+    // These values are just tuned to feel right
+
+    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.7, getPointerSmoothing() * 0.8)
+  }
 
   vec2.lerp(
     operation.points.currentPoint.location,
     prevPoint.location,
     operation.points.currentPoint.location,
-    Math.min(Math.max(getPreference("mouseSmoothing") - pointerPositionLerpAdjustment - zoomAdjustment, 0.01), 1),
+    Math.min(Math.max(getPointerSmoothing() - zoomAdjustment, 0.01), 0.98),
   )
 
   // If the new point is too close we don't commit to it and wait until the next one and blend it with the previous
@@ -100,7 +95,7 @@ function prepareOperation(relativeMouseState: MouseState) {
       case tool_types.POINT:
         DrawingManager.waitUntilInteractionEnd = true
 
-        operation.points.updateCurrentPoint(null, relativeMouseState.x, relativeMouseState.y)
+        operation.points.updateCurrentPoint(null, pointerState.x, pointerState.y)
 
         operation.points.currentPoint.active = true
 
@@ -136,7 +131,7 @@ function executeOperation() {
   DrawingManager.recomposite()
 }
 
-function process(pointerState: MouseState) {
+function process(pointerState: PointerState) {
   const gl = Application.gl
 
   gl.viewport(0, 0, AppViewportSizeCache.width, AppViewportSizeCache.height)
@@ -177,13 +172,13 @@ function endInteraction(save = true) {
 }
 
 function reset() {
-  currentMousePosition.reset()
+  currentPointerPosition.reset()
   mergeEvent = false
   mergeEventCache.reset()
 }
 
 export const InteractionManager = {
-  currentMousePosition,
+  currentPointerPosition,
   endInteraction,
   process,
   executeOperation,

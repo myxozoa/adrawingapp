@@ -74,8 +74,8 @@ export class Brush extends Tool implements IBrush {
   }
 
   private setupProgramAndAttributeUniforms = (gl: WebGL2RenderingContext) => {
-    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment, true)
-    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex, true)
+    const fragmentShader = glUtils.createShader(gl, gl.FRAGMENT_SHADER, brushFragment)
+    const vertexShader = glUtils.createShader(gl, gl.VERTEX_SHADER, brushVertex)
 
     const program = glUtils.createProgram(gl, vertexShader, fragmentShader)
 
@@ -83,7 +83,7 @@ export class Brush extends Tool implements IBrush {
 
     const attributes = glUtils.getAttributeLocations(gl, program, attributeNames)
 
-    const uniformNames = ["u_point_random", "u_brush_color", "u_brush_qualities"]
+    const uniformNames = ["u_point_random", "u_brush_color", "u_brush_qualities", "u_pencil"]
 
     const uniforms = glUtils.getUniformLocations(gl, program, uniformNames)
 
@@ -146,38 +146,39 @@ export class Brush extends Tool implements IBrush {
     const prevPoint = operation.points.getPoint(-2)
     const currentPoint = operation.points.getPoint(-1)
 
-    if (currentPoint.active && !prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
+    if (!currentPoint.active) return
+
+    if (!prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!this.drawnPoints.get(currentPoint.id)) {
         this.stamp(gl, currentPoint)
 
         this.drawnPoints.set(currentPoint.id, true)
         operation.addDrawnPoints(1)
       }
-    } else if (currentPoint.active && prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
+    }
+    if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
       if (!this.drawnPoints.get(currentPoint.id)) {
         this.line(gl, prevPoint, currentPoint)
 
         this.drawnPoints.set(currentPoint.id, true)
         operation.addDrawnPoints(2)
       }
-    } else {
-      if (
-        currentPoint.active &&
-        prevPoint.active &&
-        prevPrevPoint.active &&
-        prevPrevPrevPoint.active &&
-        !this.drawnPoints.get(currentPoint.id) &&
-        !this.drawnPoints.get(prevPoint.id) &&
-        !this.drawnPoints.get(prevPrevPoint.id)
-      ) {
-        this.splineProcess(gl, operation)
+    }
+    if (
+      prevPoint.active &&
+      prevPrevPoint.active &&
+      prevPrevPrevPoint.active &&
+      !this.drawnPoints.get(currentPoint.id) &&
+      !this.drawnPoints.get(prevPoint.id) &&
+      !this.drawnPoints.get(prevPrevPoint.id)
+    ) {
+      this.splineProcess(gl, operation)
 
-        this.drawnPoints.set(currentPoint.id, true)
-        this.drawnPoints.set(prevPoint.id, true)
-        this.drawnPoints.set(prevPrevPoint.id, true)
+      this.drawnPoints.set(currentPoint.id, true)
+      this.drawnPoints.set(prevPoint.id, true)
+      this.drawnPoints.set(prevPrevPoint.id, true)
 
-        operation.addDrawnPoints(4)
-      }
+      operation.addDrawnPoints(4)
     }
   }
 
@@ -212,18 +213,28 @@ export class Brush extends Tool implements IBrush {
   private spline = (gl: WebGL2RenderingContext, start: IPoint, control: IPoint, control2: IPoint, end: IPoint) => {
     const size = calculateFromPressure(this.settings.size / 2, start.pressure, start.pointerType === "pen")
 
+    // Estimating spacing here based on the size of the start point is an assumption that will probably not hold
+    // TODO: Make this more robust so that a very dynamic stroke will still have perfect spacing
     const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
     const estimatedArcLength = calculateCurveLength(start, control, control2, end)
 
     const steps = estimatedArcLength / stampSpacing
 
+    this.tempPoint.reset()
+
     // Stamp points along cubic bezier
-    for (let t = 1 / steps, j = 0; t < 1; t += 1 / steps, j++) {
+    for (let t = 0, j = 0; j <= steps; t += 1 / steps, j++) {
       this.interpolationPoint.x = cubicBezier(start.x, control.x, control2.x, end.x, t)
       this.interpolationPoint.y = cubicBezier(start.y, control.y, control2.y, end.y, t)
 
-      this.interpolationPoint.pressure = pressureInterpolation(start, end, j / steps)
+      this.interpolationPoint.pressure = cubicBezier(
+        start.pressure,
+        control.pressure,
+        control2.pressure,
+        end.pressure,
+        t,
+      )
       this.interpolationPoint.pointerType = start.pointerType
 
       this.tempPoint.copy(this.interpolationPoint)
@@ -261,13 +272,15 @@ export class Brush extends Tool implements IBrush {
 
     const steps = distance / stampSpacing
 
+    this.tempPoint.reset()
+
     // Stamp at evenly spaced intervals between the two points
-    for (let t = 1 / steps, j = 0; t < 1; t += 1 / steps, j++) {
+    for (let t = 1 / steps, j = 0; j <= steps; t += 1 / steps, j++) {
       const newPoint = calculatePointAlongDirection(start, end, t)
 
       this.interpolationPoint.x = newPoint.x
       this.interpolationPoint.y = newPoint.y
-      this.interpolationPoint.pressure = pressureInterpolation(start, end, j / steps)
+      this.interpolationPoint.pressure = pressureInterpolation(start, end, t)
       this.interpolationPoint.pointerType = start.pointerType
 
       this.stamp(gl, this.interpolationPoint)
@@ -379,8 +392,9 @@ export class Brush extends Tool implements IBrush {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.programInfo.VBO)
     gl.bindVertexArray(this.programInfo.VAO)
 
-    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.uniform1i(this.programInfo.uniforms.u_pencil, 0)
+
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.enable(gl.BLEND)
 
@@ -393,6 +407,7 @@ export class Brush extends Tool implements IBrush {
     this.interpolationPoint.reset()
 
     this.drawnPoints.clear()
+    Application.gl.disable(Application.gl.BLEND)
   }
 
   public reset = () => {

@@ -11,10 +11,5 @@ uniform highp sampler2D textureSampler;
 void main() {
   vec4 color = texture(textureSampler, v_tex_coord);
 
-  if (color.a == 0.)
-    discard;
-
-  color.rgb /= color.a;
-
   fragColor = color;
 }
