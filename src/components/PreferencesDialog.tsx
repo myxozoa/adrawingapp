@@ -22,6 +22,10 @@ export const PreferenesDialog = () => {
     [],
   )
   const handleUsePressure = useCallback(() => setPrefs({ usePressure: !prefs.usePressure }), [prefs.usePressure])
+  const handleClampPressure = useCallback(
+    () => setPrefs({ clampPressure: !prefs.clampPressure }),
+    [prefs.clampPressure],
+  )
   const handleCoalescedEvents = useCallback(
     () => setPrefs({ useCoalescedEvents: !prefs.useCoalescedEvents }),
     [prefs.useCoalescedEvents],
@@ -69,6 +73,11 @@ export const PreferenesDialog = () => {
       <div className="flex items-center space-x-2">
         <Switch id="pressure" onCheckedChange={handleUsePressure} checked={prefs.usePressure} />
         <Label htmlFor="pressure">Use Pen Pressure</Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch id="pressure_clamp" onCheckedChange={handleClampPressure} checked={prefs.clampPressure} />
+        <Label htmlFor="pressure_clamp">Clamp Pressure</Label>
       </div>
 
       {!coalescedEventsSupported ? (

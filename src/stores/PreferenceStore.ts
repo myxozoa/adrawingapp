@@ -14,6 +14,7 @@ interface State {
     useCoalescedEvents: boolean
     zoomCompensation: boolean
     colorDepth: 8 | 16
+    clampPressure: boolean
   }
 }
 
@@ -33,6 +34,8 @@ export const defaultPreferences = {
   canvasHeight: 8 * 300,
 
   colorDepth: 16 as const,
+
+  clampPressure: true,
 
   usePressure: true,
   useCoalescedEvents: true,
