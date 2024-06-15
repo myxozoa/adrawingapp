@@ -1,6 +1,6 @@
 import { IPoint, PointerState, IPoints, ExportImageFormatsMIME } from "@/types"
 import { vec2 } from "gl-matrix"
-import { getPreference } from "@/stores/PreferenceStore"
+import { getPreference, usePreferenceStore } from "@/stores/PreferenceStore"
 import { updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
@@ -437,6 +437,11 @@ export function calculateFromPressure(value: number, pressure: number, usePressu
     const pressureSensitivity = getPreference("pressureSensitivity") * 10
 
     result = value - (value * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
+
+    if (usePreferenceStore.getState().prefs.clampPressure) {
+      result *= 0.9
+      result += value * 0.1
+    }
   }
 
   return result
