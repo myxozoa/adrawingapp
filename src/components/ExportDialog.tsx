@@ -95,19 +95,6 @@ function _ExportDialog() {
   const [filename, setFilename] = useState("New Image")
   const [format, setFormat] = useState(Application.supportedExportImageFormats[0]) // PNG is always supported
 
-  const handleFormat = useCallback((value: string) => setFormat(value as ExportImageFormats), [])
-
-  const renderFormats = useCallback(
-    (imageFormat: string, index: number) => (
-      <SelectItem key={`exportFormat${index}`} value={imageFormat}>
-        .{imageFormat.toUpperCase()}
-      </SelectItem>
-    ),
-    [],
-  )
-
-  const handleQuality = useCallback((value: number) => setQuality(value), [])
-
   const handleSave = useCallback(() => void saveImage(filename, format, quality), [filename, format, quality])
 
   return (
@@ -131,19 +118,25 @@ function _ExportDialog() {
             value={filename}
             onChange={(event) => setFilename(event.target.value)}
           />
-          <Select defaultValue={format} onValueChange={handleFormat}>
+          <Select defaultValue={format} onValueChange={(value: string) => setFormat(value as ExportImageFormats)}>
             <SelectTrigger className="rounded-l-none pl-4">
               <SelectValue placeholder="Format" />
             </SelectTrigger>
             <SelectContent>
-              <SelectGroup>{Application.supportedExportImageFormats.map(renderFormats)}</SelectGroup>
+              <SelectGroup>
+                {Application.supportedExportImageFormats.map((imageFormat: string, index: number) => (
+                  <SelectItem key={`exportFormat${index}`} value={imageFormat}>
+                    .{imageFormat.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>
         <SettingSlider
           name={"Quality"}
           value={quality}
-          onValueChange={handleQuality}
+          onValueChange={(value: number) => setQuality(value)}
           fractionDigits={1}
           min={0}
           max={1}
