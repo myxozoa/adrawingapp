@@ -10,6 +10,7 @@ interface State {
     pointerSmoothing: number
     canvasWidth: number
     canvasHeight: number
+    canvasPPI: number
     usePressure: boolean
     useCoalescedEvents: boolean
     zoomCompensation: boolean
@@ -32,6 +33,7 @@ export const defaultPreferences = {
 
   canvasWidth: 10 * 300,
   canvasHeight: 8 * 300,
+  canvasPPI: 300,
 
   colorDepth: 16 as const,
 
