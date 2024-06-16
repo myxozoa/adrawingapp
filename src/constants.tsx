@@ -34,7 +34,7 @@ export enum blend_modes {
 }
 
 export const blendModeNames = [
-  "Clear",
+  // "Clear",
   "Normal",
   "Multiply",
   "Screen",
@@ -45,8 +45,8 @@ export const blendModeNames = [
   "Color Burn",
   "Hard Light",
   "Soft Light",
-  "Difference",
-  "Exclusion",
+  // "Difference",
+  // "Exclusion",
 ] as const
 
 export const key_modifers: Record<string, Modifier> = {
