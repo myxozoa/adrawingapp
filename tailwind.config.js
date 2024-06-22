@@ -14,7 +14,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)"],
+        sans: ["var(--font-arimo)"],
       },
       colors: {
         border: "hsl(var(--border))",
