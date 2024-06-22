@@ -1,15 +1,41 @@
 import type { PointerState, PointerType } from "@/types"
 import { isPointerEvent } from "@/utils/typeguards"
 
-export const PointerManager: PointerState = {
-  x: 0,
-  y: 0,
-  leftMouseDown: false,
-  rightMouseDown: false,
-  middleMouseDown: false,
-  pressure: 0,
-  pointerType: "mouse",
+import { LocationStorage } from "@/objects/utils"
+
+export const PointerOffsetDifferenceCache = {
+  cache: new LocationStorage(),
+  cacheRefresh: true,
 }
+
+class _PointerManager extends LocationStorage {
+  leftMouseDown: boolean
+  rightMouseDown: boolean
+  middleMouseDown: boolean
+  pressure: number
+  pointerType: PointerType
+
+  constructor() {
+    super()
+
+    this.leftMouseDown = false
+    this.rightMouseDown = false
+    this.middleMouseDown = false
+    this.pressure = 0
+    this.pointerType = "mouse"
+  }
+}
+
+function updateCache(event: PointerEvent) {
+  if (PointerOffsetDifferenceCache.cacheRefresh) {
+    PointerOffsetDifferenceCache.cache.x = event.x - event.offsetX
+    PointerOffsetDifferenceCache.cache.y = event.y - event.offsetY
+
+    PointerOffsetDifferenceCache.cacheRefresh = false
+  }
+}
+
+export const PointerManager = new _PointerManager()
 
 function parseMouseButtons(event: PointerEvent | WheelEvent) {
   const buttons = event.buttons !== undefined ? event.buttons : event.which
@@ -24,7 +50,9 @@ export const updatePointer = (event: PointerEvent | WheelEvent): PointerState =>
   ;(PointerManager.x = event.x), (PointerManager.y = event.y)
 
   if (isPointerEvent(event)) {
-    ;(PointerManager.x = event.offsetX), (PointerManager.y = event.offsetY)
+    updateCache(event)
+    ;(PointerManager.x = event.x - PointerOffsetDifferenceCache.cache.x),
+      (PointerManager.y = event.y - PointerOffsetDifferenceCache.cache.y)
     ;(PointerManager.pressure = event.pressure),
       (PointerManager.pointerType = event.pointerType as unknown as PointerType)
   }

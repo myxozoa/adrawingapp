@@ -1,7 +1,7 @@
 import { IPoint, PointerState, IPoints, ExportImageFormatsMIME } from "@/types"
 import { vec2 } from "gl-matrix"
 import { getPreference, usePreferenceStore } from "@/stores/PreferenceStore"
-import { updatePointer } from "@/managers/PointerManager"
+import { PointerOffsetDifferenceCache, updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
 
@@ -208,6 +208,8 @@ export function setCanvasSizeCache(
   AppViewportSizeCache.offsetHeight = offsetHeight || canvas.offsetHeight
   AppViewportSizeCache.width = width || canvas.width
   AppViewportSizeCache.height = height || canvas.height
+
+  PointerOffsetDifferenceCache.cacheRefresh = true
 }
 
 export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, callback?: () => void) {
