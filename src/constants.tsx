@@ -34,7 +34,7 @@ export enum blend_modes {
 }
 
 export const blendModeNames = [
-  // "Clear",
+  "Clear",
   "Normal",
   "Multiply",
   "Screen",
