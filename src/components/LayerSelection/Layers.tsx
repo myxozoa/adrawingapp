@@ -39,6 +39,7 @@ function _Layers() {
 
       return (
         <Layer
+          className="my-1"
           saveNewName={LayerStore.saveNewName}
           editing={!!LayerStore.editingLayer && LayerStore.editingLayer === layerID}
           key={layer.name + idx}
@@ -54,11 +55,11 @@ function _Layers() {
 
   return (
     <div className="absolute right-0 top-1/4 flex flex-col items-end">
-      <Button className="h-10 w-10 p-1" variant="outline" onClick={toggleLayers}>
+      <Toggle className="h-10 w-10 p-1" variant="outline" onPressedChange={toggleLayers}>
         <LayersIcon className="h-5 w-5" />
-      </Button>
+      </Toggle>
       <Container className={`${showLayers ? "" : "hidden"} h-[50vh] w-48 grow`}>
-        <Panel className="mb-1 flex w-full shrink-0 justify-between py-2 shadow-md">
+        <Panel className="mb-1 flex w-full shrink-0 justify-between py-2">
           <SettingSlider
             name={"Opacity"}
             value={getCurrentLayer().opacity}
@@ -106,7 +107,7 @@ function _Layers() {
           </Toggle>
         </Panel>
 
-        <Panel className="mb-1 w-full grow overflow-y-scroll shadow-md">
+        <Panel className="mb-1 w-full grow overflow-x-hidden overflow-y-scroll shadow-md">
           {LayerStore.layers.map(renderLayer).reverse()}
         </Panel>
         <Panel className="mt-0 flex w-full shrink-0 justify-between shadow-md">

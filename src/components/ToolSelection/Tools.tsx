@@ -32,16 +32,24 @@ function _Tools() {
 
   const renderTool = useCallback(
     (tool: AvailableTools) => {
-      return <Tool key={tool.name} name={tool.name} select={setCurrentTool} selected={currentTool.name === tool.name} />
+      return (
+        <Tool
+          className="mb-1"
+          key={tool.name}
+          name={tool.name}
+          select={setCurrentTool}
+          selected={currentTool.name === tool.name}
+        />
+      )
     },
     [currentTool.name],
   )
 
   return (
-    <Container className="absolute top-1/2 z-10 w-11 -translate-y-1/2 shadow-md">
+    <Container className="absolute top-1/2 z-10 w-12 -translate-y-1/2">
       <Panel className="flex w-full grow flex-col justify-between">
         <div>{Object.values(tools).map(renderTool)}</div>
-        <input className="w-auto rounded-sm	" type="color" value={rgbToHex(color)} onChange={changeColor} />
+        <input className="w-auto rounded-md" type="color" value={rgbToHex(color)} onChange={changeColor} />
       </Panel>
     </Container>
   )

@@ -168,7 +168,7 @@ function NewProject() {
     <div className="flex h-full w-full flex-col items-center justify-center overflow-hidden">
       <Form {...form}>
         {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="rounded-sm border p-10">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="rounded-md border p-10">
           <div className="flex w-full items-center">
             <div className="pr-5">
               <FormField
@@ -182,7 +182,7 @@ function NewProject() {
                         <Input
                           {...field}
                           inputMode="numeric"
-                          className="w-[6ch] p-0 text-center"
+                          className="w-[6ch] rounded-r-none p-0 text-center"
                           onChange={handleWidth}
                         />
                         <Select value={unit} onValueChange={handleUnitChange}>
@@ -216,7 +216,7 @@ function NewProject() {
                           <Input
                             {...field}
                             inputMode="numeric"
-                            className="w-[6ch] p-0 text-center"
+                            className="w-[6ch] rounded-r-none p-0 text-center"
                             onChange={handleHeight}
                           />
                           <Select value={unit} onValueChange={handleUnitChange}>

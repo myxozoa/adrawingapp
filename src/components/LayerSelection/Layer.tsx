@@ -14,6 +14,7 @@ function _Layer({
   id,
   editing,
   saveNewName,
+  className,
 }: {
   name: LayerName
   select: (id: string) => void
@@ -21,6 +22,7 @@ function _Layer({
   id: LayerID
   editing: boolean
   saveNewName: (id: string, name: string) => void
+  className?: string
 }) {
   const setEditingLayer = useLayerStore.use.setEditingLayer()
 
@@ -47,7 +49,7 @@ function _Layer({
   const editLayer = useCallback(() => setEditingLayer(id), [id])
 
   return (
-    <PanelElement className="h-8" selected={selected} select={select} id={id} onDoubleClick={editLayer}>
+    <PanelElement className={`h-8 ${className}`} selected={selected} select={select} id={id} onDoubleClick={editLayer}>
       <div className="mr-2 w-fit bg-gray-200">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

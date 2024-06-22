@@ -98,7 +98,7 @@ function _ToolSettings() {
 
   return (
     <Container
-      className={`absolute left-1/2 top-8 z-10 -translate-x-1/2 shadow-md ${
+      className={`absolute left-1/2 top-8 z-10 -translate-x-1/2 ${
         currentTool.availableSettings.length === 0 ? "hidden" : ""
       }`}
     >
@@ -109,7 +109,7 @@ function _ToolSettings() {
               <Label htmlFor="tool_size" className="px-2">
                 Size:
               </Label>
-              <div className="flex flex-row items-center justify-center rounded-sm border">
+              <div className="flex flex-row items-center justify-center rounded-md border">
                 <Input
                   name="Tool Size"
                   id="tool_size"
@@ -124,7 +124,7 @@ function _ToolSettings() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button className="rounded-none" size="xs" variant="ghost">
-                      <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
+                      <CaretDownIcon className="h-5 w-5 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -158,7 +158,7 @@ function _ToolSettings() {
               <Label htmlFor="tool_flow" className="px-2">
                 Flow:
               </Label>
-              <div className="flex flex-row items-center justify-center rounded-sm border">
+              <div className="flex flex-row items-center justify-center rounded-md border">
                 <Input
                   name="Tool Flow"
                   id="tool_flow"
@@ -173,7 +173,7 @@ function _ToolSettings() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button className="rounded-none" size="xs" variant="ghost">
-                      <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
+                      <CaretDownIcon className="h-5 w-5 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -207,7 +207,7 @@ function _ToolSettings() {
               <Label htmlFor="tool_opacity" className="px-2">
                 Opacity:
               </Label>
-              <div className="flex flex-row items-center justify-center rounded-sm border">
+              <div className="flex flex-row items-center justify-center rounded-md border">
                 <Input
                   name="Tool Opacity"
                   id="tool_opacity"
@@ -222,7 +222,7 @@ function _ToolSettings() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button className="rounded-none" size="xs" variant="ghost">
-                      <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
+                      <CaretDownIcon className="h-5 w-5 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -276,7 +276,7 @@ function _ToolSettings() {
           <Popover>
             <PopoverTrigger asChild>
               <Button className="ml-2" size="xs" variant="outline">
-                <CaretDownIcon className="h-4 w-4 text-muted-foreground" />
+                <CaretDownIcon className="h-5 w-5 text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent>
@@ -285,7 +285,7 @@ function _ToolSettings() {
                   <Label htmlFor="tool_spacing" className="px-2">
                     Spacing:
                   </Label>
-                  <div className="flex flex-row items-center justify-center rounded-sm border">
+                  <div className="flex flex-row items-center justify-center rounded-md border">
                     <div className="flex flex-row p-1">
                       <SettingSlider
                         name=""
@@ -316,7 +316,7 @@ function _ToolSettings() {
                   <Label htmlFor="tool_hardness" className="px-2">
                     Hardness:
                   </Label>
-                  <div className="flex flex-row items-center justify-center rounded-sm border">
+                  <div className="flex flex-row items-center justify-center rounded-md border">
                     <div className="flex flex-row p-1">
                       <SettingSlider
                         name=""

@@ -21,7 +21,7 @@ function _PanelElement({
     <div
       onDoubleClick={onDoubleClick}
       onClick={handleClick}
-      className={`w-full rounded-sm p-0.5 hover:cursor-pointer ${className} ${selected ? "bg-secondary" : ""}`}
+      className={`w-full rounded-md p-0.5 transition-colors hover:cursor-pointer hover:bg-over active:bg-on ${className} ${selected ? "bg-on" : "bg-primary-foreground"}`}
     >
       <div className="flex h-full items-center justify-center">{children}</div>
     </div>
