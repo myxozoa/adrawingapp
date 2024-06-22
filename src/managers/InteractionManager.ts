@@ -45,8 +45,13 @@ function prepareOperation(pointerState: PointerState) {
 
   const stampSpacing = calculateSpacing(spacing, size)
 
-  operation.points.currentPoint.x = pointerState.x
-  operation.points.currentPoint.y = pointerState.y
+  if (operation.tool.name === "PENCIL" || operation.tool.name === "EYEDROPPER") {
+    operation.points.currentPoint.x = Math.trunc(pointerState.x) + 0.5
+    operation.points.currentPoint.y = Math.trunc(pointerState.y) + 0.5
+  } else {
+    operation.points.currentPoint.x = pointerState.x
+    operation.points.currentPoint.y = pointerState.y
+  }
 
   let zoomAdjustment = 0
 
