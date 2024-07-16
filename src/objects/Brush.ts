@@ -12,13 +12,12 @@ import brushVertex from "@/shaders/Brush/brush.vert"
 
 import {
   getDistance,
-  calculatePointAlongDirection,
   cubicBezier,
-  pressureInterpolation,
   maintainPointSpacing,
   calculateFromPressure,
   calculateCurveLength,
   calculateSpacing,
+  lerp,
 } from "@/utils/utils"
 
 import * as glUtils from "@/utils/glUtils"
@@ -149,37 +148,37 @@ export class Brush extends Tool implements IBrush {
     if (!currentPoint.active) return
 
     if (!prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
-      if (!this.drawnPoints.get(currentPoint.id)) {
-        this.stamp(gl, currentPoint)
-
-        this.drawnPoints.set(currentPoint.id, true)
-        operation.addDrawnPoints(1)
-      }
+      // if (!this.drawnPoints.get(currentPoint.id)) {
+      this.stamp(gl, currentPoint)
+      // this.drawnPoints.set(currentPoint.id, true)
+      // operation.addDrawnPoints(1)
+      // }
     }
-    if (prevPoint.active && !prevPrevPoint.active && !prevPrevPrevPoint.active) {
-      if (!this.drawnPoints.get(currentPoint.id)) {
-        this.line(gl, prevPoint, currentPoint)
+    if (prevPoint.active) {
+      // if (!this.drawnPoints.get(currentPoint.id)) {
+      this.line(gl, prevPoint, currentPoint)
 
-        this.drawnPoints.set(currentPoint.id, true)
-        operation.addDrawnPoints(2)
-      }
+      // this.drawnPoints.set(currentPoint.id, true)
+      // operation.addDrawnPoints(2)
+      // }
     }
-    if (
-      prevPoint.active &&
-      prevPrevPoint.active &&
-      prevPrevPrevPoint.active &&
-      !this.drawnPoints.get(currentPoint.id) &&
-      !this.drawnPoints.get(prevPoint.id) &&
-      !this.drawnPoints.get(prevPrevPoint.id)
-    ) {
-      this.splineProcess(gl, operation)
-
-      this.drawnPoints.set(currentPoint.id, true)
-      this.drawnPoints.set(prevPoint.id, true)
-      this.drawnPoints.set(prevPrevPoint.id, true)
-
-      operation.addDrawnPoints(4)
-    }
+    // if (prevPoint.active && prevPrevPoint.active) {
+    // this.line(gl, prevPoint, prevPrevPoint)
+    //   if (
+    //     !this.drawnPoints.get(currentPoint.id) &&
+    //     !this.drawnPoints.get(prevPoint.id) &&
+    //     !this.drawnPoints.get(prevPrevPoint.id)
+    //   ) {
+    //     this.splineProcess(gl, operation)
+    //     this.drawnPoints.set(currentPoint.id, true)
+    //     this.drawnPoints.set(prevPoint.id, true)
+    //     this.drawnPoints.set(prevPrevPoint.id, true)
+    //     operation.addDrawnPoints(4)
+    //   }
+    // }
+    // if (prevPoint.active && prevPrevPoint.active && prevPrevPrevPoint.active) {
+    // this.line(gl, prevPrevPoint, prevPrevPrevPoint)
+    // }
   }
 
   /**
@@ -221,10 +220,12 @@ export class Brush extends Tool implements IBrush {
 
     const steps = estimatedArcLength / stampSpacing
 
+    const delta = 1 / steps
+
     this.tempPoint.reset()
 
     // Stamp points along cubic bezier
-    for (let t = 0, j = 0; j <= steps; t += 1 / steps, j++) {
+    for (let t = 0, j = 0; j <= steps; t += delta, j++) {
       this.interpolationPoint.x = cubicBezier(start.x, control.x, control2.x, end.x, t)
       this.interpolationPoint.y = cubicBezier(start.y, control.y, control2.y, end.y, t)
 
@@ -237,18 +238,15 @@ export class Brush extends Tool implements IBrush {
       )
       this.interpolationPoint.pointerType = start.pointerType
 
-      this.tempPoint.copy(this.interpolationPoint)
-
       let distance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
 
       while (distance > stampSpacing) {
+        this.tempPoint.copy(this.interpolationPoint)
         maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, distance, stampSpacing)
 
         this.stamp(gl, this.tempPoint)
 
         distance = getDistance(this.tempPoint, this.interpolationPoint)
-
-        this.tempPoint.copy(this.interpolationPoint)
       }
     }
   }
@@ -271,20 +269,64 @@ export class Brush extends Tool implements IBrush {
     const stampSpacing = calculateSpacing(this.settings.spacing, size)
 
     const steps = distance / stampSpacing
+    const delta = 1 / steps
 
     this.tempPoint.reset()
 
-    // Stamp at evenly spaced intervals between the two points
-    for (let t = 1 / steps, j = 0; j <= steps; t += 1 / steps, j++) {
-      const newPoint = calculatePointAlongDirection(start, end, t)
+    // for (let j = 0; j <= steps; j++) {
+    //   const dx = end.x - start.x
+    //   const dy = end.y - start.y
 
-      this.interpolationPoint.x = newPoint.x
-      this.interpolationPoint.y = newPoint.y
-      this.interpolationPoint.pressure = pressureInterpolation(start, end, t)
+    //   const normalizedX = dx / distance
+    //   const normalizedY = dy / distance
+
+    //   this.interpolationPoint.x = start.x + normalizedX * stampSpacing * j
+    //   this.interpolationPoint.y = start.y + normalizedY * stampSpacing * j
+    //   this.interpolationPoint.pressure = lerp(start.pressure, end.pressure, j / steps)
+    //   this.interpolationPoint.pointerType = start.pointerType
+
+    //   this.stamp(gl, this.interpolationPoint)
+    // }
+
+    // Stamp at evenly spaced intervals between the two points
+    for (let t = 0, j = 0; j < steps; t += delta, j++) {
+      this.interpolationPoint.x = lerp(start.x, end.x, t)
+      this.interpolationPoint.y = lerp(start.y, end.y, t)
+      this.interpolationPoint.pressure = lerp(start.pressure, end.pressure, t)
       this.interpolationPoint.pointerType = start.pointerType
 
       this.stamp(gl, this.interpolationPoint)
+
+      // let stepDistance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
+
+      // while (stepDistance > stampSpacing) {
+      //   console.log(Math.abs(stepDistance - stampSpacing))
+      //   this.tempPoint.copy(this.interpolationPoint)
+      //   maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, stepDistance, stampSpacing)
+
+      //   this.tempPoint.pressure = lerp(this.previouslyDrawnPoint.pressure, this.tempPoint.pressure, 0.5)
+
+      //   this.stamp(gl, this.tempPoint)
+
+      //   stepDistance = getDistance(this.tempPoint, this.interpolationPoint)
+      // }
     }
+
+    // const testDistance = getDistance(this.interpolationPoint, end)
+
+    // console.log(testDistance)
+    // let stepDistance = getDistance(this.previouslyDrawnPoint, this.interpolationPoint)
+    // while (stepDistance !== 0 && Math.round(Math.abs(stepDistance - stampSpacing)) > 1) {
+    //   console.log(Math.abs(stepDistance - stampSpacing))
+    //   this.tempPoint.copy(this.interpolationPoint)
+    //   maintainPointSpacing(this.previouslyDrawnPoint, this.tempPoint, stepDistance, stampSpacing)
+
+    //   this.tempPoint.pressure = lerp(this.previouslyDrawnPoint.pressure, this.tempPoint.pressure, 0.5)
+
+    //   this.stamp(gl, this.tempPoint)
+
+    //   stepDistance = getDistance(this.tempPoint, this.interpolationPoint)
+    // }
   }
 
   /**

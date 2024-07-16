@@ -28,8 +28,8 @@ export const defaultPreferences = {
   pressureSensitivity: 1.0,
 
   // These preferences are inverted (1-n)
-  pressureSmoothing: 0.2,
-  pointerSmoothing: 0.4,
+  pressureSmoothing: 0.1,
+  pointerSmoothing: 0.2,
 
   canvasWidth: 10 * 300,
   canvasHeight: 8 * 300,

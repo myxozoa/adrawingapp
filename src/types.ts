@@ -28,6 +28,7 @@ export type Box = Size & Location
 
 export interface IPoint extends Location {
   location: vec2
+  _pressure: Float32Array
   pressure: number
   pointerType: PointerType
   active: boolean

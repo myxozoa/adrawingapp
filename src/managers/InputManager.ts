@@ -9,6 +9,7 @@ import {
   calculateWorldPosition,
   AppViewportSizeCache,
   calculatePointerWorldPosition,
+  lerp,
 } from "@/utils/utils"
 
 import { ModifierKeyManager } from "@/managers/ModifierKeyManager"
@@ -36,6 +37,8 @@ enum InteractionState {
   touchPanZoom,
   useTool,
 }
+
+const previousPressure = new Float32Array(1)
 
 let currentInteractionState: InteractionState = InteractionState.none
 
@@ -218,6 +221,10 @@ function touchPanZoom() {
 }
 
 function pointerdown(event: PointerEvent) {
+  event.stopPropagation()
+  DrawingManager.hideCursor()
+  DrawingManager.beginDraw()
+
   idleTime = 0
   Application.gl.canvas.setPointerCapture(event.pointerId)
   ;(event.target as HTMLCanvasElement).focus()
@@ -271,15 +278,16 @@ function pointerdown(event: PointerEvent) {
 
     InteractionManager.process(position)
 
-    queueMicrotask(InteractionManager.executeOperation)
+    InteractionManager.executeOperation()
   }
-  DrawingManager.hideCursor()
-  DrawingManager.beginDraw()
 
-  event.stopPropagation()
+  previousPressure[0] = event.pressure
 }
 
 function pointermove(event: PointerEvent) {
+  event.stopPropagation()
+  DrawingManager.beginDraw()
+
   idleTime = 0
 
   const position = calculatePointerWorldPosition(event)
@@ -306,10 +314,21 @@ function pointermove(event: PointerEvent) {
       coalesced = event.getCoalescedEvents()
 
       if (coalesced !== undefined) {
-        for (const coalescedEvent of coalesced) {
+        for (let i = 0; i < coalesced.length; i++) {
+          const coalescedEvent = coalesced[i]
           const coalescedRelativePointerState = calculatePointerWorldPosition(coalescedEvent)
 
+          coalescedRelativePointerState.pressure = lerp(
+            previousPressure[0],
+            coalescedEvent.pressure,
+            i / coalesced.length,
+          )
+
+          // console.log(previousPressure[0], coalescedEvent.pressure, coalescedRelativePointerState.pressure)
+
           InteractionManager.process(coalescedRelativePointerState)
+
+          InteractionManager.executeOperation()
         }
       }
     }
@@ -322,20 +341,19 @@ function pointermove(event: PointerEvent) {
       coalesced === undefined ||
       (coalesced !== undefined &&
         coalesced.length >= 1 &&
-        (coalesced[coalesced.length - 1].x !== position.x || coalesced[coalesced.length - 1].y !== position.y))
+        (coalesced[coalesced.length - 1].x !== event.x || coalesced[coalesced.length - 1].y !== event.y))
     ) {
       InteractionManager.process(position)
+      InteractionManager.executeOperation()
     }
-
-    queueMicrotask(InteractionManager.executeOperation)
   }
 
-  DrawingManager.beginDraw()
-
-  event.stopPropagation()
+  previousPressure[0] = event.pressure
 }
 
 function pointerup(event: PointerEvent) {
+  event.stopPropagation()
+
   idleTime = 0
 
   Application.drawing = false
@@ -354,11 +372,11 @@ function pointerup(event: PointerEvent) {
   DrawingManager.pauseDrawNextFrame()
 
   reset()
-
-  event.stopPropagation()
 }
 
 function wheel(event: WheelEvent) {
+  event.stopPropagation()
+
   currentInteractionState = InteractionState.zoom
   idleTime = 0
 
@@ -367,8 +385,6 @@ function wheel(event: WheelEvent) {
   wheelThrottle(DrawingManager.pauseDrawNextFrame)
 
   currentInteractionState = InteractionState.none
-
-  event.stopPropagation()
 }
 
 function keyup(event: KeyboardEvent) {
@@ -378,21 +394,18 @@ function keyup(event: KeyboardEvent) {
 }
 
 function pointercancel(event: PointerEvent) {
-  DrawingManager.pauseDrawNextFrame()
-
   event.stopPropagation()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 function pointerout(event: PointerEvent) {
-  DrawingManager.pauseDrawNextFrame()
-
   event.stopPropagation()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 function pointerleave(event: PointerEvent) {
-  DrawingManager.pauseDrawNextFrame()
-
   event.stopPropagation()
+  DrawingManager.pauseDrawNextFrame()
 }
 
 const pointer_listeners = {

@@ -54,19 +54,19 @@ export const toolProperties: ToolProperties = {
     availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
-    numberOfPoints: 8,
+    numberOfPoints: 4,
   },
   PENCIL: {
     availableSettings: ["size", "opacity", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
-    numberOfPoints: 8,
+    numberOfPoints: 4,
   },
   ERASER: {
     availableSettings: ["size", "hardness", "opacity", "flow", "spacing"],
     type: tool_types.STROKE,
     continuous: true,
-    numberOfPoints: 8,
+    numberOfPoints: 4,
   },
   FILL: {
     availableSettings: [],

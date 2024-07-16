@@ -2,7 +2,7 @@ import type { PointerState } from "@/types"
 import { tool_types } from "@/constants.tsx"
 import { getDistance, calculateFromPressure, AppViewportSizeCache, calculateSpacing, lerp } from "@/utils/utils"
 import { Application } from "@/managers/ApplicationManager"
-import { getPointerSmoothing, getPreference } from "@/stores/PreferenceStore"
+import { getPointerSmoothing, getPreference, getPressureSmoothing } from "@/stores/PreferenceStore"
 import { ResourceManager } from "@/managers/ResourceManager"
 import { vec2 } from "gl-matrix"
 import { DrawingManager, scratchLayerBoundingBox } from "@/managers/DrawingManager"
@@ -15,6 +15,7 @@ import { LocationStorage } from "@/objects/utils"
 const currentPointerPosition = new LocationStorage()
 let mergeEvent = false
 const mergeEventCache = new LocationStorage()
+const mergeEventPressure = new Float32Array(1)
 
 function prepareOperation(pointerState: PointerState) {
   if (DrawingManager.waitUntilInteractionEnd) return
@@ -28,22 +29,8 @@ function prepareOperation(pointerState: PointerState) {
   operation.points.currentPoint.pressure = lerp(
     operation.points.getPoint(-1).active ? prevPoint.pressure : 0,
     pointerState.pressure,
-    getPreference("pressureSmoothing"),
+    getPressureSmoothing(),
   )
-
-  const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
-
-  const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
-  const usePressure = getPreference("usePressure")
-  const basePressure = usePressure && pointerState.pointerType === "pen"
-
-  const size = calculateFromPressure(
-    _size / 2,
-    operation.points.currentPoint.pressure,
-    basePressure && "sizePressure" in operation.tool.settings && operation.tool.settings.sizePressure,
-  )
-
-  const stampSpacing = calculateSpacing(spacing, size)
 
   if (operation.tool.name === "PENCIL" || operation.tool.name === "EYEDROPPER") {
     operation.points.currentPoint.x = Math.trunc(pointerState.x) + 0.5
@@ -60,7 +47,7 @@ function prepareOperation(pointerState: PointerState) {
   if (Camera.zoom < 1 && getPreference("zoomCompensation")) {
     // These values are just tuned to feel right
 
-    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.7, getPointerSmoothing() * 0.8)
+    zoomAdjustment = Math.min((1 - Camera.zoom) * 0.6, getPointerSmoothing() * 0.7)
   }
 
   vec2.lerp(
@@ -74,19 +61,35 @@ function prepareOperation(pointerState: PointerState) {
   if (mergeEvent) {
     operation.points.currentPoint.x = lerp(mergeEventCache.x, operation.points.currentPoint.x, 0.5)
     operation.points.currentPoint.y = lerp(mergeEventCache.y, operation.points.currentPoint.y, 0.5)
+    operation.points.currentPoint.pressure = lerp(mergeEventPressure[0], operation.points.currentPoint.pressure, 0.5)
 
     mergeEvent = false
   }
 
   mergeEventCache.x = operation.points.currentPoint.x
   mergeEventCache.y = operation.points.currentPoint.y
+  mergeEventPressure[0] = operation.points.currentPoint.pressure
+
+  const _size = "size" in operation.tool.settings ? operation.tool.settings.size : 0
+
+  const spacing = "spacing" in operation.tool.settings ? operation.tool.settings.spacing : 0
+  const usePressure = getPreference("usePressure")
+  const basePressure = usePressure && pointerState.pointerType === "pen"
+
+  const size = calculateFromPressure(
+    _size / 2,
+    operation.points.currentPoint.pressure,
+    basePressure && "sizePressure" in operation.tool.settings && operation.tool.settings.sizePressure,
+  )
+
+  const stampSpacing = calculateSpacing(spacing, size)
 
   const dist = getDistance(prevPoint, operation.points.currentPoint)
 
   if (Application.drawing) {
     switch (operation.tool.type) {
       case tool_types.STROKE:
-        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing / 3)) {
+        if (!prevPoint.active || (prevPoint.active && dist >= stampSpacing)) {
           operation.points.currentPoint.active = true
 
           operation.points.nextPoint()

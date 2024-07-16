@@ -1,6 +1,6 @@
 import { IPoint, PointerState, IPoints, ExportImageFormatsMIME } from "@/types"
 import { vec2 } from "gl-matrix"
-import { getPreference, usePreferenceStore } from "@/stores/PreferenceStore"
+import { getPressureSmoothing, usePreferenceStore } from "@/stores/PreferenceStore"
 import { PointerOffsetDifferenceCache, updatePointer } from "@/managers/PointerManager"
 import { Camera } from "@/objects/Camera"
 import { isPoint } from "@/utils/typeguards"
@@ -310,28 +310,6 @@ export const performanceSafeguard = () => {
 }
 
 /**
- * Calculate point a given distance from `point0` in the direction of `point0 -> point1`
- */
-export function calculatePointAlongDirection(
-  point0: IPoint,
-  point1: IPoint,
-  distance: number,
-): { x: number; y: number } {
-  const dx = point1.x - point0.x
-  const dy = point1.y - point0.y
-
-  const totalDistance = getDistance(point0, point1)
-
-  const normalizedX = dx / totalDistance
-  const normalizedY = dy / totalDistance
-
-  return {
-    x: point0.x + normalizedX * distance,
-    y: point0.y + normalizedY * distance,
-  }
-}
-
-/**
  * Moves `point1` to a `targetDistance` from `point0` in the direction of `point0 -> point1`
  */
 export function maintainPointSpacing(point0: IPoint, point1: IPoint, distance: number, targetDistance: number): void {
@@ -368,10 +346,6 @@ export function cubicBezier(start: number, control1: number, control2: number, e
   return c0 + c1 + c2 + c3
 }
 
-export function pressureInterpolation(start: IPoint, end: IPoint, j: number): number {
-  return lerp(start.pressure, end.pressure, j)
-}
-
 /**
  * Move curve points around to be evenly spaced from beginning to end
  *
@@ -393,7 +367,7 @@ export function redistributePoints(points: IPoints) {
       const x = cubicBezier(start.x, control.x, control2.x, end.x, 0.5)
       const y = cubicBezier(start.y, control.y, control2.y, end.y, 0.5)
 
-      const pressure = pressureInterpolation(start, end, 0.5)
+      const pressure = lerp(start.pressure, end.pressure, 0.5)
 
       start.x = x
       start.y = y
@@ -436,7 +410,7 @@ export function calculateFromPressure(value: number, pressure: number, usePressu
   let result = value
 
   if (usePressureSensitivity) {
-    const pressureSensitivity = getPreference("pressureSensitivity") * 10
+    const pressureSensitivity = getPressureSmoothing() * 10
 
     result = value - (value * pressureSensitivity * (1 - pressure)) / (1 + pressureSensitivity)
 
